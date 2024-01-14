@@ -5,7 +5,7 @@ _richR_ provide functions _richGO_, _richKEGG_,and _enrich_ to do functional enr
 ## Installation
 ```
 library(devtools)
-install_github("guokai8/richR")
+install_github("hurlab/richR")
 ``` 
 ## Quick tour
 ```{r}
@@ -95,7 +95,7 @@ comparedot(res)
 ggnetmap(list(resgo,resko),top=50,visNet=TRUE,smooth=FALSE)
 ```
 ### Contact information
-For any questions please contact guokai8@gmail.com
+For any questions please contact kai.guo@und.edu or junguk.hur@med.und.edu
 
 
 

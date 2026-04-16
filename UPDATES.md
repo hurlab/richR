@@ -22,6 +22,9 @@ Packaging changes (fork-only):
   behavior (pixel-accurate alignment + blended multi-set bar colors).
 - README install URL, version badge, and citation updated to
   `hurlab/richR`.
+- Declared `sna` as a package Import. `GGally::ggnet2()` (used by
+  `R/ggrich.R`) requires `sna` at runtime, which caused the upstream
+  CI vignette build to fail. This is also the fix bundled in PR #9.
 
 ---
 

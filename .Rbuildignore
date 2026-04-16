@@ -1,2 +1,9 @@
 ^.*\.Rproj$
 ^\.Rproj\.user$
+^PROJECT_HANDOFF\.md$
+^PROJECT_LOG\.md$
+^\.claude$
+^\.moai$
+^\.agency$
+^\.mcp\.json$
+^pre-upstream-sync-backup$

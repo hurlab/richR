@@ -10,3 +10,9 @@ src/*.dll
 *.Rcheck
 gene.rdata
 hsago.rdata
+
+# hurlab fork: local tooling (not part of the R package)
+.claude/
+.moai/
+.agency/
+.mcp.json

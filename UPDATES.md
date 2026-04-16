@@ -1,5 +1,30 @@
 # richR Updates
 
+## Version 0.1.4 (2026-04-16) — hurlab fork release
+
+First hurlab-led release, shipping the `richUpset()` alignment fix and
+multi-set color blending described in the 0.1.3 section below, plus
+fork-specific README/figures/packaging. Proposed upstream as
+[guokai8/richR PR #9](https://github.com/guokai8/richR/pull/9)
+(pending review). The fork leads upstream at 0.1.4 until PR #9 merges
+and upstream cuts an official release.
+
+Functional changes over upstream:
+
+- All of the `richUpset()` bug fix and enhancement in 0.1.3 below.
+
+Packaging changes (fork-only):
+
+- Restored example figures in `man/figures/` (bar, dot, GSEA,
+  compare-dot, UpSet) and embedded them in the README Visualization
+  section so each plot family has a rendered example.
+- Rewrote the README UpSet section around the updated `richUpset()`
+  behavior (pixel-accurate alignment + blended multi-set bar colors).
+- README install URL, version badge, and citation updated to
+  `hurlab/richR`.
+
+---
+
 ## Version 0.1.3 (2026-04-16)
 
 ### Bug Fixes

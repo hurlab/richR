@@ -1,9 +1,9 @@
 # richR <img src="man/figures/logo.png" align="right" height="120" />
 
 [![Project Status:](http://www.repostatus.org/badges/latest/active.svg)](http://www.repostatus.org/#active)
-[![](https://img.shields.io/badge/version-0.1.2-green.svg)](https://github.com/guokai8/richR)
-[![R-CMD-check](https://github.com/guokai8/richR/actions/workflows/R-CMD-check.yaml/badge.svg)](https://github.com/guokai8/richR/actions/workflows/R-CMD-check.yaml)
-![](https://img.shields.io/github/languages/code-size/guokai8/richR)
+[![](https://img.shields.io/badge/version-0.1.4-green.svg)](https://github.com/hurlab/richR)
+[![R-CMD-check](https://github.com/hurlab/richR/actions/workflows/R-CMD-check.yaml/badge.svg)](https://github.com/hurlab/richR/actions/workflows/R-CMD-check.yaml)
+![](https://img.shields.io/github/languages/code-size/hurlab/richR)
 [![DOI](https://zenodo.org/badge/243827597.svg)](https://zenodo.org/badge/latestdoi/243827597)
 
 ## Overview
@@ -24,13 +24,15 @@ and you can supply custom gene sets via GMT files or named lists.
   `slice()`, `summarise()` work directly on enrichment result objects
 - **Batch analysis**: `batchEnrich()` runs enrichment across multiple gene lists
 - **Comparison**: `compareResult()` and `richCompareDot()` for multi-group comparisons
+- **Publication-quality UpSet plots** with pixel-accurate panel alignment and
+  intuitive color-blended multi-set bars (`richUpset()`)
 
 ## Installation
 
 ```r
 # Install from GitHub
 library(devtools)
-install_github("guokai8/richR")
+install_github("hurlab/richR")
 ```
 
 Bioconductor annotation packages are needed for building annotations:
@@ -131,6 +133,11 @@ richLollipop(resko, top = 20)
 richCircle(resko, top = 15)
 ```
 
+<p align="center">
+  <img src="man/figures/example_barplot.png" width="48%" alt="Bar plot example" />
+  <img src="man/figures/example_dotplot.png" width="48%" alt="Dot plot example" />
+</p>
+
 ### Scatter and volcano plots
 
 Two-axis continuous plots for exploring enrichment structure:
@@ -188,6 +195,8 @@ richGSEAcurve(object = hsako, gseaRes = res_gsea, pathways = "hsa04110")
 richECDF(res_gsea)
 ```
 
+![GSEA enrichment curve](man/figures/example_gsea.png)
+
 ### Network and map plots
 
 ```r
@@ -218,19 +227,49 @@ richCompareDot(res_cmp)
 richHeatmap(list(GO = resgo, KEGG = resko), top = 50)
 ```
 
+![Multi-group comparison dot plot](man/figures/example_comparedot.png)
+
 ### UpSet plot
 
+`richUpset()` renders an UpSet-style plot (intersection bar chart +
+dot matrix + set-size bars) for visualizing overlaps between named
+gene lists. Built entirely with ggplot2 — no dependency on the UpSetR
+package. Key features:
+
+- **Pixel-accurate bar-to-dot alignment** — the intersection bar chart
+  and the dot matrix are pre-aligned with `cowplot::align_plots()` and
+  positioned via `ggdraw()` + `draw_plot()`, so the bars always line
+  up with the dots beneath them regardless of y-axis label widths.
+- **Blended multi-set bar colors** — single-set bars keep the set
+  color; multi-set intersection bars are rendered in an RGB blend of
+  the participating set colors, making each combination visually
+  distinct. Set `main.bar.color` to force a uniform color.
+- **Flexible input** — named list of character vectors, list of
+  `richResult` / `GSEAResult` objects, or data frames with a `GeneID`
+  / `leadingEdge` column.
+
 ```r
+set.seed(123)
+all_genes <- paste0("GENE", seq_len(250))
 gene_lists <- list(
-  "Treatment A" = sample(unique(hsako$GeneID), 500),
-  "Treatment B" = sample(unique(hsako$GeneID), 400),
-  "Control"     = sample(unique(hsako$GeneID), 600)
+  "Treatment A" = sample(all_genes, 150),
+  "Treatment B" = sample(all_genes, 130),
+  "Control"     = sample(all_genes, 110),
+  "Baseline"    = sample(all_genes, 100)
 )
+
 richUpset(gene_lists)
+
+# Custom colors and ordering
 richUpset(gene_lists,
-          mycol = c("dodgerblue", "goldenrod1", "seagreen3"),
+          mycol = c("dodgerblue", "goldenrod1", "seagreen3", "orchid3"),
           order.by = "degree", nintersects = 20)
+
+# Uniform bar color override
+richUpset(gene_lists, main.bar.color = "steelblue")
 ```
+
+![UpSet plot example](man/figures/example_upset.png)
 
 ### Plot summary table
 
@@ -307,12 +346,19 @@ Old `gg*` names are kept as backward-compatible aliases:
 If you use richR in your research, please cite:
 
 ```
-Guo K and Hur J (2020). richR: Enrichment analysis for functional genomics.
-R package version 0.1.2. https://github.com/guokai8/richR
-DOI: 10.5281/zenodo.3675760
+Guo K and Hur J (2026). richR: Functional enrichment analysis and visualization.
+R package version 0.1.4. https://github.com/hurlab/richR
 ```
+
+Upstream releases and their historical DOIs are maintained at
+[guokai8/richR](https://github.com/guokai8/richR); the hurlab fork
+tracks upstream and ships fix-ahead patches (currently the
+`richUpset()` alignment fix and multi-set color blending, proposed
+upstream as PR #9 — pending merge at time of writing).
 
 ## Contact
 
-For questions or bug reports please contact guokai8@gmail.com or open an
-[issue on GitHub](https://github.com/guokai8/richR/issues).
+For questions or bug reports on the hurlab fork, please open an
+[issue on GitHub](https://github.com/hurlab/richR/issues).
+For issues affecting upstream, please file at
+[guokai8/richR](https://github.com/guokai8/richR/issues).

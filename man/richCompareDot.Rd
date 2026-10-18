@@ -82,7 +82,9 @@ comparedot(
 
 \item{height}{figure height}
 
-\item{include.all}{include all richResults even empty}
+\item{include.all}{Preserve all supplied group labels on the x-axis,
+including groups with no retained rows. This plotting option uses the
+existing inclusive display cutoffs; it does not create placeholder terms.}
 }
 \description{
 draw dotplot for multiple enrichment results

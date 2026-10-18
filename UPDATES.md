@@ -1,6 +1,33 @@
 # richR Updates
 
-## Version 0.1.4 (2026-04-16) — hurlab fork release
+## Unreleased (0.1.4)
+
+### Core enrichment reliability
+
+- ORA deduplicates query genes, supports an explicit effective background,
+  normalizes invalid or duplicate annotation memberships, and records analysis
+  counts, options, and provider provenance in enrichment diagnostics.
+- ORA adjusts p-values over the positive-overlap tested family before report
+  filters; `keepRich` uses the documented reporting predicate.
+- GSEA adjusts over the full tested family before significance filtering and
+  exposes backend controls including `eps`, `scoreType`, `nproc`,
+  `BPPARAM`, and `seed`. Seeded calls restore the caller's RNG state.
+
+### Batch enrichment and comparisons
+
+- `compareResult()` validates group identities, preserves real result rows and
+  extra columns, and can retain empty group labels without adding placeholder
+  terms. Its strict significance cutoffs are unchanged.
+- `richCompareDot(..., include.all = TRUE)` keeps all requested group labels
+  on the x-axis, including when pathway filtering leaves no points.
+- `batchEnrich()` combines the rows returned by each group without applying a
+  second cutoff and reports each group as `success`, `empty`, or `failed` in a
+  typed `status` data frame.
+
+## Historical Version 0.1.4 release-note draft (2026-04-16; publication unverified)
+
+The following prior release-note text is retained for context; it does not
+verify that a public 0.1.4 release was published.
 
 First hurlab-led release, shipping the `richUpset()` alignment fix and
 multi-set color blending described in the 0.1.3 section below, plus

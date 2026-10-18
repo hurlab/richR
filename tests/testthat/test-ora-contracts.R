@@ -231,7 +231,8 @@ test_that("batchEnrich reports empty groups and preserves successful groups", {
     pvalue = 1, minSize = 1, minGSSize = 1, keepRich = FALSE
   )), "failed for 'empty'")
   expect_named(batch$results, "successful")
-  expect_equal(unique(batch$combined$group), "successful")
+  expect_identical(unique(as.character(batch$combined$group)), "successful")
+  expect_identical(levels(batch$combined$group), "successful")
 })
 
 test_that("batchEnrich errors when all validly named groups are empty", {

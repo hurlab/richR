@@ -1,5 +1,36 @@
 # PROJECT_LOG.md — richR
 
+## Session 2026-10-17 CDT — Fork sync and harness cleanup reconciled
+
+- Primary development line confirmed as `hurlab/richR` remote `master`, version 0.1.4.
+- Prior Claude Code session merged upstream `590efdb` and `ef0fb86` into fork
+  `19f38fb`, and removed MoAI commit `23f977c` from upstream PR #11.
+  This session verified remote state instead of repeating those mutations.
+- Created isolated `.moai/worktrees/fork-wrapup`, branch `WT-fork-wrapup`,
+  from remote `origin/master` at `19f38fb`. Primary checkout stayed on
+  `upstream-pr/richr-v0.1.3` at `eb4c9da`.
+- Resolved the previously absent `origin/HEAD` from the remote's advertised
+  default branch (`master`); baseline divergence check returned `0 0`.
+- Added `/.moai-backups/` to local `.git/info/exclude`. Primary checkout
+  `git status --short` then returned no paths. Harness files remain local.
+- Both `R/misc.R` and `R/species.R` idconvert definitions returned TP53 and BRCA1
+  for Entrez IDs 7157 and 672 with `AnnotationDbi attached=FALSE`.
+  Used R 4.6.1 with its usual libraries first and existing R 4.5 annotation
+  packages as fallback; no dependency installation or full local package check.
+- Inspected CI run 39079967110 for baseline `19f38fb`: Ubuntu, macOS, Windows
+  package-check jobs succeeded, each with `Status: 4 NOTEs`.
+- Replaced stale master-promotion and PR #9 restart instructions in the handoff.
+  PR #11 is OPEN at `eb4c9da`, 3 commits, 24 files, with no harness paths in
+  the inspected families; PR #7/#9 are CLOSED and unmerged.
+- No production code changed. No upstream reminder was sent and no PR was modified.
+- Evidence commands, runtime-check expression, gaps, and residual CI NOTES are
+  recorded in PROJECT_HANDOFF.md. Older log entries remain historical.
+- Remaining: upstream action on PR #11; optional future dependency/environment
+  work and NOTE cleanup require their own scope. The user authorized committing
+  the two wrap-up documents and pushing them to hurlab master.
+
+---
+
 ## Session 2026-04-16 CDT — PR #9 opened, ggUpSet retired, hurlab 0.1.4 staged
 
 - **Coding CLI used:** Claude Code CLI (Claude Opus 4.6, 1M context)

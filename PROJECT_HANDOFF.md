@@ -1,90 +1,127 @@
 # PROJECT_HANDOFF.md — richR
 
-## 1. Project Overview
+## 1. Project overview and baseline
 
-richR is an R package for functional enrichment analysis (GO, KEGG, Reactome, MSigDB, GSEA) with visualization. Originally developed by Kai Guo (`guokai8/richR`), now maintained at `hurlab/richR`.
+richR is an R package for functional enrichment analysis and visualization.
+Kai Guo's `guokai8/richR` is upstream; `hurlab/richR` is our primary development line.
 
-- **Last updated:** 2026-04-16 CDT
-- **Fork version:** 0.1.4 (upstream @ `fd96d4f`, with PR #9 richUpset fix cherry-picked)
-- **Last coding CLI used:** Claude Code CLI (Claude Opus 4.6)
+- Updated: 2026-10-17 CDT.
+- Fork version: 0.1.4 (`DESCRIPTION` at `origin/master`).
+- Verified code baseline: `19f38fb997ea8ae5236e1d52b6b3a0cbefea5493`.
+- Wrap-up workspace: `.moai/worktrees/fork-wrapup`, branch `WT-fork-wrapup`, based on `origin/master`.
+- Primary checkout remains on `upstream-pr/richr-v0.1.3` at `eb4c9da`; it is a PR preparation branch, not the current fork baseline.
+- The earlier handoff's master-promotion and PR #9 instructions are superseded by this update. Do not repeat its reset/force-push plan.
 
-## 2. Current State
+## 2. Current state
 
-| Feature / Milestone | Status | Notes |
-|---|---|---|
-| v0.1.0 — Codebase review, bug fixes, documentation (PR #6) | MERGED upstream 2026-04-11 | Squashed into upstream commit `086f655` |
-| v0.1.2 — show methods, validation, GMT import, tests (PR #8) | MERGED upstream 2026-04-11 | Squashed into upstream commit `086f655` |
-| v0.1.1 — Color-enhanced UpSet plot (PR #7) | Superseded by PR #9 | PR #7 proposed a new `ggupset()` function; PR #9 instead mainlines the fix directly into `richUpset()` |
-| PR #9 — richUpset alignment fix + multi-set color blending | OPEN, pending review | https://github.com/guokai8/richR/pull/9, targets `master` |
-| Upstream sync → `fd96d4f` | Completed 2026-04-15 | Branch `sync/upstream-v0.1.2` created as review staging |
-| Fork release 0.1.4 | Completed 2026-04-16 | `hurlab/0.1.4` branch: upstream + PR #9 patch + fork README/figures/docs |
-| ggUpSet retired | Completed 2026-04-16 | No separate `ggUpSet()` or `ggupset()` function; improvements are in `richUpset()` directly; `ggupset` remains as a simple alias from upstream's `zzz_ggplots_aliases.R` |
-| README: 4 figures embedded in Visualization sections | Completed 2026-04-16 | Bar, Dot, GSEA, Compare-dot, UpSet figures restored from safety tag |
-| README: citation updated to hurlab/richR + 2026 + v0.1.4 | Completed 2026-04-16 | DOI removed pending hurlab-owned Zenodo release |
-| R CMD check clean build | Not started | Blocked by missing Bioconductor + CRAN dependencies |
-| Integration test coverage | Not started | Need tests for core enrichment pipeline |
+| Item | Verified state |
+|---|---|
+| Fork release | Version 0.1.4 is already on remote `master` |
+| Upstream sync | `19f38fb` merged upstream commits `590efdb` and `ef0fb86`; both `idconvert()` definitions use `AnnotationDbi::mapIds()` |
+| Upstream-only commits | `git rev-list --count HEAD..upstream/master` returned `0` on the code baseline |
+| Fork improvements | richUpset alignment/color blending, sna dependency, regenerated Rd documentation, fork README/figures remain in the fork |
+| Upstream contribution | [PR #11](https://github.com/guokai8/richR/pull/11) is OPEN at `eb4c9da`, with 3 commits and 24 files |
+| Earlier PRs | PR #7 and PR #9 are CLOSED and unmerged; follow PR #11 instead |
+| Harness cleanup | PR #11 and the fork baseline have no tracked MoAI/agent harness paths in the inspected path families |
+| Local harness files | Retained locally and excluded through `.git/info/exclude`; `.moai-backups/` was added to that local exclusion list |
+| CI | The baseline passed R-CMD-check on Ubuntu, macOS and Windows; each reported `Status: 4 NOTEs` |
 
-## 3. Execution Plan Status
+MoAI/agent harness files must never be committed to richR branches. This includes
+`.moai/`, `.moai-backups/`, `.claude/`, `.agents/`, `.agency/`, `.codex/`,
+`.git_hooks/`, `.mcp.json`, `.worktreeinclude`, `AGENTS.md`, and `CLAUDE.md`.
+Keep machine-local exclusion rules in `.git/info/exclude` rather than committing
+new harness wiring. Existing R-package ignore rules were left unchanged.
 
-| Phase | Status | Last Updated | Notes |
-|---|---|---|---|
-| Phase 0: Upstream sync | Completed | 2026-04-15 | Safety tag `pre-upstream-sync-backup`; sync branch on origin |
-| Phase 0.5: Upstream PR for richUpset | Completed (awaiting merge) | 2026-04-16 | PR #9 opened |
-| Phase 0.6: Hurlab fork 0.1.4 release | Completed (awaiting master promotion) | 2026-04-16 | `hurlab/0.1.4` branch built |
-| Phase 1: Environment & Build Health | Not started | 2026-04-16 | Bioconductor (`GO.db`, `fgsea`, `S4Vectors`, `DOSE`) + CRAN (`igraph`, `visNetwork`, `reshape2`, `intergraph`, `ggrepel`, `GGally`, `sna`, `testthat`, `devtools`) still missing |
-| Phase 2: Documentation consistency | Partially complete | 2026-04-16 | CLAUDE.md still references removed `exportPattern`; man pages not regenerated |
-| Phase 3: Test coverage expansion | Not started | 2026-04-16 | Upstream has test-helpers/validation/s4-classes from PR #8; integration tests still missing |
-| Phase 4: Additional figures | Not started | 2026-04-16 | Only 4 example figures available; volcano/scatter/termSim/network/etc. need regeneration once deps are installed |
+## 3. Verification evidence
 
-## 4. Outstanding Work
+### Claim
 
-| Item | Status | Last Updated |
-|---|---|---|
-| Promote `hurlab/0.1.4` → `master` | Pending user approval | 2026-04-16 |
-| Force-push `master` to origin | Pending | 2026-04-16 |
-| Delete stale merged `feature/*` branches on origin | Pending | 2026-04-16 |
-| Monitor PR #9 for Kai's review | External (blocked) | 2026-04-16 |
-| Install missing R dependencies | Not started | 2026-04-16 |
-| Run `R CMD check` | Not started | 2026-04-16 |
-| Update CLAUDE.md (remove stale `exportPattern` reference) | Not started | 2026-04-16 |
-| Regenerate additional example figures (volcano, scatter, etc.) | Not started | 2026-04-16 |
-| Write integration tests | Not started | 2026-04-16 |
-| Close PR #7 once PR #9 merges (optional) | Pending | 2026-04-16 |
+Both changed source definitions convert human Entrez IDs without attaching
+AnnotationDbi. The upstream sync has landed in the fork, and its CI completed.
 
-## 5. Risks, Open Questions, and Assumptions
+### Evidence
 
-| Item | Status | Notes |
-|---|---|---|
-| `0.1.3-hurlab.1` would fail R CMD check (non-numeric `hurlab` token) | Resolved | Using plain `0.1.4` — fork leads upstream's 0.1.3 release line |
-| Missing deps prevent R CMD check | Open | Upstream added `sna` + dropped `tidyr`/`methods` from Imports |
-| Safety tag `pre-upstream-sync-backup` retained | Active | Local-only; points to pre-sync master tip |
-| Target audience (CRAN vs GitHub-only) | Open (default: GitHub-only) | |
+- `git show -s --format='%h %p %s' 19f38fb`:
+  `19f38fb 3d4a496 ef0fb86 Merge upstream guokai8/richR master: use AnnotationDbi::mapIds in idconvert()`.
+- `git rev-list --count HEAD..upstream/master`: `0`.
+- `gh pr view 11 -R guokai8/richR --json state,headRefOid,commits,files`:
+  `OPEN`, head `eb4c9daa39fa7002842d4e54cec620f5ac8dd3c6`, 3 commits, 24 files.
+  Filtering its file paths for harness directories and root harness files returned `[]`.
+- `git ls-files` for the harness path families listed above returned no paths.
+- `git check-ignore -v .moai-backups/` in the primary checkout:
+  `.git/info/exclude:30:/.moai-backups/ .moai-backups/` (fields separated by whitespace).
+- `gh run view 39079967110 -R hurlab/richR --json jobs`:
+  `macOS-latest (release)`, `ubuntu-latest (release)`, and `windows-latest (release)`
+  each returned `conclusion: success`, including the package-check step.
+- `gh run view 39079967110 -R hurlab/richR --log`:
+  all three platforms reported `Status: 4 NOTEs`.
+  [CI run](https://github.com/hurlab/richR/actions/runs/39079967110).
 
-## 6. Verification Status
+The direct runtime check used `timeout 120 Rscript --vanilla -e` with the following
+R expression, from the wrap-up worktree:
 
-| Item | Method | Result | Date |
-|---|---|---|---|
-| PR #6 MERGED upstream | `gh pr view` | mergedAt 2026-04-11 | 2026-04-15 |
-| PR #8 MERGED upstream | `gh pr view` | mergedAt 2026-04-11 | 2026-04-15 |
-| PR #9 OPEN | `gh pr create` returned pull/9 URL | State OPEN | 2026-04-16 |
-| `R/ggupset.R` parses cleanly with richUpset fix + `.blend_colors` | `Rscript -e parse()` | 3 top-level expressions OK | 2026-04-16 |
-| Figures restored from safety tag | `git checkout pre-upstream-sync-backup -- man/figures/*` | 5 PNGs present in man/figures/ | 2026-04-16 |
-| R CMD check | Not verified | — | Blocked by missing dependencies |
+```r
+.libPaths(c(.libPaths(), "/home/juhur/R/x86_64-pc-linux-gnu-library/4.5"))
+cat("R:", as.character(getRversion()), "\n")
+stopifnot(requireNamespace("org.Hs.eg.db", quietly = TRUE))
+e <- new.env(parent = baseenv())
+sys.source("R/species.R", e)
+stopifnot(!"package:AnnotationDbi" %in% search())
+for (f in c("R/misc.R", "R/species.R")) {
+  for (x in parse(f)) {
+    if (is.call(x) && identical(x[[1]], as.name("<-")) &&
+        identical(x[[2]], as.name("idconvert"))) eval(x, e)
+  }
+  actual <- e$idconvert("human", c("7157", "672"), "ENTREZID", "SYMBOL")
+  stopifnot(identical(unname(actual), c("TP53", "BRCA1")))
+  cat(f, ": 7157=", actual[[1]], " 672=", actual[[2]],
+      "; AnnotationDbi attached=", "package:AnnotationDbi" %in% search(), "\n", sep = "")
+}
+cat("PASS: both source definitions convert IDs without attaching AnnotationDbi\n")
+```
 
-## 7. Restart Instructions
+Observed output (excluding the annotation database's mapping messages):
 
-- **Starting point:** branch `hurlab/0.1.4` at upstream `fd96d4f` + fork commits.
-- **Safety tag:** `pre-upstream-sync-backup` for full rollback.
-- **Open upstream PR:** https://github.com/guokai8/richR/pull/9
-- **Recommended next actions:**
-  1. If user approves, promote: `git checkout master && git reset --hard hurlab/0.1.4 && git push origin master --force-with-lease`
-  2. Delete stale branches on origin: `feature/codebase-review-docs-v0.1.0`, `feature/enhancements-v0.1.2`
-  3. Keep `feature/upset-plot-v0.1.1` until PR #7 is closed (superseded by PR #9)
-  4. Install deps + run R CMD check + fix any surfaced issues
-  5. Monitor PR #9 for Kai's review; on merge, bump hurlab version to 0.1.3 (drop the `.1` patch segment) and sync
-- **Key branches:**
-  - `hurlab/0.1.4` — staged fork release, built on upstream + PR #9 + fork-specific additions
-  - `upstream-pr/richupset-align-and-blend` — clean PR #9 branch (upstream + single commit)
-  - `sync/upstream-v0.1.2` — earlier sync-review staging (retained until master is promoted)
-  - `master` — unchanged from pre-sync state until promotion
-- **Last updated:** 2026-04-16 CDT
+```text
+R: 4.6.1
+R/misc.R: 7157=TP53 672=BRCA1; AnnotationDbi attached=FALSE
+R/species.R: 7157=TP53 672=BRCA1; AnnotationDbi attached=FALSE
+PASS: both source definitions convert IDs without attaching AnnotationDbi
+```
+
+### Baseline-attribution
+
+Local runtime checks ran against the files at `19f38fb` in the isolated wrap-up
+worktree during this session. GitHub's recorded CI run targets exactly the same
+commit; it was inspected in this session, not rerun locally.
+The runtime used R 4.6.1, prioritizing its normal libraries and adding the existing
+R 4.5 user library last for annotation packages. No packages were installed.
+
+### Gaps
+
+- Full local package installation and R CMD check were not run. The default R 4.6
+  libraries could not load AnnotationDbi, org.Hs.eg.db or sna. The direct check
+  succeeded only after adding the existing R 4.5 library as a fallback.
+- The direct check evaluates each changed function separately with species helpers;
+  it does not test loading the complete installed package or every identifier type.
+- No new enrichment integration tests or additional example figures were produced.
+
+### Residual-risk
+
+CI still reports four NOTE categories: hidden files, top-level packaging files,
+unused declared Imports, and code-analysis findings about unqualified names.
+These are observed CI findings, not a claim of an entirely clean CRAN check.
+Cross-version library fallback is a limitation of the direct local check.
+
+## 4. Remaining work and restart
+
+The requested fork sync, upstream PR cleanup, local backup exclusion, and state
+reconciliation are complete. PR #11 still awaits upstream action. No automatic
+review reminder, branch deletion, dependency installation, or new feature work is
+scheduled by this handoff.
+
+For subsequent fork work, create a fresh isolated worktree from remote
+`origin/master`. Do not resume from the older upstream PR branch by accident.
+The user authorized committing these two wrap-up documents and pushing them to
+`hurlab/richR` master. Retain the worktree until the remote update is verified.
+Historical entries in PROJECT_LOG.md describe their original session state.

@@ -272,6 +272,10 @@ resko2 <- richKEGG(gene2, kodata = hsako)
 res_cmp <- compareResult(list(S1 = resko1, S2 = resko2))
 richCompareDot(res_cmp)
 
+# Keep every group's x-axis label, including groups with no retained terms
+res_cmp_all <- compareResult(list(S1 = resko1, S2 = resko2), include.all = TRUE)
+richCompareDot(res_cmp_all, include.all = TRUE)
+
 # Comparison heatmap across multiple analyses
 richHeatmap(list(GO = resgo, KEGG = resko), top = 50)
 ```
@@ -359,7 +363,20 @@ resgo %>% arrange(Pvalue) %>% head(10)
 # Batch enrichment across multiple gene lists
 gene_lists <- list(GroupA = gene1, GroupB = gene2)
 batch_res <- batchEnrich(gene_lists, annot = hsago)
+batch_res$status  # success, empty, or failed for each original group
+batch_res$combined # exact rows returned by each successful enrichment
 ```
+
+`compareResult()` keeps its strict significance cutoffs. With
+`include.all = TRUE`, its `group` column is a factor with levels in input
+order that retains every supplied group label, even when the group has no
+significant terms;
+`richCompareDot(..., include.all = TRUE)` keeps those labels on the x-axis
+without adding placeholder terms. `batchEnrich()` preserves valid empty
+results, combines the rows already returned by each group without applying a
+second cutoff, and returns a `status` data frame with `group`, `status`,
+`n_terms`, and `error` columns. A zero-row enrichment is `empty`; an exception
+is `failed` and retains its error message.
 
 ## Function name aliases
 

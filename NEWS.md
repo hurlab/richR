@@ -1,6 +1,6 @@
 # richR Updates
 
-## Unreleased (0.1.4)
+## Version 0.1.4 (2026-10-20)
 
 ### Core enrichment reliability
 
@@ -23,6 +23,15 @@
 - `batchEnrich()` combines the rows returned by each group without applying a
   second cutoff and reports each group as `success`, `empty`, or `failed` in a
   typed `status` data frame.
+
+### Packaging and namespace
+
+- Bundled KEGG data load into local environments, preserving caller's
+  `.GlobalEnv` bindings.
+- Function imports are explicit; unused `reshape2` and `tidyr`
+  dependencies were removed while required `sna` remains.
+- Built source archives include `NEWS.md` and exclude repository-only
+  files.
 
 ## Historical Version 0.1.4 release-note draft (2026-04-16; publication unverified)
 

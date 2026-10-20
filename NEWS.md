@@ -1,6 +1,6 @@
 # richR Updates
 
-## Version 0.1.5 (Unreleased)
+## Version 0.1.5 (2026-10-20)
 
 - Bundled KEGG and pathway data load from the richR namespace into local
   environments, including in namespace-only use.

@@ -155,7 +155,7 @@ richGSEA_internal<-function(x,object,keytype="",pvalue=0.05,padj=NULL,KEGG=FALSE
   res <- res[!is.na(res$pathway),]
   if(isTRUE(KEGG)){
     path_env <- new.env(parent = emptyenv())
-    utils::data("path", envir = path_env)
+    utils::data("path", package = "richR", envir = path_env)
     path <- path_env$path
     rownames(path)<-path$Level3
     res<-cbind(res,path[res$pathway,])

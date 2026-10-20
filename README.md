@@ -1,7 +1,7 @@
 # richR <img src="man/figures/logo.png" align="right" height="120" />
 
 [![Project Status:](http://www.repostatus.org/badges/latest/active.svg)](http://www.repostatus.org/#active)
-[![](https://img.shields.io/badge/version-0.1.4-green.svg)](https://github.com/hurlab/richR)
+[![](https://img.shields.io/badge/version-0.1.5-green.svg)](https://github.com/hurlab/richR)
 [![R-CMD-check](https://github.com/hurlab/richR/actions/workflows/R-CMD-check.yaml/badge.svg)](https://github.com/hurlab/richR/actions/workflows/R-CMD-check.yaml)
 ![](https://img.shields.io/github/languages/code-size/hurlab/richR)
 [![DOI](https://zenodo.org/badge/243827597.svg)](https://zenodo.org/badge/latestdoi/243827597)
@@ -413,7 +413,7 @@ If you use richR in your research, please cite:
 
 ```
 Guo K and Hur J (2026). richR: Functional enrichment analysis and visualization.
-R package version 0.1.4. https://github.com/hurlab/richR
+R package version 0.1.5. https://github.com/hurlab/richR
 ```
 
 Upstream releases and their historical DOIs are maintained at

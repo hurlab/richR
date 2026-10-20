@@ -1,5 +1,12 @@
 # richR Updates
 
+## Version 0.1.5 (2026-10-20)
+
+- Bundled KEGG and pathway data load from the richR namespace into local
+  environments, including in namespace-only use.
+- Kappa clustering preserves named term groups for equal-sized clusters and
+  keeps representatives, memberships, and scores aligned.
+
 ## Version 0.1.4 (2026-10-20)
 
 ### Core enrichment reliability

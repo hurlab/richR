@@ -16,6 +16,7 @@
 }
 
 .expect_consumer_process_success <- function(run) {
+  cat(run$output, sep = "\n")
   expect_identical(run$status, 0L, info = paste(run$output, collapse = "\n"))
 }
 
@@ -60,6 +61,7 @@ test_that("namespace-only KEGG enrichment resolves bundled data and keeps metada
     "warnings <- character()",
     "res <- withCallingHandlers(richR::richKEGG(c('A','B'), annot, pvalue=1, minSize=1, minGSSize=1, keepRich=FALSE), warning=function(w) { warnings <<- c(warnings, conditionMessage(w)); invokeRestart('muffleWarning') })",
     "stopifnot(length(warnings)==0L)",
+    "stopifnot(nrow(res@result)>0L, identical(as.character(res@result$ko), '00010'))",
     "stopifnot(all(c('ko','Level1','Level2','Level3') %in% names(res@result)))",
     "expected <- ref$path[match(res@result$ko, ref$path$ko), c('ko','Level3','Level2','Level1'), drop=FALSE]",
     "stopifnot(identical(as.character(res@result$ko), as.character(expected$ko)))",
@@ -109,6 +111,8 @@ test_that("bundled data access preserves global state and works in a worker proc
     "gsea_result <- withCallingHandlers(richR::richGSEA(scores, object=gsea_annot, KEGG=TRUE, minSize=1, maxSize=20, pvalue=1, padj=1, organism='hsa', nproc=1, seed=42), warning=function(w) { gsea_warnings <<- c(gsea_warnings, conditionMessage(w)); invokeRestart('muffleWarning') })",
     "stopifnot(length(gsea_warnings)==0L, methods::is(gsea_result,'GSEAResult'))",
     "stopifnot(all(c('Level1','Level2','Level3') %in% names(gsea_result@result)))",
+    "stopifnot(nrow(gsea_result@result)==2L)",
+    "stopifnot(setequal(as.character(gsea_result@result$pathway), as.character(path_ref$path$Level3[1:2])))",
     "expected_gsea <- path_ref$path[match(gsea_result@result$pathway, path_ref$path$Level3), c('Level3','Level2','Level1'), drop=FALSE]",
     "stopifnot(identical(as.character(gsea_result@result$Level3), as.character(expected_gsea$Level3)))",
     "stopifnot(identical(as.character(gsea_result@result$Level2), as.character(expected_gsea$Level2)))",

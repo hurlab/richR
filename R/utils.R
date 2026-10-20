@@ -10,6 +10,10 @@
 #' @param padj.method p-value adjustment method
 #' @param minSize minimum significant genes
 #' @param maxSize maximum significant genes
+#' @importFrom grDevices adjustcolor colorRampPalette
+#' @importFrom methods new
+#' @importFrom stats as.dist cor hclust na.omit setNames
+#' @importFrom utils data write.table
 #' @keywords internal
 .validate_enrichment_input <- function(x, annot = NULL, pvalue = 0.05, padj = NULL,
                                         padj.method = "BH", minSize = 1, maxSize = 500) {

@@ -7,3 +7,7 @@
 ^\.agency$
 ^\.mcp\.json$
 ^pre-upstream-sync-backup$
+^\.github$
+^\.travis\.yml$
+^_config\.yml$
+^LICENSE$

@@ -27,7 +27,6 @@ Imports:
     igraph,
     visNetwork,
     AnnotationDbi,
-    reshape2,
     intergraph,
     fgsea,
     ggrepel,
@@ -35,8 +34,7 @@ Imports:
     GGally,
     rlang,
     S4Vectors,
-    sna,
-    tidyr
+    sna
 LinkingTo: Rcpp
 Suggests:
     knitr,

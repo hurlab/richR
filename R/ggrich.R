@@ -86,6 +86,8 @@ ggrich_internal <- function(object,top=50, pvalue=0.05, padj=NULL,
     stop("Package 'GGally' is required for network plots. Install it with install.packages('GGally').")
   if (!requireNamespace("intergraph", quietly = TRUE))
     stop("Package 'intergraph' is required for network plots. Install it with install.packages('intergraph').")
+  if (!requireNamespace("sna", quietly = TRUE))
+    stop("Package 'sna' is required by GGally::ggnet2() for network plots. Install it with install.packages('sna').")
   p <- GGally::ggnet2(g, node.size = degree(g), node.color = V(g)$color,
               node.shape=node.shape,legend.position = "none",mode=layout,
               node.alpha=node.alpha,edge.size=0.05)

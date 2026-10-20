@@ -184,6 +184,8 @@ ggnetwork_internal<-function (object=object,gene=gene,top = 50, pvalue = 0.05, p
     stop("Package 'intergraph' is required for network plots. Install it with install.packages('intergraph').")
   if (!requireNamespace("ggrepel", quietly = TRUE))
     stop("Package 'ggrepel' is required for network plots. Install it with install.packages('ggrepel').")
+  if (!requireNamespace("sna", quietly = TRUE))
+    stop("Package 'sna' is required by GGally::ggnet2() for network plots. Install it with install.packages('sna').")
   p<-GGally::ggnet2(g, node.size = V(g)$size, node.color = V(g)$color,mode=layout,
             edge.size = E(g)$width/20,node.shape=node.shape,node.alpha=node.alpha) +
     ggrepel::geom_text_repel(label = V(g)$name,

@@ -10,3 +10,4 @@
 ^\.github$
 ^\.travis\.yml$
 ^_config\.yml$
+^LICENSE$

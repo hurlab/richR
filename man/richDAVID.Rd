@@ -2,7 +2,7 @@
 % Please edit documentation in R/enrich.R
 \name{richDAVID}
 \alias{richDAVID}
-\title{Functional enrichment analysis with DAVID}
+\title{Functional enrichment analysis with DAVID (deprecated)}
 \usage{
 richDAVID(
   gene,
@@ -54,9 +54,14 @@ richDAVID(
 Annot object
 }
 \description{
-Functional enrichment analysis with DAVID
+\code{richDAVID()} is deprecated and will be removed in the next minor
+release of richR. It depends on the RDAVIDWebService package, which is no
+longer available from Bioconductor. Use \code{enrich()}, \code{richGO()} or
+\code{richKEGG()} with a locally built annotation instead.
 }
 \details{
+Every call signals a deprecation warning before any other check.
+
 The adjusted p-values come from the DAVID service, not from
 \code{stats::p.adjust}. \code{padj.method} selects one of three distinct
 provider-supplied quantities: \code{"bonferroni"} takes DAVID's
@@ -64,11 +69,6 @@ provider-supplied quantities: \code{"bonferroni"} takes DAVID's
 adaptive false discovery rate estimate computed by DAVID), and any other value
 takes DAVID's \code{Benjamini} column. These three are not interchangeable
 with each other or with the \code{p.adjust} method of the same name.
-
-The \code{FDR} column is copied into \code{Padj} without rescaling. Whether
-DAVID reports it as a fraction or as a percentage has not been verified
-(RDAVIDWebService could not be run when this was written); check the range of
-\code{Padj} before applying a \code{padj} cutoff with \code{padj.method = "FDR"}.
 
 DAVID applies \code{count = minSize} on the server, so terms with fewer than
 \code{minSize} significant genes are never returned and \code{keepRich}

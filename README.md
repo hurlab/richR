@@ -16,7 +16,9 @@ and you can supply custom gene sets via GMT files or named lists.
 
 ### Key features
 
-- **Enrichment**: `richGO()`, `richKEGG()`, `enrich()`, `richGSEA()`, `richDAVID()`
+- **Enrichment**: `richGO()`, `richKEGG()`, `enrich()`, `richGSEA()`
+  (`richDAVID()` is deprecated: RDAVIDWebService is no longer available from
+  Bioconductor, and the function will be removed in the next minor release)
 - **Clustering**: `richCluster()` groups terms by kappa similarity
 - **20+ visualization functions** including bar, dot, lollipop, heatmap, network,
   volcano, circle bar, gene-dot, gene-heat, gene-bar, UpSet, and more
@@ -83,9 +85,6 @@ resko_all <- richKEGG(gene, kodata = hsako, pvalue = 1, padj = 1) # no cutoff
 genelist <- rnorm(1000)
 names(genelist) <- sample(unique(hsako$GeneID), 1000)
 res_gsea <- richGSEA(genelist, object = hsako)
-
-# DAVID (online)
-res_david <- richDAVID(gene, keytype = "ENTREZID", species = "human")
 ```
 
 For ORA, `universe = NULL` uses all unique genes in the eligible annotation.

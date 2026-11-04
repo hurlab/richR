@@ -52,13 +52,13 @@
   `richResult` printed `(pvalue < 0.05 )` and never the adjusted cutoff.
   `summary(<GSEAResult>)` counts the rows passing the stored cutoffs instead
   of a fixed `padj < 0.05`.
-- `richDAVID()`: the scale of DAVID's `FDR` column (used for `Padj` with
-  `padj.method = "FDR"`) has not been verified, so it may be a percentage
-  rather than a fraction; check the range of `Padj` before relying on a
-  `padj` cutoff. The documentation now states that Benjamini, DAVID's
-  adaptive FDR and Bonferroni are distinct quantities and that DAVID applies
-  `count = minSize` on the server, so `keepRich` cannot restore smaller
-  terms.
+- `richDAVID()` is deprecated and warns on every call: it depends on
+  RDAVIDWebService, which is no longer available from Bioconductor, and it
+  will be removed in the next minor release. Use `enrich()`, `richGO()` or
+  `richKEGG()` with a locally built annotation instead. Its documentation now
+  states that Benjamini, DAVID's adaptive FDR and Bonferroni are distinct
+  quantities and that DAVID applies `count = minSize` on the server, so
+  `keepRich` cannot restore smaller terms.
 
 ### ORA tested family (changes adjusted p-values)
 

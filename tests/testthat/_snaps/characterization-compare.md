@@ -221,15 +221,10 @@
     "B.44", "B.45", "B.46", "B.47", "B.48"), class = "data.frame"), 
         layers = 6L)
 
-# compareGSEA() with a non-NULL padj fails today and the failure is pinned
+# compareGSEA() with a non-NULL padj applies both cutoffs to the fixture pair
 
-    Code
-      compareGSEA(fx$results, fx$annot, padj = 0.05)
-    Condition
-      Error in `filter()`:
-      i In argument: `padj < Padj`.
-      Caused by error:
-      ! object 'Padj' not found
+    list(drawn = c("A@down pathway", "A@top pathway", "A@up pathway", 
+    "B@down pathway", "B@top pathway", "B@up pathway"))
 
 # richCluster() pins kappa clusters for data.frame and richResult input
 

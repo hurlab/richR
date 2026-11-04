@@ -1,5 +1,5 @@
 # Characterization baseline (REQ-004): richLevel(), compareResult(),
-# compareGSEA() (padj = NULL and the current failure mode for non-NULL padj)
+# compareGSEA() (padj = NULL, and non-NULL padj after the SPEC-RICHR-002 B1 fix)
 # and richCluster(), as produced by richR 0.1.5. Known defects are pinned as
 # they stand (REQ-005): a later fix must show up as a snapshot change.
 
@@ -105,12 +105,21 @@ test_that("compareGSEA() with padj = NULL pins the enrichment-curve data behind 
   )
 })
 
-test_that("compareGSEA() with a non-NULL padj fails today and the failure is pinned", {
-  # Known defect (research.md, plan.md B1): with a non-NULL `padj` the function
-  # never defines `Padj` and then filters on it. M2 fixes this; until then the
-  # failure itself is the pinned behaviour.
+test_that("compareGSEA() with a non-NULL padj applies both cutoffs to the fixture pair", {
+  # SPEC-RICHR-002 B1: a non-NULL `padj` used to fail with "object 'Padj' not
+  # found"; it now applies the raw and the adjusted cutoff together. On this
+  # fixture every pathway with pval < 0.05 also has padj < 0.05, so the curve
+  # data equal the padj = NULL curve.
   fx <- gsea_pair()
-  expect_snapshot(error = TRUE, compareGSEA(fx$results, fx$annot, padj = 0.05))
+  with_padj <- compareGSEA(fx$results, fx$annot, padj = 0.05)
+  without_padj <- compareGSEA(fx$results, fx$annot)
+  expect_s3_class(with_padj, "ggplot")
+  curve <- .char_nonempty(with_padj$data)
+  expect_identical(curve, without_padj$data)
+  expect_snapshot_value(
+    list(drawn = sort(unique(paste(curve$group, curve$Group, sep = "@")))),
+    style = "deparse"
+  )
 })
 
 test_that("richCluster() pins kappa clusters for data.frame and richResult input", {

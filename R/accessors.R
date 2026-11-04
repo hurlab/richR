@@ -416,6 +416,10 @@ setMethod("detail", signature = "GSEAResult", function(x) {
 ## ----------------------------------------------------------------
 ##  rbind methods
 ## ----------------------------------------------------------------
+## The bodies are the 0.1.5 live ones (do.call(rbind, ...)): they keep argument
+## names as row-name prefixes and return NULL when called with no arguments.
+## The `@importFrom S4Vectors bindROWS` tags are retained only so NAMESPACE
+## stays identical to 0.1.5; bindROWS() is not called.
 
 #' rbind for richResult objects
 #' @param ... richResult objects to combine
@@ -425,7 +429,7 @@ setMethod("detail", signature = "GSEAResult", function(x) {
 rbind.richResult <- function(...) {
   objects <- list(...)
   objects <- lapply(objects, as.data.frame)
-  bindROWS(objects[[1L]], objects = objects[-1L])
+  do.call(rbind, objects)
 }
 
 #' rbind for GSEAResult objects
@@ -436,7 +440,7 @@ rbind.richResult <- function(...) {
 rbind.GSEAResult <- function(...) {
   objects <- list(...)
   objects <- lapply(objects, as.data.frame)
-  bindROWS(objects[[1L]], objects = objects[-1L])
+  do.call(rbind, objects)
 }
 
 ##'

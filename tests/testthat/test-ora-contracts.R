@@ -92,7 +92,7 @@ test_that("GO membership normalization precedes ontology selection", {
   expect_equal(result@result$Pvalue, stats::phyper(1, 2, 2, 2, lower.tail = FALSE))
 })
 
-test_that("ORA correction covers positive overlaps before reporting size filters", {
+test_that("ORA adjusts over the size-eligible overlap family and minSize filtering leaves Padj unchanged", {
   annot <- data.frame(
     GeneID = c("A", "B", "A", "C", "B", "C", "A", "D", "E", "F"),
     Term = c("T1", "T1", "T2", "T2", "T3", "T3", "T4", "T4", "T5", "T5")

@@ -5,8 +5,8 @@ test_that("annotation membership normalization validates and deduplicates rows",
     Annot = paste0("name", 1:5)
   )
 
-  normalized <- expect_warning(
-    richR:::.normalize_annotation(annot, func_name = "test"),
+  expect_warning(
+    normalized <- richR:::.normalize_annotation(annot, func_name = "test"),
     "3 invalid annotation row"
   )
 
@@ -32,8 +32,8 @@ test_that("annotation membership normalization validates and deduplicates rows",
 })
 
 test_that("normalized constructor annotations do not warn again during analysis", {
-  annotation <- expect_warning(
-    richR::buildAnnotFromList(list(T = c("A", NA, " "))),
+  expect_warning(
+    annotation <- richR::buildAnnotFromList(list(T = c("A", NA, " "))),
     "excluded 2 invalid annotation row"
   )
   expect_no_warning(suppressMessages(richR::enrich(
@@ -78,7 +78,7 @@ test_that("GO membership normalization precedes ontology selection", {
     ONTOLOGYALL = c("BP", "BP", "BP", "BP", "MF", "MF", "BP")
   )
 
-  result <- expect_warning(suppressMessages(richR::richGO(
+  expect_warning(result <- suppressMessages(richR::richGO(
     c("A", "B"), godata = annot, ontology = "BP", pvalue = 1,
     minSize = 1, minGSSize = 1, keepRich = FALSE
   )), "excluded 1 invalid annotation row")
@@ -145,7 +145,7 @@ test_that("GMT duplicate terms merge memberships once and blank terms fail with 
 
   writeLines(c("T\tdesc\tA\tB", "T\tdesc2\tB\tC", "S\tdesc\tD"), gmt)
 
-  annot <- expect_warning(richR::readGMT(gmt), "duplicate.*T")
+  expect_warning(annot <- richR::readGMT(gmt), "duplicate.*T")
   expect_equal(annot@annot$GeneID[annot@annot$Term == "T"], c("A", "B", "C"))
   expect_true(all(c("S", "T") %in% annot@annot$Term))
 
@@ -226,7 +226,7 @@ test_that("GSEA adjusts backend NA p-values with the full returned family", {
 test_that("batchEnrich reports empty groups and preserves successful groups", {
   annot <- data.frame(GeneID = LETTERS[1:20],
                       Term = c(rep("T", 2), rep("U", 18)))
-  batch <- expect_warning(suppressMessages(richR::batchEnrich(
+  expect_warning(batch <- suppressMessages(richR::batchEnrich(
     list(empty = character(), successful = c("A", "B")), annot, verbose = FALSE,
     pvalue = 1, minSize = 1, minGSSize = 1, keepRich = FALSE
   )), "failed for 'empty'")
@@ -238,13 +238,13 @@ test_that("batchEnrich reports empty groups and preserves successful groups", {
 test_that("batchEnrich errors when all validly named groups are empty", {
   annot <- data.frame(GeneID = LETTERS[1:20],
                       Term = c(rep("T", 2), rep("U", 18)))
-  expect_warning(
+  suppressWarnings(expect_warning(
     expect_error(richR::batchEnrich(
       list(empty1 = character(), empty2 = character()), annot,
       verbose = FALSE, pvalue = 1
     ), "all enrichment analyses failed"),
     "failed for 'empty1'"
-  )
+  ))
 })
 
 test_that("zero-variance ORA z-scores are NA", {

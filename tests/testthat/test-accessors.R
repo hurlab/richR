@@ -1,5 +1,3 @@
-context("Accessor methods")
-
 # Helper to create a test richResult
 make_test_result <- function() {
   new("richResult",

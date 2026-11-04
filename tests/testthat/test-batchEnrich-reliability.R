@@ -9,7 +9,7 @@ batch_test_annotation <- function() {
 test_that("batchEnrich combines exact returned rows and reports every group outcome", {
   annot <- batch_test_annotation()
   groups <- list(success = c("A", "B"), empty = c("A", "C"), failed = character())
-  result <- expect_warning(suppressMessages(richR::batchEnrich(
+  expect_warning(result <- suppressMessages(richR::batchEnrich(
     groups, annot, pvalue = 0.1, minSize = 1, minGSSize = 1,
     keepRich = FALSE, verbose = FALSE
   )), "failed for 'failed'")
@@ -52,13 +52,13 @@ test_that("batchEnrich returns valid all-empty reports and errors when all fail"
   expect_identical(empty$status$n_terms, c(0L, 0L))
   expect_identical(empty$status$error, c(NA_character_, NA_character_))
 
-  expect_warning(expect_error(richR::batchEnrich(
+  suppressWarnings(expect_warning(expect_error(richR::batchEnrich(
     list(first = character(), second = "unmapped"), annot, verbose = FALSE
-  ), "all enrichment analyses failed"), "failed for 'first'")
+  ), "all enrichment analyses failed"), "failed for 'first'"))
 })
 
 test_that("batchEnrich reports a group-specific invalid-input failure", {
-  result <- expect_warning(suppressMessages(richR::batchEnrich(
+  expect_warning(result <- suppressMessages(richR::batchEnrich(
     list(valid = c("A", "B"), invalid = NA_character_),
     batch_test_annotation(), pvalue = 0.1, minSize = 1, minGSSize = 1,
     keepRich = FALSE, verbose = FALSE

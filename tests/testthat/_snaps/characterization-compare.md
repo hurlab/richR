@@ -1,0 +1,251 @@
+# richLevel() pins Level2 and Level3 enrichment on bundled KEGG levels
+
+    list(level2 = list(result = structure(list(Annot = c("Carbohydrate metabolism", 
+    "Energy metabolism", "Lipid metabolism", "Translation"), Term = c("Carbohydrate metabolism", 
+    "Energy metabolism", "Lipid metabolism", "Translation"), Annotated = c(8L, 
+    5L, 8L, 6L), Significant = c(6L, 4L, 4L, 3L), RichFactor = c(0.75, 
+    0.8, 0.5, 0.5), FoldEnrichment = c(2.025, 2.16, 1.35, 1.35), 
+        zscore = c(2.60108336562337, 2.16268796901839, 0.888174807773834, 
+        0.731637968975817), Pvalue = c(0.0138035877166312, 0.0473429951690821, 
+        0.316117698726395, 0.38733150907064), Padj = c(0.0552143508665249, 
+        0.0946859903381643, 0.38733150907064, 0.38733150907064), 
+        GeneID = c("G01,G02,G03,G04,G05,G06", "G01,G02,G13,G14", 
+        "G05,G06,G09,G10", "G03,G04,G09")), row.names = c("Carbohydrate metabolism", 
+    "Energy metabolism", "Lipid metabolism", "Translation"), class = "data.frame"), 
+        detail = structure(list(TERM = c("Carbohydrate metabolism", 
+        "Carbohydrate metabolism", "Carbohydrate metabolism", "Carbohydrate metabolism", 
+        "Carbohydrate metabolism", "Carbohydrate metabolism", "Energy metabolism", 
+        "Energy metabolism", "Energy metabolism", "Energy metabolism", 
+        "Lipid metabolism", "Lipid metabolism", "Lipid metabolism", 
+        "Lipid metabolism", "Translation", "Translation", "Translation"
+        ), Annot = c("Carbohydrate metabolism", "Carbohydrate metabolism", 
+        "Carbohydrate metabolism", "Carbohydrate metabolism", "Carbohydrate metabolism", 
+        "Carbohydrate metabolism", "Energy metabolism", "Energy metabolism", 
+        "Energy metabolism", "Energy metabolism", "Lipid metabolism", 
+        "Lipid metabolism", "Lipid metabolism", "Lipid metabolism", 
+        "Translation", "Translation", "Translation"), GeneID = c("G01", 
+        "G02", "G03", "G04", "G05", "G06", "G01", "G02", "G13", "G14", 
+        "G05", "G06", "G09", "G10", "G03", "G04", "G09"), Pvalue = c(0.0138035877166312, 
+        0.0138035877166312, 0.0138035877166312, 0.0138035877166312, 
+        0.0138035877166312, 0.0138035877166312, 0.0473429951690821, 
+        0.0473429951690821, 0.0473429951690821, 0.0473429951690821, 
+        0.316117698726395, 0.316117698726395, 0.316117698726395, 
+        0.316117698726395, 0.38733150907064, 0.38733150907064, 0.38733150907064
+        ), Padj = c(0.0552143508665249, 0.0552143508665249, 0.0552143508665249, 
+        0.0552143508665249, 0.0552143508665249, 0.0552143508665249, 
+        0.0946859903381643, 0.0946859903381643, 0.0946859903381643, 
+        0.0946859903381643, 0.38733150907064, 0.38733150907064, 0.38733150907064, 
+        0.38733150907064, 0.38733150907064, 0.38733150907064, 0.38733150907064
+        )), row.names = c(NA, -17L), class = "data.frame")), level3 = list(
+        result = structure(list(Annot = c("Glycolysis / Gluconeogenesis", 
+        "Oxidative phosphorylation", "Fatty acid biosynthesis", "Aminoacyl-tRNA biosynthesis"
+        ), Term = c("Glycolysis / Gluconeogenesis", "Oxidative phosphorylation", 
+        "Fatty acid biosynthesis", "Aminoacyl-tRNA biosynthesis"), 
+            Annotated = c(8L, 5L, 8L, 6L), Significant = c(6L, 4L, 
+            4L, 3L), RichFactor = c(0.75, 0.8, 0.5, 0.5), FoldEnrichment = c(2.025, 
+            2.16, 1.35, 1.35), zscore = c(2.60108336562337, 2.16268796901839, 
+            0.888174807773834, 0.731637968975817), Pvalue = c(0.0138035877166312, 
+            0.0473429951690821, 0.316117698726395, 0.38733150907064
+            ), Padj = c(0.0552143508665249, 0.0946859903381643, 0.38733150907064, 
+            0.38733150907064), GeneID = c("G01,G02,G03,G04,G05,G06", 
+            "G01,G02,G13,G14", "G05,G06,G09,G10", "G03,G04,G09")), row.names = c("Glycolysis / Gluconeogenesis", 
+        "Oxidative phosphorylation", "Fatty acid biosynthesis", "Aminoacyl-tRNA biosynthesis"
+        ), class = "data.frame"), detail = structure(list(TERM = c("Glycolysis / Gluconeogenesis", 
+        "Glycolysis / Gluconeogenesis", "Glycolysis / Gluconeogenesis", 
+        "Glycolysis / Gluconeogenesis", "Glycolysis / Gluconeogenesis", 
+        "Glycolysis / Gluconeogenesis", "Oxidative phosphorylation", 
+        "Oxidative phosphorylation", "Oxidative phosphorylation", 
+        "Oxidative phosphorylation", "Fatty acid biosynthesis", "Fatty acid biosynthesis", 
+        "Fatty acid biosynthesis", "Fatty acid biosynthesis", "Aminoacyl-tRNA biosynthesis", 
+        "Aminoacyl-tRNA biosynthesis", "Aminoacyl-tRNA biosynthesis"
+        ), Annot = c("Glycolysis / Gluconeogenesis", "Glycolysis / Gluconeogenesis", 
+        "Glycolysis / Gluconeogenesis", "Glycolysis / Gluconeogenesis", 
+        "Glycolysis / Gluconeogenesis", "Glycolysis / Gluconeogenesis", 
+        "Oxidative phosphorylation", "Oxidative phosphorylation", 
+        "Oxidative phosphorylation", "Oxidative phosphorylation", 
+        "Fatty acid biosynthesis", "Fatty acid biosynthesis", "Fatty acid biosynthesis", 
+        "Fatty acid biosynthesis", "Aminoacyl-tRNA biosynthesis", 
+        "Aminoacyl-tRNA biosynthesis", "Aminoacyl-tRNA biosynthesis"
+        ), GeneID = c("G01", "G02", "G03", "G04", "G05", "G06", "G01", 
+        "G02", "G13", "G14", "G05", "G06", "G09", "G10", "G03", "G04", 
+        "G09"), Pvalue = c(0.0138035877166312, 0.0138035877166312, 
+        0.0138035877166312, 0.0138035877166312, 0.0138035877166312, 
+        0.0138035877166312, 0.0473429951690821, 0.0473429951690821, 
+        0.0473429951690821, 0.0473429951690821, 0.316117698726395, 
+        0.316117698726395, 0.316117698726395, 0.316117698726395, 
+        0.38733150907064, 0.38733150907064, 0.38733150907064), Padj = c(0.0552143508665249, 
+        0.0552143508665249, 0.0552143508665249, 0.0552143508665249, 
+        0.0552143508665249, 0.0552143508665249, 0.0946859903381643, 
+        0.0946859903381643, 0.0946859903381643, 0.0946859903381643, 
+        0.38733150907064, 0.38733150907064, 0.38733150907064, 0.38733150907064, 
+        0.38733150907064, 0.38733150907064, 0.38733150907064)), row.names = c(NA, 
+        -17L), class = "data.frame")))
+
+# compareResult() pins group stacking, cutoffs, include.all and extra input types
+
+    list(by_pvalue = structure(list(Annot = c("GO:0000001", "GO:0000006", 
+    "GO:0000003", "GO:0000002", "GO:0000005", "GO:0000002", "GO:0000004"
+    ), Term = c("GO:0000001", "GO:0000006", "GO:0000003", "GO:0000002", 
+    "GO:0000005", "GO:0000002", "GO:0000004"), Annotated = c(8L, 
+    3L, 5L, 8L, 6L, 8L, 9L), Significant = c(6L, 3L, 4L, 4L, 3L, 
+    5L, 5L), RichFactor = c(0.75, 1, 0.8, 0.5, 0.5, 0.625, 0.555555555555556
+    ), FoldEnrichment = c(2.025, 2.7, 2.16, 1.35, 1.35, 1.40625, 
+    1.25), zscore = c(2.60108336562337, 2.35053185470863, 2.16268796901839, 
+    0.888174807773834, 0.731637968975817, 1.2022457056867, 0.806225774829855
+    ), Pvalue = c(0.0138035877166312, 0.041025641025641, 0.0473429951690821, 
+    0.316117698726395, 0.38733150907064, 0.211594202898551, 0.339740655987796
+    ), Padj = c(0.0690179385831561, 0.0789049919484702, 0.0789049919484702, 
+    0.38733150907064, 0.38733150907064, 0.844444444444444, 0.844444444444444
+    ), GeneID = c("G01,G02,G03,G04,G05,G06", "G01,G02,G03", "G01,G02,G13,G14", 
+    "G05,G06,G09,G10", "G03,G04,G09", "G05,G09,G10,G11,G12", "G16,G17,G18,G19,G20"
+    ), group = c("first", "first", "first", "first", "first", "second", 
+    "second")), row.names = c("GO:0000001", "GO:0000006", "GO:0000003", 
+    "GO:0000002...4", "GO:0000005", "GO:0000002...6", "GO:0000004"
+    ), class = "data.frame"), by_padj = structure(list(Annot = c("GO:0000001", 
+    "GO:0000006", "GO:0000003"), Term = c("GO:0000001", "GO:0000006", 
+    "GO:0000003"), Annotated = c(8L, 3L, 5L), Significant = c(6L, 
+    3L, 4L), RichFactor = c(0.75, 1, 0.8), FoldEnrichment = c(2.025, 
+    2.7, 2.16), zscore = c(2.60108336562337, 2.35053185470863, 2.16268796901839
+    ), Pvalue = c(0.0138035877166312, 0.041025641025641, 0.0473429951690821
+    ), Padj = c(0.0690179385831561, 0.0789049919484702, 0.0789049919484702
+    ), GeneID = c("G01,G02,G03,G04,G05,G06", "G01,G02,G03", "G01,G02,G13,G14"
+    ), group = c("first", "first", "first")), row.names = c("GO:0000001", 
+    "GO:0000006", "GO:0000003"), class = "data.frame"), include_all = structure(list(
+        Annot = c("GO:0000001", "GO:0000006", "GO:0000003", "GO:0000002", 
+        "GO:0000005", "GO:0000002", "GO:0000004"), Term = c("GO:0000001", 
+        "GO:0000006", "GO:0000003", "GO:0000002", "GO:0000005", "GO:0000002", 
+        "GO:0000004"), Annotated = c(8L, 3L, 5L, 8L, 6L, 8L, 9L), 
+        Significant = c(6L, 3L, 4L, 4L, 3L, 5L, 5L), RichFactor = c(0.75, 
+        1, 0.8, 0.5, 0.5, 0.625, 0.555555555555556), FoldEnrichment = c(2.025, 
+        2.7, 2.16, 1.35, 1.35, 1.40625, 1.25), zscore = c(2.60108336562337, 
+        2.35053185470863, 2.16268796901839, 0.888174807773834, 0.731637968975817, 
+        1.2022457056867, 0.806225774829855), Pvalue = c(0.0138035877166312, 
+        0.041025641025641, 0.0473429951690821, 0.316117698726395, 
+        0.38733150907064, 0.211594202898551, 0.339740655987796), 
+        Padj = c(0.0690179385831561, 0.0789049919484702, 0.0789049919484702, 
+        0.38733150907064, 0.38733150907064, 0.844444444444444, 0.844444444444444
+        ), GeneID = c("G01,G02,G03,G04,G05,G06", "G01,G02,G03", "G01,G02,G13,G14", 
+        "G05,G06,G09,G10", "G03,G04,G09", "G05,G09,G10,G11,G12", 
+        "G16,G17,G18,G19,G20"), group = structure(c(1L, 1L, 1L, 1L, 
+        1L, 2L, 2L), levels = c("first", "second", "none"), class = "factor")), row.names = c("GO:0000001", 
+    "GO:0000006", "GO:0000003", "GO:0000002...4", "GO:0000005", "GO:0000002...6", 
+    "GO:0000004"), class = "data.frame"), from_frames = structure(list(
+        Annot = c("GO:0000001", "GO:0000006", "GO:0000003", "GO:0000002", 
+        "GO:0000005", "GO:0000002", "GO:0000004"), Term = c("GO:0000001", 
+        "GO:0000006", "GO:0000003", "GO:0000002", "GO:0000005", "GO:0000002", 
+        "GO:0000004"), Annotated = c(8L, 3L, 5L, 8L, 6L, 8L, 9L), 
+        Significant = c(6L, 3L, 4L, 4L, 3L, 5L, 5L), RichFactor = c(0.75, 
+        1, 0.8, 0.5, 0.5, 0.625, 0.555555555555556), FoldEnrichment = c(2.025, 
+        2.7, 2.16, 1.35, 1.35, 1.40625, 1.25), zscore = c(2.60108336562337, 
+        2.35053185470863, 2.16268796901839, 0.888174807773834, 0.731637968975817, 
+        1.2022457056867, 0.806225774829855), Pvalue = c(0.0138035877166312, 
+        0.041025641025641, 0.0473429951690821, 0.316117698726395, 
+        0.38733150907064, 0.211594202898551, 0.339740655987796), 
+        Padj = c(0.0690179385831561, 0.0789049919484702, 0.0789049919484702, 
+        0.38733150907064, 0.38733150907064, 0.844444444444444, 0.844444444444444
+        ), GeneID = c("G01,G02,G03,G04,G05,G06", "G01,G02,G03", "G01,G02,G13,G14", 
+        "G05,G06,G09,G10", "G03,G04,G09", "G05,G09,G10,G11,G12", 
+        "G16,G17,G18,G19,G20"), group = c("first", "first", "first", 
+        "first", "first", "second", "second")), row.names = c("GO:0000001", 
+    "GO:0000006", "GO:0000003", "GO:0000002...4", "GO:0000005", "GO:0000002...6", 
+    "GO:0000004"), class = "data.frame"))
+
+# compareGSEA() with padj = NULL pins the enrichment-curve data behind the plot
+
+    list(fgsea_version = "1.38.0", curve = structure(list(x = c(0, 
+    0, 1, 1, 2, 2, 3, 3, 4, 4, 5, 41, 0, 30, 31, 31, 32, 32, 33, 
+    33, 34, 34, 35, 35, 36, 36, 37, 37, 38, 41, 0, 0, 1, 1, 2, 2, 
+    3, 3, 4, 4, 5, 5, 6, 7, 8, 9, 10, 41, 0, 0, 1, 1, 2, 2, 3, 3, 
+    4, 4, 5, 41, 0, 0, 1, 1, 2, 2, 3, 3, 4, 4, 5, 5, 6, 7, 8, 9, 
+    10, 41, 0, 30, 31, 31, 32, 32, 33, 33, 34, 34, 35, 35, 36, 36, 
+    37, 37, 38, 41), y = c(0, 0, 0.220289423038986, 0.220289423038986, 
+    0.430434134558479, 0.430434134558479, 0.630434134558479, 0.630434134558479, 
+    0.820289423038986, 0.820289423038986, 1, 0, 0, -0.9375, -0.844416836657441, 
+    -0.844416836657441, -0.743103698491862, -0.743103698491862, -0.633560585503263, 
+    -0.633560585503263, -0.515787497691643, -0.515787497691643, -0.383560652186651, 
+    -0.383560652186651, -0.243103742947454, -0.243103742947454, -0.094416858885237, 
+    -0.0944168588852369, 0.0625, 0, 0, 0, 0.153781263214382, 0.153781263214382, 
+    0.300480631479422, 0.300480631479422, 0.440098104795122, 0.440098104795122, 
+    0.57263368316148, 0.57263368316148, 0.698087366578496, 0.698087366578496, 
+    0.81645907853808, 0.78520907853808, 0.884061434218382, 0.852811434218381, 
+    0.9375, 0, 0, 0, 0.218097488481384, 0.218097488481384, 0.428242200000877, 
+    0.428242200000877, 0.630434134558479, 0.630434134558479, 0.824673292154189, 
+    0.824673292154189, 1, 0, 0, 0, 0.152718469334246, 0.152718469334246, 
+    0.299868163287201, 0.299868163287201, 0.441449081858865, 0.441449081858865, 
+    0.577461225049236, 0.577461225049236, 0.700230297916897, 0.700230297916897, 
+    0.817430518660317, 0.786180518660317, 0.88687118218216, 0.85562118218216, 
+    0.9375, 0, 0, -0.9375, -0.842638612980197, -0.842638612980197, 
+    -0.741325474814618, -0.741325474814618, -0.633560585503263, -0.633560585503263, 
+    -0.519343945046131, -0.519343945046131, -0.38356065218665, -0.38356065218665, 
+    -0.24132551927021, -0.24132551927021, -0.092638635207993, -0.0926386352079931, 
+    0.0625, 0), Group = c("top pathway", "top pathway", "top pathway", 
+    "top pathway", "top pathway", "top pathway", "top pathway", "top pathway", 
+    "top pathway", "top pathway", "top pathway", "top pathway", "down pathway", 
+    "down pathway", "down pathway", "down pathway", "down pathway", 
+    "down pathway", "down pathway", "down pathway", "down pathway", 
+    "down pathway", "down pathway", "down pathway", "down pathway", 
+    "down pathway", "down pathway", "down pathway", "down pathway", 
+    "down pathway", "up pathway", "up pathway", "up pathway", "up pathway", 
+    "up pathway", "up pathway", "up pathway", "up pathway", "up pathway", 
+    "up pathway", "up pathway", "up pathway", "up pathway", "up pathway", 
+    "up pathway", "up pathway", "up pathway", "up pathway", "top pathway", 
+    "top pathway", "top pathway", "top pathway", "top pathway", "top pathway", 
+    "top pathway", "top pathway", "top pathway", "top pathway", "top pathway", 
+    "top pathway", "up pathway", "up pathway", "up pathway", "up pathway", 
+    "up pathway", "up pathway", "up pathway", "up pathway", "up pathway", 
+    "up pathway", "up pathway", "up pathway", "up pathway", "up pathway", 
+    "up pathway", "up pathway", "up pathway", "up pathway", "down pathway", 
+    "down pathway", "down pathway", "down pathway", "down pathway", 
+    "down pathway", "down pathway", "down pathway", "down pathway", 
+    "down pathway", "down pathway", "down pathway", "down pathway", 
+    "down pathway", "down pathway", "down pathway", "down pathway", 
+    "down pathway"), group = c("A", "A", "A", "A", "A", "A", "A", 
+    "A", "A", "A", "A", "A", "A", "A", "A", "A", "A", "A", "A", "A", 
+    "A", "A", "A", "A", "A", "A", "A", "A", "A", "A", "A", "A", "A", 
+    "A", "A", "A", "A", "A", "A", "A", "A", "A", "A", "A", "A", "A", 
+    "A", "A", "B", "B", "B", "B", "B", "B", "B", "B", "B", "B", "B", 
+    "B", "B", "B", "B", "B", "B", "B", "B", "B", "B", "B", "B", "B", 
+    "B", "B", "B", "B", "B", "B", "B", "B", "B", "B", "B", "B", "B", 
+    "B", "B", "B", "B", "B", "B", "B", "B", "B", "B", "B")), row.names = c("A.1", 
+    "A.2", "A.3", "A.4", "A.5", "A.6", "A.7", "A.8", "A.9", "A.10", 
+    "A.11", "A.12", "A.13", "A.14", "A.15", "A.16", "A.17", "A.18", 
+    "A.19", "A.20", "A.21", "A.22", "A.23", "A.24", "A.25", "A.26", 
+    "A.27", "A.28", "A.29", "A.30", "A.31", "A.32", "A.33", "A.34", 
+    "A.35", "A.36", "A.37", "A.38", "A.39", "A.40", "A.41", "A.42", 
+    "A.43", "A.44", "A.45", "A.46", "A.47", "A.48", "B.1", "B.2", 
+    "B.3", "B.4", "B.5", "B.6", "B.7", "B.8", "B.9", "B.10", "B.11", 
+    "B.12", "B.13", "B.14", "B.15", "B.16", "B.17", "B.18", "B.19", 
+    "B.20", "B.21", "B.22", "B.23", "B.24", "B.25", "B.26", "B.27", 
+    "B.28", "B.29", "B.30", "B.31", "B.32", "B.33", "B.34", "B.35", 
+    "B.36", "B.37", "B.38", "B.39", "B.40", "B.41", "B.42", "B.43", 
+    "B.44", "B.45", "B.46", "B.47", "B.48"), class = "data.frame"), 
+        layers = 6L)
+
+# compareGSEA() with a non-NULL padj fails today and the failure is pinned
+
+    Code
+      compareGSEA(fx$results, fx$annot, padj = 0.05)
+    Condition
+      Error in `filter()`:
+      i In argument: `padj < Padj`.
+      Caused by error:
+      ! object 'Padj' not found
+
+# richCluster() pins kappa clusters for data.frame and richResult input
+
+    list(by_annot = structure(list(AnnotationCluster = 1:2, EnrichmentScore = c(7.5, 
+    5.5), filteredClusterSize = c(2L, 2L), Term = c("A", "C"), Annot = c("a", 
+    "c"), GeneID = c("g1,g2,g3,g4,g5", "g11,g12,g13,g14,g15"), Pvalue = c(1e-08, 
+    1e-06), Padj = c(1e-08, 1e-06), Cluster = c("a,b", "c,d")), row.names = c("a", 
+    "c"), class = "data.frame"), by_term = structure(list(AnnotationCluster = 1:2, 
+        EnrichmentScore = c(7.5, 5.5), filteredClusterSize = c(2L, 
+        2L), Term = c("A", "C"), Annot = c("a", "c"), GeneID = c("g1,g2,g3,g4,g5", 
+        "g11,g12,g13,g14,g15"), Pvalue = c(1e-08, 1e-06), Padj = c(1e-08, 
+        1e-06), Cluster = c("A,B", "C,D")), row.names = c("A", "C"
+    ), class = "data.frame"), from_rich = structure(list(AnnotationCluster = 1:2, 
+        EnrichmentScore = c(7.5, 5.5), filteredClusterSize = c(2L, 
+        2L), Term = c("A", "C"), Annot = c("a", "c"), GeneID = c("g1,g2,g3,g4,g5", 
+        "g11,g12,g13,g14,g15"), Pvalue = c(1e-08, 1e-06), Padj = c(1e-08, 
+        1e-06), Cluster = c("a,b", "c,d")), row.names = c("a", "c"
+    ), class = "data.frame"))
+

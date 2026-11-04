@@ -35,11 +35,7 @@ ggrich_internal <- function(object,top=50, pvalue=0.05, padj=NULL,
                             label.color = "black", label.size = 2, node.shape=NULL,
                             layout = "fruchtermanreingold",savefig=FALSE,filename="network",
                             width=7,height=7,node.alpha=0.7,repel=TRUE,segment.size=0.2,sep=","){
-  if(!is.null(padj)){
-    object<-object[object$Padj<padj,]
-  }else{
-    object<-object[object$Pvalue<pvalue,]
-  }
+  object <- .sig_filter(object, pvalue, padj)
   if(nrow(object)>=top){
     object<-object[1:top,]
   }

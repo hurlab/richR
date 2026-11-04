@@ -53,22 +53,17 @@
 
 #' Validate enrichment parameters
 #'
-#' @param pvalue p-value cutoff
-#' @param padj adjusted p-value cutoff
+#' @param pvalue p-value cutoff (the adjusted cutoff is checked by the caller
+#'   with \code{.check_cutoff})
 #' @param minSize minimum gene set size
 #' @param maxSize maximum gene set size
 #' @param minGSSize minimum gene set size for annotation
 #' @param maxGSSize maximum gene set size for annotation
 #' @param func_name name of calling function
 #' @keywords internal
-.validateParams <- function(pvalue = 0.05, padj = NULL, minSize = 2, maxSize = 500,
+.validateParams <- function(pvalue = 0.05, minSize = 2, maxSize = 500,
                             minGSSize = 10, maxGSSize = 500, func_name = "enrich") {
-  if (!is.null(pvalue) && (pvalue <= 0 || pvalue > 1)) {
-    stop(func_name, ": pvalue must be between 0 and 1 (got ", pvalue, ").", call. = FALSE)
-  }
-  if (!is.null(padj) && (padj <= 0 || padj > 1)) {
-    stop(func_name, ": padj must be between 0 and 1 (got ", padj, ").", call. = FALSE)
-  }
+  .check_cutoff(pvalue, "pvalue")
   if (minSize > maxSize) {
     stop(func_name, ": minSize (", minSize, ") cannot be greater than maxSize (", maxSize, ").", call. = FALSE)
   }
@@ -89,8 +84,8 @@
 .handleEmptyResult <- function(resultFis, pvalue = 0.05, padj = NULL, func_name = "enrich") {
   if (nrow(resultFis) == 0) {
     message(func_name, ": no significant terms found. Consider:\n",
-            "  - Increasing the pvalue cutoff (current: ",
-            if (!is.null(padj)) paste0("padj < ", padj) else paste0("pvalue < ", pvalue), ")\n",
+            "  - Increasing the cutoffs (current: pvalue <= ", pvalue,
+            if (!is.null(padj)) paste0(", padj <= ", padj) else "", ")\n",
             "  - Adjusting minGSSize/maxGSSize filters\n",
             "  - Checking that input genes overlap with the annotation database")
   }

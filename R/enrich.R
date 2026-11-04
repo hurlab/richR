@@ -33,8 +33,9 @@ enrich_internal<-function(x,object,ontology= "",pvalue=0.05,padj=NULL,organism=N
                           minGSSize = 10, maxGSSize = 500,
                           keepRich=TRUE,keytype="",filename=NULL,padj.method="BH",sep = ",",universe=NULL,
                           annotation_provenance=NULL,padj.family=c("overlap","all")){
-  .validateParams(pvalue=pvalue, padj=padj, minSize=minSize, maxSize=maxSize,
+  .validateParams(pvalue=pvalue, minSize=minSize, maxSize=maxSize,
                   minGSSize=minGSSize, maxGSSize=maxGSSize, func_name="enrich")
+  .check_cutoff(padj, "padj", allow_null = TRUE)
   normalization <- .normalize_annotation(object, func_name = "enrich")
   .run_ora(x, annot = normalization, term_names = NULL, extra_cols = NULL,
            pvalue = pvalue, padj = padj, padj.method = padj.method,
@@ -138,6 +139,24 @@ setMethod("enrich", signature(object = "Annot"),definition = function(x,object,p
 
 #' Functional enrichment analysis with DAVID
 #'
+#' @details
+#' The adjusted p-values come from the DAVID service, not from
+#' \code{stats::p.adjust}. \code{padj.method} selects one of three distinct
+#' provider-supplied quantities: \code{"bonferroni"} takes DAVID's
+#' \code{Bonferroni} column, \code{"FDR"} takes DAVID's \code{FDR} column (an
+#' adaptive false discovery rate estimate computed by DAVID), and any other value
+#' takes DAVID's \code{Benjamini} column. These three are not interchangeable
+#' with each other or with the \code{p.adjust} method of the same name.
+#'
+#' The \code{FDR} column is copied into \code{Padj} without rescaling. Whether
+#' DAVID reports it as a fraction or as a percentage has not been verified
+#' (RDAVIDWebService could not be run when this was written); check the range of
+#' \code{Padj} before applying a \code{padj} cutoff with \code{padj.method = "FDR"}.
+#'
+#' DAVID applies \code{count = minSize} on the server, so terms with fewer than
+#' \code{minSize} significant genes are never returned and \code{keepRich}
+#' cannot restore them.
+#'
 #' @param gene vector contains gene names
 #' @param keytype key type export
 #' @param species species name
@@ -166,6 +185,8 @@ richDAVID <- function(gene,keytype="ENTREZ_GENE_ID",species="human",anntype="GOT
                       universe,pvalue=0.05,padj=NULL,minSize=2,maxSize=500,
                       keepRich=TRUE, filename=NULL,padj.method="BH",sep=",",
                       david.user="richR@und.edu"){
+  .check_cutoff(pvalue, "pvalue")
+  .check_cutoff(padj, "padj", allow_null = TRUE)
   pkg <- "RDAVIDWebService"
   if (!requireNamespace(pkg, quietly = TRUE)) {
     stop("Package '", pkg, "' is required for DAVID analysis. Install it with:\n",
@@ -236,12 +257,8 @@ richDAVID <- function(gene,keytype="ENTREZ_GENE_ID",species="human",anntype="GOT
   }
   resultFis$GeneID <- gsub(' ','',res$Genes)
   resultFis<-resultFis[order(resultFis$Pvalue),]
-  if(is.null(padj)){
-    resultFis<-resultFis[resultFis$Pvalue<pvalue,]
-    padj=numeric()
-  }else{
-    resultFis<-resultFis[resultFis$Padj<padj,]
-  }
+  resultFis <- resultFis[.sig_keep(resultFis, pvalue, padj), , drop = FALSE]
+  if (is.null(padj)) padj <- numeric()
   resultFis<-subset(resultFis, Significant<=maxSize)
   if(keepRich==FALSE){
     resultFis<-subset(resultFis, Significant>=minSize)

@@ -1,12 +1,6 @@
 .validate_gsea_inputs <- function(x, pvalue, padj, minSize, maxSize,
                                  padj.method,
                                  eps, scoreType, nproc, BPPARAM, seed) {
-  scalar_probability <- function(value, name) {
-    if (length(value) != 1L || !is.numeric(value) || !is.finite(value) ||
-        value < 0 || value > 1) {
-      stop(name, " must be one finite numeric scalar between 0 and 1.", call. = FALSE)
-    }
-  }
   scalar_size <- function(value, name, allow_infinite = FALSE) {
     if (length(value) != 1L || !is.numeric(value) || is.na(value) ||
         value < 1 || (!is.finite(value) && !allow_infinite) ||
@@ -24,8 +18,8 @@
     stop("GSEA stats must have unique, non-missing, non-blank gene names.",
          call. = FALSE)
   }
-  scalar_probability(pvalue, "pvalue")
-  if (!is.null(padj)) scalar_probability(padj, "padj")
+  .check_cutoff(pvalue, "pvalue")
+  .check_cutoff(padj, "padj", allow_null = TRUE)
   scalar_size(minSize, "minSize")
   scalar_size(maxSize, "maxSize", allow_infinite = TRUE)
   if (minSize > maxSize) {
@@ -349,12 +343,11 @@ richGSEA_internal<-function(x,object,keytype="",pvalue=0.05,padj=NULL,KEGG=FALSE
     res <- res[, c(cols[seq_len(le_pos)], "Term",
                    setdiff(cols[-seq_len(le_pos)], "Term")), drop = FALSE]
   }
-  if(is.null(padj)){
-    res<-res[!is.na(res$pval) & res$pval<pvalue, , drop = FALSE]
-    padj=numeric()
-  }else{
-    res<-res[!is.na(res$padj) & res$padj<padj, , drop = FALSE]
-  }
+  # richR's own padj (above) is computed over the full returned family before
+  # the significance predicate runs.
+  res <- res[.sig_keep(res, pvalue, padj, p_col = "pval", padj_col = "padj"), ,
+             drop = FALSE]
+  if (is.null(padj)) padj <- numeric()
   res<-res[order(res$pval),]
   res <- res[!is.na(res$pathway),]
   if(isTRUE(KEGG)){
@@ -686,14 +679,11 @@ richGSEAcurve <- function(object, gseaRes, mycol = NULL,
       stop("No pathways match the specified pattern")
     }
   } else {
-    # Use filtering criteria
-    if(!is.null(padj)) {
-      cutoff <- padj
-      sig_indices <- gseaRes_result$padj < cutoff
-    } else {
-      cutoff <- pvalue
-      sig_indices <- gseaRes_result$pval < cutoff
-    }
+    # Use filtering criteria: the significance predicate (raw AND adjusted)
+    .check_cutoff(pvalue, "pvalue")
+    .check_cutoff(padj, "padj", allow_null = TRUE)
+    sig_indices <- .sig_keep(gseaRes_result, pvalue, padj,
+                             p_col = "pval", padj_col = "padj")
 
     sigpathway <- gseaRes_result$pathway[sig_indices]
     sig_nes <- gseaRes_result$NES[sig_indices]
@@ -944,6 +934,24 @@ richGSEAcurve <- function(object, gseaRes, mycol = NULL,
   }
 }
 
+#' Keep GSEA result rows passing the significance predicate
+#'
+#' \code{pval_cutoff} and \code{padj_cutoff} are validated with the shared rule;
+#' \code{padj_cutoff = NULL} filters on the raw p-value only, and
+#' \code{pval_cutoff = NULL} applies no raw cutoff.
+#' @param result GSEA result data.frame (\code{pval}, \code{padj} columns)
+#' @param pval_cutoff raw p-value cutoff or NULL
+#' @param padj_cutoff adjusted p-value cutoff or NULL
+#' @keywords internal
+#' @noRd
+.gsea_sig_filter <- function(result, pval_cutoff, padj_cutoff) {
+  .check_cutoff(pval_cutoff, "pval_cutoff", allow_null = TRUE)
+  .check_cutoff(padj_cutoff, "padj_cutoff", allow_null = TRUE)
+  if (is.null(pval_cutoff)) pval_cutoff <- 1
+  result[.sig_keep(result, pval_cutoff, padj_cutoff, p_col = "pval", padj_col = "padj"), ,
+         drop = FALSE]
+}
+
 #' Get available pathways from GSEA results
 #' @param gseaRes GSEAResult object
 #' @param padj_cutoff padj cutoff for filtering (if NULL, no filtering applied)
@@ -964,11 +972,7 @@ getPathways <- function(gseaRes, padj_cutoff = 0.05, pval_cutoff = 0.05, min_siz
   result <- gseaRes@result
 
   # Apply significance filtering
-  if(!is.null(padj_cutoff)) {
-    result <- result[result$padj < padj_cutoff, ]
-  } else if(!is.null(pval_cutoff)) {
-    result <- result[result$pval < pval_cutoff, ]
-  }
+  result <- .gsea_sig_filter(result, pval_cutoff, padj_cutoff)
 
   # Apply size filtering
   if(!is.null(min_size)) {
@@ -1157,11 +1161,7 @@ filterPathways <- function(gseaRes, nes_cutoff = NULL, padj_cutoff = 0.05, pval_
   }
 
   # Apply significance filtering
-  if(!is.null(padj_cutoff)) {
-    result <- result[result$padj < padj_cutoff, ]
-  } else if(!is.null(pval_cutoff)) {
-    result <- result[result$pval < pval_cutoff, ]
-  }
+  result <- .gsea_sig_filter(result, pval_cutoff, padj_cutoff)
 
   # Apply size filtering
   if(!is.null(min_size)) {

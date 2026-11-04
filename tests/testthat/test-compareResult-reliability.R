@@ -132,7 +132,9 @@ test_that("include-all plots retain empty axes and draw only real results", {
   expect_gt(file.info(output)$size, 0)
 })
 
-test_that("compareResult uses strict pvalue and adjusted-pvalue cutoffs", {
+# SPEC-RICHR-002 REQ-015 / REQ-021: values equal to a cutoff are kept and the
+# 0.1.x Padj < 1 / Pvalue < 1 guards are gone.
+test_that("compareResult keeps values equal to the cutoffs without extra guards", {
   boundary <- data.frame(
     Annot = c("p-boundary", "padj-boundary", "inside"),
     Term = c("P", "Q", "R"),
@@ -142,9 +144,12 @@ test_that("compareResult uses strict pvalue and adjusted-pvalue cutoffs", {
     stringsAsFactors = FALSE
   )
   pfiltered <- richR::compareResult(list(g = boundary), pvalue = 0.05)
-  expect_identical(pfiltered$Annot, "inside")
+  expect_identical(pfiltered$Annot, c("p-boundary", "padj-boundary", "inside"))
   padj_filtered <- richR::compareResult(list(g = boundary), padj = 1)
-  expect_identical(padj_filtered$Annot, c("p-boundary", "inside"))
+  expect_identical(padj_filtered$Annot, c("p-boundary", "padj-boundary", "inside"))
+  # Both cutoffs apply together and stay inclusive.
+  both <- richR::compareResult(list(g = boundary), pvalue = 0.049, padj = 0.99)
+  expect_identical(both$Annot, "inside")
 })
 
 test_that("all NULL comparisons return a typed empty frame and retain plot labels", {

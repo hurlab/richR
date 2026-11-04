@@ -6,7 +6,6 @@
 \usage{
 .validateParams(
   pvalue = 0.05,
-  padj = NULL,
   minSize = 2,
   maxSize = 500,
   minGSSize = 10,
@@ -15,9 +14,8 @@
 )
 }
 \arguments{
-\item{pvalue}{p-value cutoff}
-
-\item{padj}{adjusted p-value cutoff}
+\item{pvalue}{p-value cutoff (the adjusted cutoff is checked by the caller
+with \code{.check_cutoff})}
 
 \item{minSize}{minimum gene set size}
 

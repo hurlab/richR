@@ -2,9 +2,9 @@
 #
 # compareGSEA() must keep a group's pathways only when the caller's cutoffs
 # hold: with a non-NULL `padj` both the raw and the adjusted cutoff apply; with
-# `padj = NULL` the raw cutoff applies together with the `padj < 1` guard. The
-# cutoffs must never be resolved to the same-named columns of the result table
-# (`padj`, `pval`).
+# `padj = NULL` only the raw cutoff applies. Values equal to a cutoff are kept.
+# The cutoffs must never be resolved to the same-named columns of the result
+# table (`padj`, `pval`).
 #
 # Fixtures are built inline; expectations are valid in testthat editions 2 and 3.
 
@@ -61,30 +61,31 @@ test_that("compareGSEA() with pvalue and padj keeps pathways passing both cutoff
   expect_identical(cutoffs_drawn(p), c("P1", "P4"))
 })
 
-test_that("compareGSEA() with padj = NULL applies the raw cutoff and the padj < 1 guard", {
+test_that("compareGSEA() with padj = NULL applies the raw cutoff only", {
   skip_if_not_installed("fgsea")
+  # No padj < 1 guard: P6 (raw p 0.02, padj exactly 1) is kept.
   p <- compareGSEA(list(A = cutoffs_result()), cutoffs_annot(),
                    pvalue = 0.05, padj = NULL)
   expect_s3_class(p, "ggplot")
-  expect_identical(cutoffs_drawn(p), c("P1", "P2", "P4"))
+  expect_identical(cutoffs_drawn(p), c("P1", "P2", "P4", "P6"))
 })
 
-test_that("compareGSEA() compares cutoffs strictly at the boundary", {
+test_that("compareGSEA() keeps values equal to a cutoff", {
   skip_if_not_installed("fgsea")
   # P4 has pval exactly 0.04; P3 has padj exactly 0.04.
   by_raw <- compareGSEA(list(A = cutoffs_result()), cutoffs_annot(),
                         pvalue = 0.04, padj = 0.5)
-  expect_identical(cutoffs_drawn(by_raw), c("P1", "P2"))
+  expect_identical(cutoffs_drawn(by_raw), c("P1", "P2", "P4"))
   by_adj <- compareGSEA(list(A = cutoffs_result()), cutoffs_annot(),
                         pvalue = 0.1, padj = 0.04)
-  expect_identical(cutoffs_drawn(by_adj), "P1")
+  expect_identical(cutoffs_drawn(by_adj), c("P1", "P3"))
 })
 
 test_that("compareGSEA() uses the caller's padj, not the result's padj column", {
   skip_if_not_installed("fgsea")
-  # With padj = 1 every pathway except P6 (padj exactly 1) passes the adjusted
-  # cutoff, so the raw cutoff alone decides the remaining set.
+  # With padj = 1 every pathway passes the adjusted cutoff (P6 sits exactly at
+  # it), so the raw cutoff alone decides the set.
   p <- compareGSEA(list(A = cutoffs_result()), cutoffs_annot(),
                    pvalue = 0.05, padj = 1)
-  expect_identical(cutoffs_drawn(p), c("P1", "P2", "P4"))
+  expect_identical(cutoffs_drawn(p), c("P1", "P2", "P4", "P6"))
 })

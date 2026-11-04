@@ -8,7 +8,6 @@
   x,
   annot = NULL,
   pvalue = 0.05,
-  padj = NULL,
   padj.method = "BH",
   minSize = 1,
   maxSize = 500
@@ -20,8 +19,6 @@
 \item{annot}{annotation data.frame (2+ columns: GeneID, Term)}
 
 \item{pvalue}{p-value cutoff}
-
-\item{padj}{adjusted p-value cutoff (or NULL)}
 
 \item{padj.method}{p-value adjustment method}
 

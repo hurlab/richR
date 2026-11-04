@@ -45,12 +45,7 @@ ggnetwork_internal<-function (object=object,gene=gene,top = 50, pvalue = 0.05, p
                               label.color = "black", label.size = 2,node.shape=NULL, layout = "fruchtermanreingold",savefig=FALSE,
                               visNet=FALSE,smooth=TRUE,nodeselect=FALSE,edit=FALSE,savehtml=FALSE,filename=NULL,
                               width=7,height=7,segment.size=0.2,node.alpha=0.7,sep=",",...){
-  if (!is.null(padj)) {
-    object <- object[object$Padj < padj, ]
-  }
-  else {
-    object <- object[object$Pvalue < pvalue, ]
-  }
+  object <- .sig_filter(object, pvalue, padj)
   if (nrow(object) <= top) {
     object <- object
   }

@@ -26,6 +26,8 @@ compareResult<-function (x, pvalue = 0.05, padj = NULL,include.all=FALSE)
   if (!is.list(x) || length(x) == 0L) {
     stop("x must be a non-empty list of enrichment results.", call. = FALSE)
   }
+  .check_cutoff(pvalue, "pvalue")
+  .check_cutoff(padj, "padj", allow_null = TRUE)
   if (is.null(names(x))) names(x) <- paste("Group", seq_along(x))
   .validate_named_list(x, "x")
 
@@ -44,13 +46,7 @@ compareResult<-function (x, pvalue = 0.05, padj = NULL,include.all=FALSE)
       stop("x group '", group, "' is missing required result column(s): ",
            paste(missing, collapse = ", "), call. = FALSE)
     }
-    if (is.null(padj)) {
-      value <- value[!is.na(value$Padj) & value$Padj < 1 &
-                       !is.na(value$Pvalue) & value$Pvalue < pvalue, , drop = FALSE]
-    } else {
-      value <- value[!is.na(value$Padj) & value$Padj < padj &
-                       !is.na(value$Pvalue) & value$Pvalue < 1, , drop = FALSE]
-    }
+    value <- value[.sig_keep(value, pvalue, padj), , drop = FALSE]
     value$group <- rep(group, nrow(value))
     value
   })
@@ -127,15 +123,13 @@ richCompareDot<-function (x, pvalue = 0.05, low = "lightpink", high = "red",leve
                       filename = NULL, width = 10, height = 8,include.all=FALSE)
 {
   group_levels <- if (is.factor(x$group)) levels(x$group) else unique(as.character(x$group))
+  .check_cutoff(pvalue, "pvalue")
+  .check_cutoff(padj, "padj", allow_null = TRUE)
   if(isTRUE(include.all)){
-    padj<-pvalue<-1.1
+    # include.all skips the significance predicate: every input row is drawn
     low<-"white"
-  }
-  if (!is.null(padj)) {
-    x <- x[x$Padj < padj, ]
-  }
-  else {
-    x <- x[x$Pvalue < pvalue, ]
+  } else {
+    x <- x[.sig_keep(x, pvalue, padj), , drop = FALSE]
   }
   if (isTRUE(short)) {
     x$Term <- unlist(lapply(x$Term, function(x) .paste.char(x)))
@@ -215,10 +209,11 @@ richCompareDot<-function (x, pvalue = 0.05, low = "lightpink", high = "red",leve
 compareGSEA<-function(x,object,gene=NULL,pathway=NULL,
                       mycol=NULL,pvalue = 0.05, padj = NULL,label=FALSE,
                       gseaParam = 1, ticksSize = 0.2,ncol=2,scales="fixed"){
-  # The cutoffs are compared outside any data mask, so they can never resolve
-  # to the same-named columns (padj, pval) of the GSEA result table.
-  pval_cutoff <- pvalue
-  padj_cutoff <- if (is.null(padj)) 1 else padj
+  # The cutoffs are compared by the significance predicate outside any data
+  # mask, so they can never resolve to the same-named columns (padj, pval) of
+  # the GSEA result table.
+  .check_cutoff(pvalue, "pvalue")
+  .check_cutoff(padj, "padj", allow_null = TRUE)
   if (is.null(names(x))) {
     names(x) <- paste("Group", seq_along(x))
   }
@@ -236,8 +231,7 @@ compareGSEA<-function(x,object,gene=NULL,pathway=NULL,
   }
   tmp <- lapply(x, function(x) {
     res <- x@result
-    keep <- !is.na(res$padj) & res$padj < padj_cutoff &
-      !is.na(res$pval) & res$pval < pval_cutoff
+    keep <- .sig_keep(res, pvalue, padj, p_col = "pval", padj_col = "padj")
     x@result <- res[keep, , drop = FALSE]
     x
   })

@@ -35,8 +35,9 @@ richGO_internal<-function(x,godata,ontology="BP",pvalue=0.05,padj=NULL,
                  minGSSize = 10, maxGSSize = 500,
                  keepRich=FALSE, filename=NULL,padj.method="BH",sep=",",universe=NULL,
                  annotation_provenance=NULL,padj.family=c("overlap","all")){
-  .validateParams(pvalue=pvalue, padj=padj, minSize=minSize, maxSize=maxSize,
+  .validateParams(pvalue=pvalue, minSize=minSize, maxSize=maxSize,
                   minGSSize=minGSSize, maxGSSize=maxGSSize, func_name="richGO")
+  .check_cutoff(padj, "padj", allow_null = TRUE)
   normalization <- .normalize_annotation(godata, func_name = "richGO")
   godata <- normalization$data
   ## GO-specific: filter annotation to terms in this ontology

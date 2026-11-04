@@ -66,9 +66,11 @@ test_that("ORA membership counts and keepRich filtering use both bounds", {
   # keepRich exempts minSize only; "rich" (Annotated 1 < minGSSize 2) is outside
   # the tested family (SPEC-RICHR-002 REQ-011).
   expect_equal(true$Annot, "both")
-  expect_length(richR:::.filter_ora_result(
+  # SPEC-RICHR-002 REQ-015 / REQ-018: a p-value equal to the cutoff is kept, so
+  # pvalue = 1 reports rows with p = 1.
+  expect_equal(richR:::.filter_ora_result(
     transform(fixture, Pvalue = 1), 1, NULL, 2, 10, 2, 10, TRUE
-  )$Annot, 0)
+  )$Annot, "both")
 })
 
 test_that("GO membership normalization precedes ontology selection", {

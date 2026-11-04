@@ -38,11 +38,7 @@ richBar_internal<-function(resultFis,top=50,pvalue=0.05,order=FALSE,horiz=TRUE,
                          short=FALSE,
                          fontsize.text=3,angle=75,padj=NULL,usePadj=TRUE,orderp=FALSE,
                          filename=NULL,width=10,height=8){
-  if(!is.null(padj)){
-    resultFis<-resultFis[resultFis$Padj<padj,]
-  }else{
-    resultFis<-resultFis[resultFis$Pvalue<pvalue,]
-  }
+  resultFis <- .sig_filter(resultFis, pvalue, padj)
   if(nrow(resultFis)>=top){
     resultFis<-resultFis[1:top,]
   }

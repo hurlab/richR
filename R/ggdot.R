@@ -37,11 +37,7 @@ ggdot_internal<-function(object,top=50,pvalue=0.05,order=FALSE,
                          font.x="bold",font.y="bold",fontsize.x=10,fontsize.y=10,
                          short=FALSE,
                          padj=NULL,usePadj=TRUE,orderp=FALSE,filename=NULL,width=10,height=8){
-  if(!is.null(padj)){
-    object<-object[object$Padj<padj,]
-  }else{
-    object<-object[object$Pvalue<pvalue,]
-  }
+  object <- .sig_filter(object, pvalue, padj)
   if(nrow(object)>=top){
     dd<-object[1:top,]
   }else{

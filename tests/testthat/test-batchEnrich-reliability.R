@@ -94,8 +94,10 @@ test_that("batchEnrich combines exact p-value and adjusted-p results without a s
   standalone <- richR::compareResult(pvalue_batch$results)
   expect_equal(nrow(standalone), 0L)
 
+  # The adjusted-p path: pvalue = 1 so only the padj cutoff restricts (both
+  # cutoffs apply together, SPEC-RICHR-002 D1).
   padj_batch <- suppressMessages(richR::batchEnrich(
-    groups, annot, padj = 0.1, minSize = 1, minGSSize = 1,
+    groups, annot, pvalue = 1, padj = 0.1, minSize = 1, minGSSize = 1,
     keepRich = FALSE, verbose = FALSE
   ))
   expect_equal(nrow(padj_batch$combined), 2L)

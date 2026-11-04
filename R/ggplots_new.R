@@ -249,8 +249,7 @@ ggNES_internal <- function(resultFis,
                            height     = 8) {
 
   resultFis <- .standardise_gsea_cols(resultFis)
-  if (!is.null(padj))  resultFis <- resultFis[resultFis$Padj < padj, ]
-  else                 resultFis <- resultFis[resultFis$Pvalue < pvalue, ]
+  resultFis <- .sig_filter(resultFis, pvalue, padj)
 
   resultFis <- resultFis[order(resultFis$NES, decreasing = TRUE), ]
   if (nrow(resultFis) > top) resultFis <- resultFis[seq_len(top), ]
@@ -395,8 +394,7 @@ ggecdf_internal <- function(resultFis,
                             height     = 8) {
 
   resultFis <- .standardise_gsea_cols(resultFis)
-  if (!is.null(padj))  resultFis <- resultFis[resultFis$Padj < padj, ]
-  else                 resultFis <- resultFis[resultFis$Pvalue < pvalue, ]
+  resultFis <- .sig_filter(resultFis, pvalue, padj)
   resultFis <- resultFis[order(resultFis$NES), ]
   if (nrow(resultFis) > top) resultFis <- resultFis[seq_len(top), ]
   if (nrow(resultFis) == 0) { message("No significant terms to plot."); return(invisible(NULL)) }
@@ -773,9 +771,7 @@ gggenebar_internal <- function(resultFis,
 #' @keywords internal
 #' @noRd
 .filter_and_top <- function(df, top, pvalue, padj) {
-  if (!is.null(padj))  df <- df[df$Padj < padj, , drop = FALSE]
-  else                 df <- df[df$Pvalue < pvalue, , drop = FALSE]
-  df <- df[!is.na(df$Pvalue), , drop = FALSE]
+  df <- .sig_filter(df, pvalue, padj)
   if (nrow(df) > top) df <- df[seq_len(top), , drop = FALSE]
   df
 }

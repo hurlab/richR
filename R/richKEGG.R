@@ -37,8 +37,9 @@ richKEGG_internal<-function(x,kodata,pvalue=0.05,padj=NULL,ontology="KEGG",
                             minGSSize = 10, maxGSSize = 500,
                             keepRich=TRUE, filename=NULL,padj.method="BH",builtin=TRUE,sep=",",universe=NULL,
                             annotation_provenance=NULL,padj.family=c("overlap","all")){
-    .validateParams(pvalue=pvalue, padj=padj, minSize=minSize, maxSize=maxSize,
+    .validateParams(pvalue=pvalue, minSize=minSize, maxSize=maxSize,
                     minGSSize=minGSSize, maxGSSize=maxGSSize, func_name="richKEGG")
+    .check_cutoff(padj, "padj", allow_null = TRUE)
     normalization <- .normalize_annotation(kodata, func_name = "richKEGG")
   ## KEGG-specific: term name lookup + pathway level annotation
   if (ontology == "KEGGM") {

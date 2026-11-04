@@ -109,3 +109,39 @@ test_that("rbind() on richResult and GSEAResult objects is pinned", {
     style = "deparse", tolerance = 1e-8
   )
 })
+
+test_that("rbind() keeps argument names as row-name prefixes, as in 0.1.5", {
+  rich_a <- .char_richResult()
+  rich_b <- .char_richResult_second()
+  gsea_a <- .char_gsea_result()
+  gsea_b <- .char_gsea_result_second()
+
+  rich_named <- rbind(first = rich_a, second = rich_b)
+  expect_identical(
+    rownames(rich_named),
+    c("first.GO:0001", "first.GO:0002", "first.GO:0003",
+      "second.GO:0010", "second.GO:0011")
+  )
+  expect_identical(
+    rich_named,
+    rbind(first = as.data.frame(rich_a), second = as.data.frame(rich_b))
+  )
+
+  gsea_named <- rbind(first = gsea_a, second = gsea_b)
+  expect_identical(
+    rownames(gsea_named),
+    c("first.1", "first.2", "first.3", "second.1", "second.2")
+  )
+  expect_identical(
+    gsea_named,
+    rbind(first = as.data.frame(gsea_a), second = as.data.frame(gsea_b))
+  )
+})
+
+test_that("rbind methods called with no arguments return NULL, as in 0.1.5", {
+  # base::rbind() never dispatches with zero arguments, so the methods are
+  # called directly. In 0.1.5 do.call(rbind, list()) returned NULL; a
+  # bindROWS(objects[[1L]], ...) body errors with "subscript out of bounds".
+  expect_null(richR:::rbind.richResult())
+  expect_null(richR:::rbind.GSEAResult())
+})

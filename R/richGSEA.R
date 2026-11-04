@@ -1,5 +1,5 @@
 .validate_gsea_inputs <- function(x, pvalue, padj, minSize, maxSize,
-                                 minGSSize, maxGSSize, padj.method,
+                                 padj.method,
                                  eps, scoreType, nproc, BPPARAM, seed) {
   scalar_probability <- function(value, name) {
     if (length(value) != 1L || !is.numeric(value) || !is.finite(value) ||
@@ -28,9 +28,7 @@
   if (!is.null(padj)) scalar_probability(padj, "padj")
   scalar_size(minSize, "minSize")
   scalar_size(maxSize, "maxSize", allow_infinite = TRUE)
-  scalar_size(minGSSize, "minGSSize")
-  scalar_size(maxGSSize, "maxGSSize", allow_infinite = TRUE)
-  if (minSize > maxSize || minGSSize > maxGSSize) {
+  if (minSize > maxSize) {
     stop("Minimum GSEA size must not exceed its maximum size.", call. = FALSE)
   }
   if (length(padj.method) != 1L || is.na(padj.method) ||
@@ -273,10 +271,12 @@
 #' @param pvalue pvalue cutoff value
 #' @param padj adjust p value cut off method
 #' @param KEGG a logical evaluating to TRUE or FALSE indicating whether KEGG GSEA were peformed or not.
-#' @param minSize Minimal size of a gene set to test. All pathways below the threshold are excluded.
-#' @param maxSize Maximal size of a gene set to test. All pathways above the threshold are excluded.
-#' @param minGSSize minimal size of genes annotated by ontology term for testing.
-#' @param maxGSSize maximal size of each geneset for analyzing
+#' @param minSize Minimal size of a gene set to test, counted as the gene-set
+#'   membership intersected with the ranked genes (passed to fgsea). Smaller
+#'   gene sets are not tested.
+#' @param maxSize Maximal size of a gene set to test, counted as the gene-set
+#'   membership intersected with the ranked genes (passed to fgsea). Larger
+#'   gene sets are not tested.
 #' @param padj.method p value adjust method
 #' @param organism organism name
 #' @param ontology ontology type
@@ -291,13 +291,11 @@
 #' @importFrom fgsea fgseaMultilevel
 #' @author Kai Guo
 richGSEA_internal<-function(x,object,keytype="",pvalue=0.05,padj=NULL,KEGG=FALSE,minSize=15,maxSize=500,
-                            minGSSize = 10, maxGSSize = 500,
                             padj.method="BH",organism=NULL,ontology=NULL,table=TRUE,sep=",",
                             eps=NULL,scoreType=NULL,nproc=NULL,BPPARAM=NULL,seed=NULL,
                             annotation_provenance=NULL){
-  .validate_gsea_inputs(x, pvalue, padj, minSize, maxSize, minGSSize,
-                        maxGSSize, padj.method, eps, scoreType, nproc,
-                        BPPARAM, seed)
+  .validate_gsea_inputs(x, pvalue, padj, minSize, maxSize, padj.method,
+                        eps, scoreType, nproc, BPPARAM, seed)
   rng_summary <- list(seed = NULL, RNGkind = RNGkind(), backend = NULL)
   if (!is.null(seed)) {
     had_seed <- exists(".Random.seed", envir = .GlobalEnv, inherits = FALSE)
@@ -412,8 +410,7 @@ richGSEA_internal<-function(x,object,keytype="",pvalue=0.05,padj=NULL,KEGG=FALSE
                   tested_count = as.integer(tested_count),
                   effective_N = NA_integer_, effective_n = NA_integer_)
   options <- list(pvalue = pvalue, padj = metadata_padj, minSize = minSize,
-                  maxSize = maxSize, minGSSize = minGSSize,
-                  maxGSSize = maxGSSize, padj.method = padj.method,
+                  maxSize = maxSize, padj.method = padj.method,
                   ontology = ontology, keytype = keytype, KEGG = KEGG,
                   table = table, sep = sep, eps = eps, scoreType = scoreType,
                   nproc = nproc,
@@ -440,9 +437,11 @@ richGSEA_internal<-function(x,object,keytype="",pvalue=0.05,padj=NULL,KEGG=FALSE
 #' @param pvalue pvalue cutoff value
 #' @param padj adjust p value cut off
 #' @param KEGG logical, whether KEGG GSEA were performed
-#' @param minSize Minimal size of a gene set to test
+#' @param minSize Minimal size of a gene set to test, counted as the gene-set
+#'   membership intersected with the ranked genes (passed to fgsea)
 #' @param ontology ontology type
-#' @param maxSize Maximal size of a gene set to test
+#' @param maxSize Maximal size of a gene set to test, counted as the gene-set
+#'   membership intersected with the ranked genes (passed to fgsea)
 #' @param padj.method pvalue adjust method
 #' @param organism organism name
 #' @param table leadingEdge as vector
@@ -489,9 +488,11 @@ setMethod("richGSEA", signature(object = "data.frame"),definition = function(x,o
 #' @param pvalue pvalue cutoff value
 #' @param padj adjust p value cut off
 #' @param KEGG logical, whether KEGG GSEA were performed
-#' @param minSize Minimal size of a gene set to test
+#' @param minSize Minimal size of a gene set to test, counted as the gene-set
+#'   membership intersected with the ranked genes (passed to fgsea)
 #' @param ontology ontology type
-#' @param maxSize Maximal size of a gene set to test
+#' @param maxSize Maximal size of a gene set to test, counted as the gene-set
+#'   membership intersected with the ranked genes (passed to fgsea)
 #' @param padj.method pvalue adjust method
 #' @param organism organism name
 #' @param table leadingEdge as vector
@@ -1190,9 +1191,11 @@ filterPathways <- function(gseaRes, nes_cutoff = NULL, padj_cutoff = 0.05, pval_
 #' @param pvalue pvalue cutoff value
 #' @param padj adjust p value cut off
 #' @param KEGG logical, whether KEGG GSEA were performed
-#' @param minSize Minimal size of a gene set to test
+#' @param minSize Minimal size of a gene set to test, counted as the gene-set
+#'   membership intersected with the ranked genes (passed to fgsea)
 #' @param ontology ontology type
-#' @param maxSize Maximal size of a gene set to test
+#' @param maxSize Maximal size of a gene set to test, counted as the gene-set
+#'   membership intersected with the ranked genes (passed to fgsea)
 #' @param padj.method p value adjust method
 #' @param organism organism name
 #' @param table leadingEdge as vector

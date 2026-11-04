@@ -80,9 +80,11 @@ setGeneric("richKEGG", function(x,kodata,pvalue=0.05,padj=NULL,organism=NULL,ont
 #' @param pvalue pvalue cutoff value
 #' @param padj adjust p value cut off
 #' @param KEGG logical, whether KEGG GSEA were performed
-#' @param minSize Minimal size of a gene set to test
+#' @param minSize Minimal size of a gene set to test, counted as the gene-set
+#'   membership intersected with the ranked genes (passed to fgsea)
 #' @param ontology ontology type
-#' @param maxSize Maximal size of a gene set to test
+#' @param maxSize Maximal size of a gene set to test, counted as the gene-set
+#'   membership intersected with the ranked genes (passed to fgsea)
 #' @param padj.method p value adjust method
 #' @param organism organism name
 #' @param table leadingEdge as vector

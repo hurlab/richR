@@ -72,18 +72,25 @@ res   <- enrich(my_genes, annot)
 
 ## 2. Enrichment analysis
 
+By default richR reports a term when its raw p-value is at most `pvalue = 0.05`
+**and** its adjusted p-value is at most `padj = 0.05`. The examples below use
+random genes, which have no adjusted-significant terms, so every call that
+reports or plots their results passes `padj = NULL` to filter on the raw
+p-value only and keep the output illustrative. With real data, keep the
+default; use `pvalue = 1, padj = 1` to switch significance filtering off.
+
 ### GO enrichment (ORA)
 
 ```{r go-enrich, eval=has_orgdb}
 gene  <- sample(unique(hsa_go$GeneID), 1000)
-resgo <- richGO(gene, godata = hsa_go, ontology = "BP")
+resgo <- richGO(gene, godata = hsa_go, ontology = "BP", padj = NULL)
 head(resgo)
 ```
 
 ### KEGG enrichment
 
 ```{r kegg-enrich, eval=has_orgdb}
-resko <- richKEGG(gene, kodata = hsa_ko, pvalue = 0.05)
+resko <- richKEGG(gene, kodata = hsa_ko, pvalue = 0.05, padj = NULL)
 head(resko)
 ```
 
@@ -93,7 +100,7 @@ head(resko)
 name     <- sample(unique(hsa_ko$GeneID), 1000)
 genelist <- rnorm(1000)
 names(genelist) <- name
-res_gsea <- richGSEA(genelist, object = hsa_ko)
+res_gsea <- richGSEA(genelist, object = hsa_ko, padj = NULL)
 ```
 
 ### DAVID (online)
@@ -107,42 +114,42 @@ res_david <- richDAVID(gene, keytype = "ENTREZID", species = "human")
 ### Bar and dot plots
 
 ```{r bar-dot, fig.height=6, eval=has_orgdb}
-richBar(resgo, top = 20, usePadj = FALSE)
-richDot(resko, top = 10, usePadj = FALSE)
+richBar(resgo, top = 20, padj = NULL, usePadj = FALSE)
+richDot(resko, top = 10, padj = NULL, usePadj = FALSE)
 ```
 
 ### Lollipop plot
 
 ```{r lollipop, eval=has_orgdb}
-richLollipop(resko, top = 20)
+richLollipop(resko, top = 20, padj = NULL)
 ```
 
 ### Gene-level plots
 
 ```{r gene-plots, fig.height=6, fig.width=9, eval=has_orgdb}
 # Gene-term dot plot (color by significance when no fold change provided)
-richGeneDot(resgo)
+richGeneDot(resgo, padj = NULL)
 
 # Gene-term heatmap with custom colors
-richGeneHeat(resgo, usePadj = FALSE,
+richGeneHeat(resgo, padj = NULL, usePadj = FALSE,
              low = "deepskyblue", high = "darkorange", mid = "white")
 
 # Gene bar plot (x-axis = RichFactor, gene labels aligned left)
-richGeneBar(resgo, top = 10)
+richGeneBar(resgo, top = 10, padj = NULL)
 ```
 
 ### Network plots
 
 ```{r network, fig.height=6, eval=has_orgdb}
-richNetplot(resko, top = 20)
-richNetwork(resko, top = 20, weightcut = 0.01)
+richNetplot(resko, top = 20, padj = NULL)
+richNetwork(resko, top = 20, padj = NULL, weightcut = 0.01)
 ```
 
 ### GSEA-specific plots
 
 ```{r gsea-plots, eval=has_orgdb}
-richNES(res_gsea, top = 20)
-richVolcano(res_gsea)
+richNES(res_gsea, top = 20, padj = NULL)
+richVolcano(res_gsea, padj = NULL)
 ```
 
 ## 4. Clustering and comparison
@@ -159,10 +166,10 @@ if (!is.null(resc)) richClusterDot(resc) else message("No significant clusters f
 ```{r compare, eval=has_orgdb}
 gene1  <- sample(unique(hsa_ko$GeneID), 1000)
 gene2  <- sample(unique(hsa_ko$GeneID), 1000)
-resko1 <- richKEGG(gene1, kodata = hsa_ko)
-resko2 <- richKEGG(gene2, kodata = hsa_ko)
-res_cmp <- compareResult(list(S1 = resko1, S2 = resko2))
-richCompareDot(res_cmp)
+resko1 <- richKEGG(gene1, kodata = hsa_ko, padj = NULL)
+resko2 <- richKEGG(gene2, kodata = hsa_ko, padj = NULL)
+res_cmp <- compareResult(list(S1 = resko1, S2 = resko2), padj = NULL)
+richCompareDot(res_cmp, padj = NULL)
 ```
 
 ### Comparison heatmap

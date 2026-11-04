@@ -174,7 +174,7 @@ test_that("richKEGG and richLevel honour padj.family", {
     ))
     expect_setequal(kegg@result$Annot, ko[fam_overlap])
     expect_equal(unname(kegg@result$Padj),
-                 unname(expected[match(kegg@result$Annot, ko)]), tolerance = 1e-12)
+                 unname(expected[names(ko)[match(kegg@result$Annot, ko)]]), tolerance = 1e-12)
     expect_equal(richR::enrichmentInfo(kegg)$options$padj.family, family)
 
     level <- suppressMessages(richR::richLevel(
@@ -183,7 +183,7 @@ test_that("richKEGG and richLevel honour padj.family", {
     ))
     expect_setequal(level@result$Annot, level3[fam_overlap])
     expect_equal(unname(level@result$Padj),
-                 unname(expected[match(level@result$Annot, level3)]), tolerance = 1e-12)
+                 unname(expected[names(level3)[match(level@result$Annot, level3)]]), tolerance = 1e-12)
     expect_equal(richR::enrichmentInfo(level)$testing$tested_count, length(expected))
   }
 })

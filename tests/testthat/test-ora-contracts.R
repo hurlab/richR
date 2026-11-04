@@ -63,7 +63,9 @@ test_that("ORA membership counts and keepRich filtering use both bounds", {
   false <- richR:::.filter_ora_result(fixture, 1, NULL, 2, 10, 2, 10, FALSE)
   true <- richR:::.filter_ora_result(fixture, 1, NULL, 2, 10, 2, 10, TRUE)
   expect_equal(false$Annot, "both")
-  expect_equal(true$Annot, c("both", "rich"))
+  # keepRich exempts minSize only; "rich" (Annotated 1 < minGSSize 2) is outside
+  # the tested family (SPEC-RICHR-002 REQ-011).
+  expect_equal(true$Annot, "both")
   expect_length(richR:::.filter_ora_result(
     transform(fixture, Pvalue = 1), 1, NULL, 2, 10, 2, 10, TRUE
   )$Annot, 0)

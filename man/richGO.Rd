@@ -21,6 +21,7 @@ richGO(
   padj.method = "BH",
   sep = ",",
   universe = NULL,
+  padj.family = c("overlap", "all"),
   ...
 )
 }
@@ -43,11 +44,11 @@ richGO(
 
 \item{maxSize}{maximum number of genes included in significant terms}
 
-\item{minGSSize}{minimum annotated term size for reporting; positive-overlap terms are adjusted before this reporting filter.}
+\item{minGSSize}{minimum annotated term size for testing: the number of the term's genes in the background. \code{[minGSSize, maxGSSize]} (inclusive) bounds the tested family before p-value adjustment.}
 
-\item{maxGSSize}{maximal size of each geneset for analyzing}
+\item{maxGSSize}{maximum annotated term size for testing (inclusive upper bound of the tested family; see \code{minGSSize}).}
 
-\item{keepRich}{keep terms with rich factor value equal 1 or not (default: TRUE)}
+\item{keepRich}{keep terms with rich factor value equal 1 even when their overlap is below \code{minSize} (default: TRUE). It exempts only the \code{minSize} reporting filter and never admits a term outside the tested family.}
 
 \item{filename}{output filename}
 
@@ -56,6 +57,20 @@ richGO(
 \item{sep}{character string used to separate the genes when concatenating}
 
 \item{universe}{optional character vector intersected with annotated genes to define the ORA background}
+
+\item{padj.family}{family of terms that \code{padj.method} adjusts over:
+\code{"overlap"} (default) holds the size-eligible terms (see \code{minGSSize})
+that share at least one gene with the query; \code{"all"} holds every
+size-eligible term, zero-overlap terms contributing p = 1 (they are never
+reported). \code{minSize}, \code{maxSize}, \code{keepRich} and the cutoffs are
+applied afterwards and never change an adjusted value. The default family
+matches clusterProfiler/DOSE but is a convention, not an FDR guarantee: with a
+universe of 100 single-gene terms and one selected gene under the null (with
+\code{minGSSize = 1, minSize = 1}), the only overlapping term has p = 0.01 and
+BH over that one term gives 0.01, so a null term is reported every time; BH
+over all 100 gives 1. Use \code{padj.family = "all"} for adjustment over every
+size-eligible term.
+The annotation is narrowed to \code{ontology} before the background is built, so the tested family (and the default background) is ontology-specific.}
 
 \item{...}{additional arguments}
 }

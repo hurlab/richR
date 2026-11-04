@@ -159,7 +159,7 @@
 .compute_ora_stats <- function(k, M, N, n, padj.method = "BH") {
   # k = significant genes per term, M = annotated genes per term
   # N = total annotated genes, n = total input genes in annotation
-  rhs <- hyper_bench_vector(k, M, N, n)
+  rhs <- if (length(k) > 0) hyper_bench_vector(k, M, N, n) else setNames(numeric(0), character(0))
   lhs <- stats::p.adjust(rhs, method = padj.method)
   RichFactor <- k / M
   FoldEnrichment <- RichFactor * N / n
@@ -187,10 +187,12 @@
                                 minGSSize, maxGSSize, keepRich) {
   if (nrow(resultFis) == 0) return(resultFis)
   resultFis <- resultFis[order(resultFis$Pvalue), ]
-  # Upper bounds always apply
+  # The tested family is already bounded by [minGSSize, maxGSSize] before
+  # adjustment; re-applying the bound here never admits a term outside it.
+  resultFis <- subset(resultFis, Annotated >= minGSSize & Annotated <= maxGSSize)
   resultFis <- subset(resultFis, Significant <= maxSize)
-  resultFis <- subset(resultFis, Annotated <= maxGSSize)
-  lower_bounds <- (resultFis$Significant >= minSize & resultFis$Annotated >= minGSSize) |
+  # keepRich exempts fully rich terms from minSize only (REQ-011)
+  lower_bounds <- resultFis$Significant >= minSize |
     (isTRUE(keepRich) & resultFis$RichFactor == 1)
   resultFis <- resultFis[lower_bounds, , drop = FALSE]
   # Filter by p-value
@@ -287,6 +289,9 @@
 #' @param minGSSize minimum annotated genes for testing
 #' @param maxGSSize maximum annotated genes for testing
 #' @param keepRich keep terms with RichFactor == 1
+#' @param padj.family family adjusted by \code{padj.method}: \code{"overlap"}
+#'   (size-eligible terms with query overlap >= 1) or \code{"all"} (every
+#'   size-eligible term, zero-overlap terms contributing p = 1)
 #' @param organism organism name
 #' @param ontology ontology type
 #' @param keytype key type
@@ -302,7 +307,9 @@
                      minSize = 2, maxSize = 500, minGSSize = 10, maxGSSize = 500,
                      keepRich = TRUE, organism = NULL, ontology = "",
                      keytype = "", filename = NULL, sep = ",", universe = NULL,
-                     annotation_provenance = NULL, metadata_ontology = ontology) {
+                     annotation_provenance = NULL, metadata_ontology = ontology,
+                     padj.family = c("overlap", "all")) {
+  padj.family <- match.arg(padj.family)
   normalization <- if (!is.data.frame(annot) && is.list(annot) &&
                        all(c("data", "counts") %in% names(annot))) {
     annot
@@ -372,10 +379,17 @@
   gene2ao <- sf(annot[, c(2, 1)])
   fgene2ao <- gene2ao[effective_input]
   fao2gene <- reverseList(fgene2ao)
-  k <- name_table(fao2gene)
+  overlap_k <- name_table(fao2gene)
+  # N and n are fixed here, before any term-size filtering, and never recomputed.
   n <- length(effective_input)
-  M <- ao2gene_num[names(k)]
   N <- length(effective_universe)
+  # Tested family (D2): universe-intersected term size in [minGSSize, maxGSSize];
+  # "overlap" keeps terms the query touches, "all" adds zero-overlap terms (p = 1).
+  eligible <- names(ao2gene_num)[ao2gene_num >= minGSSize & ao2gene_num <= maxGSSize]
+  family <- if (padj.family == "all") eligible else intersect(names(overlap_k), eligible)
+  k <- setNames(as.integer(overlap_k[family]), family)
+  k[is.na(k)] <- 0L
+  M <- ao2gene_num[family]
   stats <- .compute_ora_stats(k, M, N, n, padj.method)
   rhs_gene <- unlist(lapply(fao2gene, function(g) paste(unique(g), sep = "", collapse = sep)))
   GeneID <- rhs_gene[names(stats$rhs)]
@@ -394,6 +408,8 @@
     zscore = stats$zscore, Pvalue = as.vector(stats$rhs), Padj = stats$lhs,
     GeneID = GeneID
   )
+  # Zero-overlap terms of the "all" family are adjusted over but never reported.
+  resultFis <- resultFis[resultFis$Significant > 0, , drop = FALSE]
   if (!is.null(extra_cols)) {
     resultFis <- cbind(resultFis, extra_cols[resultFis$Annot, , drop = FALSE])
   }
@@ -421,12 +437,18 @@
     effective_count = as.integer(length(effective_input)),
     excluded_by_universe_ids = setdiff(input[input %in% annotation_genes], effective_universe)
   )
-  testing <- list(family_policy = "positive_overlap_before_reporting_filters",
-                  tested_count = as.integer(length(stats$rhs)),
+  family_policy <- if (padj.family == "all") {
+    "size_bounded_all_eligible"
+  } else {
+    "size_bounded_positive_overlap"
+  }
+  testing <- list(family_policy = family_policy,
+                  tested_count = as.integer(length(family)),
                   effective_N = as.integer(N), effective_n = as.integer(n))
   options <- list(pvalue = pvalue, padj = padj, minSize = minSize,
                   maxSize = maxSize, minGSSize = minGSSize,
                   maxGSSize = maxGSSize, keepRich = keepRich,
+                  padj.family = padj.family,
                   padj.method = padj.method, ontology = metadata_ontology,
                   keytype = keytype, universe = if (is.null(universe)) NULL else universe)
   if (is.null(annotation_provenance)) {

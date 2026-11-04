@@ -1,18 +1,3 @@
-##' @method as.data.frame Annot
-##' @export
-as.data.frame.Annot<-function(x,...){
-  as.data.frame(x@annot)
-}
-##' @method as.data.frame richResult
-##' @export
-as.data.frame.richResult <- function(x, ...) {
-  as.data.frame(x@result, ...)
-}
-##' @method as.data.frame GSEAResult
-##' @export
-as.data.frame.GSEAResult <- function(x, ...) {
-  as.data.frame(x@result, ...)
-}
 
 # S4 row- and column-related methods (docs in accessors.R)
 
@@ -486,26 +471,6 @@ setAs(from = "data.frame", to = "richResult", def = function(from){
       sep            = ","
   )
 })
-
-#' rbind generic function for richResult object
-#' @param ... richResult objects to combine
-#'@export
-#'@author Kai Guo
-rbind.richResult<-function(...){
-    objects <- list(...)
-    objects <- lapply(objects,as.data.frame)
-    do.call(rbind, objects)
-}
-
-#' rbind generic function for GSEAResult object
-#' @param ... GSEAResult objects to combine
-#'@export
-#'@author Kai Guo
-rbind.GSEAResult<-function(...){
-  objects <- list(...)
-  objects <- lapply(objects,as.data.frame)
-  do.call(rbind, objects)
-}
 
 #' Remove newlines
 #'

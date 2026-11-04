@@ -2,36 +2,57 @@
 
 ## Version 0.2.0 (unreleased)
 
-- `detail(<GSEAResult>)` now emits a message that the class has no `detail`
-  slot and returns `as.data.frame(x@result)`. In 0.1.5 the call failed with
+### Requirements and packaging
+
+- richR now requires R 4.6 or later (`Depends: R (>= 4.6)`). The package
+  metadata follow Bioconductor conventions: non-empty `biocViews`, plus `URL`
+  and `BugReports` fields.
+- The `LazyData` field was removed. `data(path, package = "richR")` and the
+  other `data()` calls work as before, and richR's own functions load the
+  bundled data with `utils::data()`, so analysis results are unchanged.
+  Direct access such as `richR::path`, which worked in 0.1.5, now fails with
+  `'path' is not an exported object from 'namespace:richR'`; load the dataset
+  with `data()` first. The same applies to `godata`, `kegg.db`, `module` and
+  `pathway`.
+- Added `data-raw/` scripts (`kegg.R`, `module.R`, `path.R`, `pathway.R`) that
+  rebuild the bundled KEGG data and record the retrieval date. They were not
+  run for this release: the files in `data/` are unchanged, and the retrieval
+  dates of the bundled snapshots remain unknown.
+- Corrected the documentation of the bundled data: `godata` is a named list of
+  GO terms mapped to themselves and their offspring, not a data frame of gene
+  annotations.
+
+### Bug fixes
+
+- `detail(<GSEAResult>)` now returns `as.data.frame(x@result)` with a message
+  that the class has no `detail` slot. In 0.1.5 the call failed with
   `no slot of name "detail"` because an outdated duplicate method read a slot
   that `GSEAResult` does not have.
-- Added a characterization test baseline (testthat edition 3 snapshots on small
-  fixtures) that pins the 0.1.5 ORA, GSEA, `richLevel`, `compareResult`,
-  `compareGSEA`, `richCluster`, accessor and coercion behaviour.
+
+### Internal changes
+
+These changes do not alter results: the `NAMESPACE` file, and so the set of
+exported functions, is unchanged from 0.1.5, and the only characterization
+snapshot that changed is the `detail()` bug fix above.
+
 - Removed `R/misc.R`, which held outdated duplicate definitions of 32 functions
-  and 37 S4 methods or coercions, silently overriding or overridden by
-  `R/accessors.R`, `R/kappa.R`, `R/utils.R` and `R/species.R`. Each function and
-  method is now defined exactly once; its four unique definitions
-  (`reverseList_bk()`, `.clean.char()`, `.calGSEA()` and the
+  and 37 S4 methods or coercions that silently overrode, or were overridden by,
+  those in `R/accessors.R`, `R/kappa.R`, `R/utils.R` and `R/species.R`. Each
+  function and method is now defined once; the four definitions found only in
+  `R/misc.R` (`reverseList_bk()`, `.clean.char()`, `.calGSEA()` and the
   `data.frame` to `richResult` coercion) moved to `R/utils.R`, `R/richGSEA.R`
   and `R/accessors.R`.
-- `DESCRIPTION` now lists an explicit `Collate` field, in a logical order with the
-  class and generic definitions first.
-- Packaging moves toward Bioconductor conventions: version 0.2.0, `Depends: R (>= 4.6)`,
-  non-empty `biocViews`, `URL` and `BugReports`, `Config/testthat/edition: 3`, and no
-  `LazyData` field (bundled data are loaded with `utils::data()` and are unchanged).
-- Added `data-raw/` scripts (`kegg.R`, `module.R`, `path.R`, `pathway.R`) that rebuild
-  the bundled KEGG data and stamp the retrieval date. They are not run in this
-  release; the files in `data/` are unchanged, and the dates of the bundled snapshots
-  remain unknown.
-- Corrected the documentation of the bundled data: `godata` is a named list of GO
-  terms mapped to themselves and their offspring, not a data frame of gene
-  annotations.
-- Continuous integration runs `R CMD check` on R 4.6 with Bioconductor 3.23 on
-  Linux, macOS and Windows, and adds a BiocCheck step that reports findings without
-  failing the job. The test that builds annotations from `org.Hs.eg.db` is skipped
-  when that package is not installed.
+- `DESCRIPTION` now lists an explicit `Collate` field, with the class and
+  generic definitions first.
+- Added characterization tests (testthat edition 3 snapshots on small
+  fixtures) that pin the ORA, GSEA, `richLevel`, `compareResult`,
+  `compareGSEA`, `richCluster`, accessor and coercion behaviour of 0.1.5.
+
+### Known issues
+
+- `compareGSEA()` with a `padj` cutoff still fails with
+  `object 'Padj' not found`, as in 0.1.5. The characterization tests record
+  this behaviour; it is not fixed in this development snapshot.
 
 ## Version 0.1.5 (2026-10-20)
 

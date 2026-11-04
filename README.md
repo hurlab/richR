@@ -103,9 +103,14 @@ filtered <- dplyr::filter(resgo, Pvalue < 0.05)
 enrichmentInfo(filtered)$testing$tested_count
 ```
 
-Every analysis, comparison and plot function applies the same significance
-rule: a term is kept when `Pvalue <= pvalue` and, unless `padj` is `NULL`,
-`Padj <= padj`. The defaults are `pvalue = 0.05` and `padj = 0.05`.
+The analysis, comparison and plot functions apply one significance rule: a
+term is kept when `Pvalue <= pvalue` and, unless `padj` is `NULL`,
+`Padj <= padj`. The defaults are `pvalue = 0.05` and `padj = 0.05`. Two
+functions do not filter: `richVolcano()` draws every row and uses the cutoffs
+only for its dashed reference line (at `padj`, or at `pvalue` when
+`padj = NULL`), and `richGSEAcurve()` applies the rule only when it picks the
+pathways itself, never to explicit `pathways` or `pathway_pattern`
+selections.
 `padj = NULL` filters on the raw p-value only, `pvalue = 1` on the adjusted
 p-value alone, and `pvalue = 1, padj = 1` switches significance filtering
 off. Cutoffs must lie in (0, 1]. Rows removed at analysis time are not kept

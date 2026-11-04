@@ -44,6 +44,43 @@ Suggests:
     plotly,
     org.Hs.eg.db,
     reactome.db
+Collate:
+    00-AllClasses.R
+    AllGenerics.R
+    RcppExports.R
+    accessors.R
+    batch.R
+    compareResult.R
+    data.R
+    dplyr-methods.R
+    enrich.R
+    enrichmentInfo.R
+    ggbar.R
+    ggdot.R
+    ggdot_cluster.R
+    ggdot_cluster_gsea.R
+    ggheatmap.R
+    ggnetmap.R
+    ggnetwork.R
+    ggplots_new.R
+    ggplots_new_methods.R
+    ggrich.R
+    ggupset.R
+    import.R
+    kappa.R
+    makeAnnot.R
+    makeown.R
+    misc.R
+    richGO.R
+    richGSEA.R
+    richKEGG.R
+    richLevel.R
+    species.R
+    theme.R
+    utils.R
+    validate.R
+    zzz.R
+    zzz_ggplots_aliases.R
 VignetteBuilder: knitr
 RoxygenNote: 7.3.3
 biocViews:

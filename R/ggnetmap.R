@@ -4,7 +4,7 @@
 ##' @param gene vector contains gene names or dataframe with DEGs information
 ##' @param top number of terms to display
 ##' @param top.display top number to display
-##' @param pvalue cutoff value of pvalue (if padj set as NULL)
+##' @param pvalue raw p-value cutoff: a term is kept when \code{Pvalue <= pvalue} and, unless \code{padj} is NULL, \code{Padj <= padj}
 ##' @param padj cutoff value of p adjust value
 ##' @param usePadj use adjust p value as color or not
 ##' @param low color used for small value

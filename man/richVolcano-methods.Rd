@@ -128,9 +128,11 @@ richVolcano(
 
 \item{top}{max terms (default 50)}
 
-\item{pvalue}{p-value cutoff}
+\item{pvalue}{p-value cutoff; sets the dashed reference line only when
+\code{padj} is NULL (no rows are filtered)}
 
-\item{padj}{adjusted p-value cutoff}
+\item{padj}{adjusted p-value cutoff; the dashed reference line is drawn at
+\code{-log10(padj)} (no rows are filtered)}
 
 \item{usePadj}{use adjusted p-value for y-axis}
 

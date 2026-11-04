@@ -17,8 +17,10 @@ NULL
 #'
 #' @param resultFis data.frame of enrichment results (columns: Term, Pvalue, Padj)
 #' @param top number of top terms to display (default 20)
-#' @param pvalue p-value cutoff when \code{padj} is NULL
-#' @param padj adjusted-p cutoff (takes precedence when non-NULL)
+#' @param pvalue p-value cutoff: a term is kept when \code{Pvalue <= pvalue}
+#'   and, unless \code{padj} is NULL, \code{Padj <= padj}
+#' @param padj adjusted-p cutoff applied together with \code{pvalue}; NULL
+#'   filters on the raw p-value only
 #' @param usePadj logical; colour by adjusted p-value?
 #' @param low low-end gradient colour (default \code{"lightpink"})
 #' @param high high-end gradient colour (default \code{"red"})
@@ -76,8 +78,10 @@ gglollipop_internal <- function(resultFis,
 #'
 #' @param resultFis data.frame with GSEA or ORA results (columns vary; NES/pval/padj for GSEA, FoldEnrichment/Pvalue/Padj for ORA)
 #' @param top max number of top terms to display (default 50)
-#' @param pvalue p-value cutoff
-#' @param padj adjusted-p cutoff (overrides \code{pvalue} when supplied)
+#' @param pvalue p-value cutoff; sets the reference line only when \code{padj}
+#'   is NULL (no rows are filtered)
+#' @param padj adjusted-p cutoff; the dashed reference line is drawn at
+#'   \code{-log10(padj)} (no rows are filtered)
 #' @param usePadj logical, use adjusted p-value column for significance (default TRUE)
 #' @param low colour for down-regulated (negative-effect) points (default \code{"#2166ac"})
 #' @param mid colour at zero effect (default \code{"white"})

@@ -597,8 +597,14 @@ richGSEAplot <- function(term, object, gseaRes, top = 10, default = TRUE) {
 #' @param min_genes minimum gene set size filter
 #' @param max_genes maximum gene set size filter
 #' @param top number of terms you want to display (used when pathways is NULL)
-#' @param pvalue cutoff value of pvalue (if padj set as NULL, used when pathways is NULL)
-#' @param padj cutoff value of p adjust value (used when pathways is NULL)
+#' @param pvalue raw p-value cutoff, used only when \code{pathways} and
+#'   \code{pathway_pattern} are NULL: a pathway is drawn when
+#'   \code{pval <= pvalue} and, unless \code{padj} is NULL,
+#'   \code{padj <= padj}. The explicit \code{pathways} and
+#'   \code{pathway_pattern} selections are not significance-filtered by design;
+#'   they choose among the rows the \code{GSEAResult} already holds.
+#' @param padj adjusted p-value cutoff (used only when \code{pathways} and
+#'   \code{pathway_pattern} are NULL); NULL filters on the raw p-value only
 #' @param gseaParam GSEA parameter for enrichment score calculation
 #' @param ticksSize size of the tick marks
 #' @param plot_title title for the plot
@@ -954,8 +960,10 @@ richGSEAcurve <- function(object, gseaRes, mycol = NULL,
 
 #' Get available pathways from GSEA results
 #' @param gseaRes GSEAResult object
-#' @param padj_cutoff padj cutoff for filtering (if NULL, no filtering applied)
-#' @param pval_cutoff pvalue cutoff for filtering (used if padj_cutoff is NULL)
+#' @param padj_cutoff adjusted p-value cutoff in (0, 1]: a pathway is kept when
+#'   \code{padj <= padj_cutoff}; NULL applies no adjusted cutoff
+#' @param pval_cutoff raw p-value cutoff in (0, 1], applied together with
+#'   \code{padj_cutoff} (\code{pval <= pval_cutoff}); NULL applies no raw cutoff
 #' @param min_size minimum pathway size
 #' @param max_size maximum pathway size
 #' @export
@@ -1136,8 +1144,10 @@ getPathwayStats <- function(gseaRes, top = 10) {
 #' Filter pathways by multiple criteria
 #' @param gseaRes GSEAResult object
 #' @param nes_cutoff absolute NES cutoff
-#' @param padj_cutoff padj cutoff
-#' @param pval_cutoff pval cutoff (used if padj_cutoff is NULL)
+#' @param padj_cutoff adjusted p-value cutoff in (0, 1]: a pathway is kept when
+#'   \code{padj <= padj_cutoff}; NULL applies no adjusted cutoff
+#' @param pval_cutoff raw p-value cutoff in (0, 1], applied together with
+#'   \code{padj_cutoff} (\code{pval <= pval_cutoff}); NULL applies no raw cutoff
 #' @param min_size minimum pathway size
 #' @param max_size maximum pathway size
 #' @param direction filter by direction ("up", "down", or "both")

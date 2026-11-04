@@ -16,7 +16,7 @@
 ##' @importFrom ggplot2 guide_legend
 ##' @param object data.frame with enrichment results
 ##' @param top number of terms you want to display
-##' @param pvalue cutoff value of pvalue (if padj set as NULL)
+##' @param pvalue raw p-value cutoff: a term is kept when \code{Pvalue <= pvalue} and, unless \code{padj} is NULL, \code{Padj <= padj}
 ##' @param order order by Term or richFactor
 ##' @param low low color
 ##' @param high high color
@@ -78,7 +78,7 @@ ggdot_internal<-function(object,top=50,pvalue=0.05,order=FALSE,
 ##' @rdname richDot-methods
 ##' @param object richResult object
 ##' @param top number of terms you want to display
-##' @param pvalue cutoff value of pvalue (if padj set as NULL)
+##' @param pvalue raw p-value cutoff: a term is kept when \code{Pvalue <= pvalue} and, unless \code{padj} is NULL, \code{Padj <= padj}
 ##' @param order order by Term or richFactor
 ##' @param low low color
 ##' @param high high color
@@ -117,7 +117,7 @@ setMethod("richDot", signature(object = "richResult"),definition = function(obje
 ##' @rdname richDot-methods
 ##' @param object data.frame of enrichment results
 ##' @param top number of terms you want to display
-##' @param pvalue cutoff value of pvalue (if padj set as NULL)
+##' @param pvalue raw p-value cutoff: a term is kept when \code{Pvalue <= pvalue} and, unless \code{padj} is NULL, \code{Padj <= padj}
 ##' @param order order by Term or richFactor
 ##' @param low low color
 ##' @param high high color

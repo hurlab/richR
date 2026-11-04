@@ -84,8 +84,10 @@ setMethod("richLollipop", signature(object = "GSEAResult"), function(object, top
 #'
 #' @param object richResult, GSEAResult, or data.frame
 #' @param top max terms (default 50)
-#' @param pvalue p-value cutoff
-#' @param padj adjusted p-value cutoff
+#' @param pvalue p-value cutoff; sets the dashed reference line only when
+#'   \code{padj} is NULL (no rows are filtered)
+#' @param padj adjusted p-value cutoff; the dashed reference line is drawn at
+#'   \code{-log10(padj)} (no rows are filtered)
 #' @param usePadj use adjusted p-value for y-axis
 #' @param low low-end gradient colour (negative effect)
 #' @param mid midpoint gradient colour

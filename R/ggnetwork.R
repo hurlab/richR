@@ -3,7 +3,7 @@
 ##' @param object richResult,GSEAResult object or dataframe
 ##' @param gene vector contains gene names or dataframe with DEGs information
 ##' @param top number of terms to display
-##' @param pvalue cutoff value of pvalue (if padj set as NULL)
+##' @param pvalue raw p-value cutoff: a term is kept when \code{Pvalue <= pvalue} and, unless \code{padj} is NULL, \code{Padj <= padj}
 ##' @param padj cutoff value of p adjust value
 ##' @param usePadj use p adjust value as color or not (should use with padj)
 ##' @param low color used for small value
@@ -200,7 +200,7 @@ ggnetwork_internal<-function (object=object,gene=gene,top = 50, pvalue = 0.05, p
 ##' @rdname richNetwork-methods
 ##' @param object richResult object
 ##' @param top number of terms to display
-##' @param pvalue cutoff value of pvalue (if padj set as NULL)
+##' @param pvalue raw p-value cutoff: a term is kept when \code{Pvalue <= pvalue} and, unless \code{padj} is NULL, \code{Padj <= padj}
 ##' @param padj cutoff value of p adjust value
 ##' @param usePadj use p adjust value as color or not
 ##' @param low color used for small value
@@ -245,7 +245,7 @@ setMethod("richNetwork", signature(object = "richResult"),definition = function(
 ##' @param object data.frame of enrichment results
 ##' @param gene vector contains gene names
 ##' @param top number of terms to display
-##' @param pvalue cutoff value of pvalue (if padj set as NULL)
+##' @param pvalue raw p-value cutoff: a term is kept when \code{Pvalue <= pvalue} and, unless \code{padj} is NULL, \code{Padj <= padj}
 ##' @param padj cutoff value of p adjust value
 ##' @param usePadj use p adjust value as color or not
 ##' @param low color used for small value
@@ -292,7 +292,7 @@ setMethod("richNetwork", signature(object = "data.frame"),definition = function(
 ##' @param object GSEAResult object
 ##' @param gene vector contains gene names
 ##' @param top number of terms to display
-##' @param pvalue cutoff value of pvalue (if padj set as NULL)
+##' @param pvalue raw p-value cutoff: a term is kept when \code{Pvalue <= pvalue} and, unless \code{padj} is NULL, \code{Padj <= padj}
 ##' @param padj cutoff value of p adjust value
 ##' @param usePadj use p adjust value as color or not
 ##' @param low color used for small value

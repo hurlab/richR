@@ -34,9 +34,12 @@ pathway removed by the cutoffs in every group is warned about}
 
 \item{mycol}{a vector indicate the colors used for the figure}
 
-\item{pvalue}{cutoff value of pvalue (if padj set as NULL)}
+\item{pvalue}{raw p-value cutoff in (0, 1]: a pathway is kept in a group
+when its \code{pval <= pvalue} and, unless \code{padj} is NULL, its
+\code{padj} is \code{<=} the \code{padj} cutoff}
 
-\item{padj}{cutoff value of p adjust value}
+\item{padj}{adjusted p-value cutoff in (0, 1], applied together with
+\code{pvalue}; NULL filters on the raw p-value only}
 
 \item{label}{display the NES values or not}
 

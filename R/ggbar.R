@@ -14,7 +14,7 @@
 ##' @rdname richBar
 ##' @param resultFis data frame of enrichment results
 ##' @param top number of terms you want to display,
-##' @param pvalue cutoff value of pvalue (if padj set as NULL)
+##' @param pvalue raw p-value cutoff: a term is kept when \code{Pvalue <= pvalue} and, unless \code{padj} is NULL, \code{Padj <= padj}
 ##' @param order order by Term or richFactor
 ##' @param horiz horiz or not
 ##' @param low low color

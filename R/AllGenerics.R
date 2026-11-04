@@ -246,7 +246,7 @@ setGeneric("richLevel", function(x,kodata,level="Level2",pvalue =0.05, padj=0.05
 ##' @title richDot method
 ##' @param object enrichment result or data.frame
 ##' @param top number of terms you want to display
-##' @param pvalue cutoff value of pvalue (if padj set as NULL)
+##' @param pvalue raw p-value cutoff: a term is kept when \code{Pvalue <= pvalue} and, unless \code{padj} is NULL, \code{Padj <= padj}
 ##' @param order order by Term or richFactor
 ##' @param low low color
 ##' @param high high color
@@ -287,7 +287,7 @@ setGeneric("richDot", function(object,top=50,pvalue=0.05,order=FALSE,
 ##' @title ggbar method
 ##' @param object enrichment result or data.frame
 ##' @param top number of terms you want to display
-##' @param pvalue cutoff value of pvalue (if padj set as NULL)
+##' @param pvalue raw p-value cutoff: a term is kept when \code{Pvalue <= pvalue} and, unless \code{padj} is NULL, \code{Padj <= padj}
 ##' @param padj cutoff value of p adjust value
 ##' @param order order by Term or richFactor
 ##' @param usePadj use p adjust value as color or not
@@ -371,7 +371,7 @@ setGeneric("richNetplot",function(object,top=50, pvalue=0.05, padj=0.05,
 ##' @param object richResult,GSEAResult object or dataframe
 ##' @param gene vector contains gene names or dataframe with DEGs information
 ##' @param top number of terms to display
-##' @param pvalue cutoff value of pvalue (if padj set as NULL)
+##' @param pvalue raw p-value cutoff: a term is kept when \code{Pvalue <= pvalue} and, unless \code{padj} is NULL, \code{Padj <= padj}
 ##' @param padj cutoff value of p adjust value
 ##' @param usePadj use p adjust value as color or not (should use with padj)
 ##' @param low color used for small value

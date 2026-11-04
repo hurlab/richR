@@ -2,13 +2,16 @@
 #' @param x Non-empty list of richResult objects, result data.frames, or NULL
 #'   entries. Unnamed lists receive positional Group labels; explicit names
 #'   must be nonblank and unique.
-#' @param pvalue Strict raw p-value cutoff used when \code{padj} is NULL; such
-#'   rows must also satisfy \code{Padj < 1}.
-#' @param padj Strict adjusted p-value cutoff; when supplied, rows must also
-#'   satisfy \code{Pvalue < 1}.
+#' @param pvalue Raw p-value cutoff in (0, 1]: a row is kept when
+#'   \code{Pvalue <= pvalue} and, unless \code{padj} is NULL,
+#'   \code{Padj <= padj}. Rows with a missing \code{Pvalue} are dropped.
+#' @param padj Adjusted p-value cutoff in (0, 1], applied together with
+#'   \code{pvalue}; NULL filters on the raw p-value only. Use
+#'   \code{pvalue = 1} to filter on \code{Padj} alone and
+#'   \code{pvalue = 1, padj = 1} to keep every row with a p-value.
 #' @param include.all Preserve all input group names as factor levels in input order,
-#'   including groups with no retained rows. The same strict significance
-#'   filtering still applies, and no placeholder terms are created.
+#'   including groups with no retained rows. The same significance filtering
+#'   still applies, and no placeholder terms are created.
 #' @examples
 #' \dontrun{
 #' hsako <- buildAnnot(species="human",keytype="SYMBOL",anntype = "KEGG")
@@ -84,7 +87,7 @@ compareResult<-function (x, pvalue = 0.05, padj = 0.05,include.all=FALSE)
 ##' @importFrom ggplot2 guide_colourbar
 ##' @importFrom ggplot2 guide_legend
 ##' @param x dataframe of enrichment result
-##' @param pvalue cutoff value of pvalue (if padj set as NULL)
+##' @param pvalue raw p-value cutoff: a term is kept when \code{Pvalue <= pvalue} and, unless \code{padj} is NULL, \code{Padj <= padj}
 ##' @param low low color
 ##' @param high high color
 ##' @param level the level for KEGG pathway
@@ -101,8 +104,10 @@ compareResult<-function (x, pvalue = 0.05, padj = 0.05,include.all=FALSE)
 ##' @param width figure width
 ##' @param height figure height
 ##' @param include.all Preserve all supplied group labels on the x-axis,
-##'   including groups with no retained rows. This plotting option uses the
-##'   existing inclusive display cutoffs; it does not create placeholder terms.
+##'   including groups with no retained rows. With \code{include.all = TRUE}
+##'   the plot skips \code{pvalue} and \code{padj} and draws every input row
+##'   (filter in \code{compareResult()} instead); it does not create
+##'   placeholder terms.
 ##' @examples
 #' \dontrun{
 #' hsako <- buildAnnot(species="human",keytype="SYMBOL",anntype = "KEGG")
@@ -184,8 +189,11 @@ richCompareDot<-function (x, pvalue = 0.05, low = "lightpink", high = "red",leve
 #'   shared by several pathways, or a value matching nothing, is an error, and a
 #'   pathway removed by the cutoffs in every group is warned about
 #' @param mycol a vector indicate the colors used for the figure
-#' @param pvalue cutoff value of pvalue (if padj set as NULL)
-#' @param padj cutoff value of p adjust value
+#' @param pvalue raw p-value cutoff in (0, 1]: a pathway is kept in a group
+#'   when its \code{pval <= pvalue} and, unless \code{padj} is NULL, its
+#'   \code{padj} is \code{<=} the \code{padj} cutoff
+#' @param padj adjusted p-value cutoff in (0, 1], applied together with
+#'   \code{pvalue}; NULL filters on the raw p-value only
 #' @param label display the NES values or not
 #' @param gseaParam GSEA parameter for enrichment score calculation
 #' @param ticksSize size of the tick marks

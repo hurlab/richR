@@ -27,9 +27,11 @@ ggvolcano_internal(
 
 \item{top}{max number of top terms to display (default 50)}
 
-\item{pvalue}{p-value cutoff}
+\item{pvalue}{p-value cutoff; sets the reference line only when \code{padj}
+is NULL (no rows are filtered)}
 
-\item{padj}{adjusted-p cutoff (overrides \code{pvalue} when supplied)}
+\item{padj}{adjusted-p cutoff; the dashed reference line is drawn at
+\code{-log10(padj)} (no rows are filtered)}
 
 \item{usePadj}{logical, use adjusted p-value column for significance (default TRUE)}
 

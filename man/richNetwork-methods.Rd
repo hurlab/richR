@@ -181,7 +181,7 @@ richNetwork(
 
 \item{top}{number of terms to display}
 
-\item{pvalue}{cutoff value of pvalue (if padj set as NULL)}
+\item{pvalue}{raw p-value cutoff: a term is kept when \code{Pvalue <= pvalue} and, unless \code{padj} is NULL, \code{Padj <= padj}}
 
 \item{padj}{cutoff value of p adjust value}
 

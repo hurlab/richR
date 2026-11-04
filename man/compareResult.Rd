@@ -11,15 +11,18 @@ compareResult(x, pvalue = 0.05, padj = 0.05, include.all = FALSE)
 entries. Unnamed lists receive positional Group labels; explicit names
 must be nonblank and unique.}
 
-\item{pvalue}{Strict raw p-value cutoff used when \code{padj} is NULL; such
-rows must also satisfy \code{Padj < 1}.}
+\item{pvalue}{Raw p-value cutoff in (0, 1]: a row is kept when
+\code{Pvalue <= pvalue} and, unless \code{padj} is NULL,
+\code{Padj <= padj}. Rows with a missing \code{Pvalue} are dropped.}
 
-\item{padj}{Strict adjusted p-value cutoff; when supplied, rows must also
-satisfy \code{Pvalue < 1}.}
+\item{padj}{Adjusted p-value cutoff in (0, 1], applied together with
+\code{pvalue}; NULL filters on the raw p-value only. Use
+\code{pvalue = 1} to filter on \code{Padj} alone and
+\code{pvalue = 1, padj = 1} to keep every row with a p-value.}
 
 \item{include.all}{Preserve all input group names as factor levels in input order,
-including groups with no retained rows. The same strict significance
-filtering still applies, and no placeholder terms are created.}
+including groups with no retained rows. The same significance filtering
+still applies, and no placeholder terms are created.}
 }
 \description{
 compare enrichment results across different samples

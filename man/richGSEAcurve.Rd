@@ -89,9 +89,15 @@ matching nothing, is an error}
 
 \item{top}{number of terms you want to display (used when pathways is NULL)}
 
-\item{pvalue}{cutoff value of pvalue (if padj set as NULL, used when pathways is NULL)}
+\item{pvalue}{raw p-value cutoff, used only when \code{pathways} and
+\code{pathway_pattern} are NULL: a pathway is drawn when
+\code{pval <= pvalue} and, unless \code{padj} is NULL,
+\code{padj <= padj}. The explicit \code{pathways} and
+\code{pathway_pattern} selections are not significance-filtered by design;
+they choose among the rows the \code{GSEAResult} already holds.}
 
-\item{padj}{cutoff value of p adjust value (used when pathways is NULL)}
+\item{padj}{adjusted p-value cutoff (used only when \code{pathways} and
+\code{pathway_pattern} are NULL); NULL filters on the raw p-value only}
 
 \item{gseaParam}{GSEA parameter for enrichment score calculation}
 

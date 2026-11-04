@@ -24,9 +24,11 @@ gglollipop_internal(
 
 \item{top}{number of top terms to display (default 20)}
 
-\item{pvalue}{p-value cutoff when \code{padj} is NULL}
+\item{pvalue}{p-value cutoff: a term is kept when \code{Pvalue <= pvalue}
+and, unless \code{padj} is NULL, \code{Padj <= padj}}
 
-\item{padj}{adjusted-p cutoff (takes precedence when non-NULL)}
+\item{padj}{adjusted-p cutoff applied together with \code{pvalue}; NULL
+filters on the raw p-value only}
 
 \item{usePadj}{logical; colour by adjusted p-value?}
 

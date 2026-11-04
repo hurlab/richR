@@ -73,6 +73,12 @@ head(resgo)
 # KEGG enrichment
 resko <- richKEGG(gene, kodata = hsako, pvalue = 0.05)
 
+# Significance cutoffs: a term is reported when Pvalue <= pvalue AND
+# Padj <= padj (defaults pvalue = 0.05, padj = 0.05)
+resko_raw <- richKEGG(gene, kodata = hsako, padj = NULL)          # raw p only
+resko_adj <- richKEGG(gene, kodata = hsako, pvalue = 1)           # Padj only
+resko_all <- richKEGG(gene, kodata = hsako, pvalue = 1, padj = 1) # no cutoff
+
 # GSEA (requires a named numeric vector)
 genelist <- rnorm(1000)
 names(genelist) <- sample(unique(hsako$GeneID), 1000)
@@ -98,10 +104,26 @@ filtered <- dplyr::filter(resgo, Pvalue < 0.05)
 enrichmentInfo(filtered)$testing$tested_count
 ```
 
-ORA counts each valid query ID once. Adjusted p-values cover terms with
-positive query overlap before size and significance filters. With
-`keepRich = TRUE`, fully rich terms (`RichFactor == 1`) can pass the lower size
-cutoffs; upper size bounds and the significance cutoff still apply.
+Every analysis, comparison and plot function applies the same significance
+rule: a term is kept when `Pvalue <= pvalue` and, unless `padj` is `NULL`,
+`Padj <= padj`. The defaults are `pvalue = 0.05` and `padj = 0.05`.
+`padj = NULL` filters on the raw p-value only, `pvalue = 1` on the adjusted
+p-value alone, and `pvalue = 1, padj = 1` switches significance filtering
+off. Cutoffs must lie in (0, 1]. Rows removed at analysis time are not kept
+in the result, so a later plot with looser cutoffs cannot bring them back;
+run the analysis with `pvalue = 1, padj = 1` if you want to choose cutoffs
+later.
+
+ORA counts each valid query ID once. Adjusted p-values cover the terms whose
+annotated size lies in [`minGSSize`, `maxGSSize`] and that share at least one
+gene with the query (the clusterProfiler/DOSE convention);
+`padj.family = "all"` adjusts over every size-eligible term instead, with
+zero-overlap terms contributing p = 1. The default family is a convention,
+not an FDR guarantee. `minSize`, `maxSize`, `keepRich` and the cutoffs are
+applied afterwards and never change an adjusted value. With
+`keepRich = TRUE`, fully rich terms (`RichFactor == 1`) are exempt from the
+`minSize` filter only; with the default sizes (`minGSSize = 10`,
+`minSize = 2`) this changes nothing.
 
 `enrichmentInfo()` reports input mapping, effective background, tested-family,
 annotation, and provenance details. Legacy objects without recorded metadata
@@ -123,6 +145,14 @@ res_gsea <- richGSEA(genelist, object = hsako, eps = 0,
 `padj.method` is applied to p-values for the full backend-returned pathway set
 before result filtering, so choosing a non-BH method can change adjusted
 p-values.
+
+GSEA gene sets are keyed by annotation identifier: `pathway` holds the
+identifier (for example `04110` for a KEGG pathway) and the `Term` column
+holds its label. Select pathways by label with `Term`, not `pathway`:
+
+```r
+subset(result(res_gsea), Term == "Cell cycle")
+```
 
 `parGSEA()` forwards the same controls. With `simplify = FALSE` it returns a
 `GSEAResult` with metadata; `simplify = TRUE` returns a data frame.
@@ -238,6 +268,8 @@ richNES(res_gsea, top = 20)
 
 # Running enrichment score curve (classic GSEA plot)
 richGSEAcurve(object = hsako, gseaRes = res_gsea)
+# pathways: identifier ("04110"), KEGG id with organism prefix ("hsa04110"),
+# or a unique Term label; explicit selections are not significance-filtered
 richGSEAcurve(object = hsako, gseaRes = res_gsea, pathways = "hsa04110")
 
 # ECDF step plot — cumulative rank distribution of gene sets
@@ -367,12 +399,15 @@ batch_res$status  # success, empty, or failed for each original group
 batch_res$combined # exact rows returned by each successful enrichment
 ```
 
-`compareResult()` keeps its strict significance cutoffs. With
+`compareResult()` applies the shared significance rule to every group
+(`Pvalue <= pvalue` and, unless `padj = NULL`, `Padj <= padj`; defaults
+0.05 and 0.05) without further guards. With
 `include.all = TRUE`, its `group` column is a factor with levels in input
 order that retains every supplied group label, even when the group has no
 significant terms;
 `richCompareDot(..., include.all = TRUE)` keeps those labels on the x-axis
-without adding placeholder terms. `batchEnrich()` preserves valid empty
+without adding placeholder terms, and draws every input row without
+applying its own cutoffs. `batchEnrich()` preserves valid empty
 results, combines the rows already returned by each group without applying a
 second cutoff, and returns a `status` data frame with `group`, `status`,
 `n_terms`, and `error` columns. A zero-row enrichment is `empty`; an exception

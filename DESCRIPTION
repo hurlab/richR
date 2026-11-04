@@ -48,13 +48,24 @@ Collate:
     00-AllClasses.R
     AllGenerics.R
     RcppExports.R
-    accessors.R
-    batch.R
-    compareResult.R
-    data.R
-    dplyr-methods.R
+    utils.R
+    species.R
+    validate.R
+    makeAnnot.R
+    makeown.R
+    import.R
     enrich.R
+    richGO.R
+    richKEGG.R
+    richLevel.R
+    richGSEA.R
+    kappa.R
+    compareResult.R
+    batch.R
     enrichmentInfo.R
+    accessors.R
+    dplyr-methods.R
+    theme.R
     ggbar.R
     ggdot.R
     ggdot_cluster.R
@@ -66,18 +77,7 @@ Collate:
     ggplots_new_methods.R
     ggrich.R
     ggupset.R
-    import.R
-    kappa.R
-    makeAnnot.R
-    makeown.R
-    richGO.R
-    richGSEA.R
-    richKEGG.R
-    richLevel.R
-    species.R
-    theme.R
-    utils.R
-    validate.R
+    data.R
     zzz.R
     zzz_ggplots_aliases.R
 VignetteBuilder: knitr

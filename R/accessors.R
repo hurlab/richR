@@ -418,6 +418,7 @@ setMethod("detail", signature = "GSEAResult", function(x) {
 ## ----------------------------------------------------------------
 
 #' rbind for richResult objects
+#' @param ... richResult objects to combine
 #' @importFrom S4Vectors bindROWS
 #' @export
 #' @author Kai Guo
@@ -428,6 +429,7 @@ rbind.richResult <- function(...) {
 }
 
 #' rbind for GSEAResult objects
+#' @param ... GSEAResult objects to combine
 #' @importFrom S4Vectors bindROWS
 #' @export
 #' @author Kai Guo
@@ -436,3 +438,38 @@ rbind.GSEAResult <- function(...) {
   objects <- lapply(objects, as.data.frame)
   bindROWS(objects[[1L]], objects = objects[-1L])
 }
+
+##'
+##'
+setAs(from = "data.frame", to = "richResult", def = function(from){
+  keytype <- character()
+  organism <- character()
+  ontology <- character()
+  pvalueCutoff <- numeric()
+  pAdjustMethod <-character()
+  padjCutoff <- numeric()
+  Annot <- from$Annot
+  Term <- from$Term
+  Annotated <- from$Annotated
+  Significant <- from$Significant
+  Pvalue <- from$Pvalue
+  Padj <- from$Padj
+  GeneID <- as.vector(from$GeneID)
+  gene<-unique(unlist(strsplit(GeneID,",")))
+  genenumber <- length(gene)
+  resultFis <- data.frame(Annot, Term, Annotated, Significant, Pvalue, Padj, GeneID)
+  rownames(resultFis) <- Annot
+  new("richResult",
+      result=resultFis,
+      detail=data.frame(),
+      pvalueCutoff   = pvalueCutoff,
+      pAdjustMethod  = pAdjustMethod,
+      padjCutoff   = padjCutoff,
+      genenumber    = genenumber,
+      organism       = organism,
+      ontology       = ontology,
+      gene           = gene,
+      keytype        = keytype,
+      sep            = ","
+  )
+})

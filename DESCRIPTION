@@ -70,7 +70,6 @@ Collate:
     kappa.R
     makeAnnot.R
     makeown.R
-    misc.R
     richGO.R
     richGSEA.R
     richKEGG.R

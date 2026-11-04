@@ -6,6 +6,17 @@
   slot and returns `as.data.frame(x@result)`. In 0.1.5 the call failed with
   `no slot of name "detail"` because an outdated duplicate method read a slot
   that `GSEAResult` does not have.
+- Added a characterization test baseline (testthat edition 3 snapshots on small
+  fixtures) that pins the 0.1.5 ORA, GSEA, `richLevel`, `compareResult`,
+  `compareGSEA`, `richCluster`, accessor and coercion behaviour.
+- Removed `R/misc.R`, which held outdated duplicate definitions of 32 functions
+  and 37 S4 methods or coercions, silently overriding or overridden by
+  `R/accessors.R`, `R/kappa.R`, `R/utils.R` and `R/species.R`. Each function and
+  method is now defined exactly once; its four unique definitions
+  (`reverseList_bk()`, `.clean.char()`, `.calGSEA()` and the
+  `data.frame` to `richResult` coercion) moved to `R/utils.R`, `R/richGSEA.R`
+  and `R/accessors.R`.
+- `DESCRIPTION` now lists an explicit `Collate` field.
 
 ## Version 0.1.5 (2026-10-20)
 

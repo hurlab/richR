@@ -145,6 +145,12 @@
   pathway. In 0.1.x, groups whose retained pathways differed in set or order
   received values from the wrong pathway, and pathways retained only by a
   later group were dropped.
+- `richGSEAcurve()` and `compareGSEA()` stop with "no pathway passes the
+  cutoffs" when the cutoffs leave nothing to draw, instead of failing with an
+  unrelated data-frame error; the stricter 0.2.0 defaults make this case more
+  common. `richGSEAcurve()` and `richVolcano()` (with its aliases
+  `ggvolcano()` and `ggVolcano()`) now validate `pvalue` and `padj` even when
+  they do not filter rows.
 - `detail(<GSEAResult>)` now returns `as.data.frame(x@result)` with a message
   that the class has no `detail` slot. In 0.1.5 the call failed with
   `no slot of name "detail"` because an outdated duplicate method read a slot

@@ -111,6 +111,10 @@ ggvolcano_internal <- function(resultFis,
                                width      = 10,
                                height     = 8) {
 
+  # No row is filtered here; the cutoffs only place the reference line, but
+  # they are validated with the shared rule like every other entry point.
+  .check_cutoff(pvalue, "pvalue")
+  .check_cutoff(padj, "padj", allow_null = TRUE)
   resultFis <- .standardise_gsea_cols(resultFis)
   if (nrow(resultFis) > top) resultFis <- resultFis[seq_len(top), ]
   if (isTRUE(short)) resultFis$Term <- vapply(resultFis$Term, function(x) .paste.char(x, n = 6), character(1))

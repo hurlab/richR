@@ -342,3 +342,55 @@ test_that("ORA under the default cutoffs applies the adjusted cutoff; padj = NUL
   expect_gt(nrow(raw_only@result), 0L)
   expect_identical(raw_only@padjCutoff, numeric(0))
 })
+
+# ---- Post-review: empty selections and cutoff validation ---------------------
+
+policy_curve_annot <- function() {
+  data.frame(GeneID = sprintf("g%02d", 1:12),
+             Term = rep(c("EQ", "RAW", "ADJ"), each = 4),
+             stringsAsFactors = FALSE)
+}
+
+test_that("richGSEAcurve() stops clearly when no pathway passes the cutoffs", {
+  skip_if_not_installed("fgsea")
+  expect_error(richR::richGSEAcurve(policy_curve_annot(), policy_gsea(),
+                                    pvalue = 0.01, padj = 0.01),
+               "no pathway passes the cutoffs")
+})
+
+test_that("compareGSEA() stops clearly when no pathway passes the cutoffs", {
+  skip_if_not_installed("fgsea")
+  annot <- data.frame(GeneID = sprintf("g%02d", 1:8),
+                      Term = rep(c("RAWSMALL", "ADJSMALL"), each = 4),
+                      stringsAsFactors = FALSE)
+  x <- list(A = policy_compare_gsea())
+  expect_error(richR::compareGSEA(x, annot, pvalue = 1e-12, padj = 1e-12),
+               "no pathway passes the cutoffs")
+  # the selected pathway is removed by the cutoffs in every group
+  expect_error(suppressWarnings(richR::compareGSEA(x, annot, pathway = "ADJSMALL",
+                                                   padj = NULL)),
+               "no pathway passes the cutoffs")
+})
+
+test_that("richGSEAcurve() validates cutoffs for explicit selections too", {
+  x <- policy_gsea()
+  for (bad in policy_bad_cutoffs) {
+    expect_error(richR::richGSEAcurve(policy_curve_annot(), x, pathways = "EQ",
+                                      pvalue = bad), policy_cutoff_error)
+    expect_error(richR::richGSEAcurve(policy_curve_annot(), x, pathway_pattern = "EQ",
+                                      padj = bad), policy_cutoff_error)
+  }
+})
+
+test_that("richVolcano() and its aliases validate cutoffs", {
+  frame <- policy_rows()
+  gsea <- policy_gsea()
+  for (bad in policy_bad_cutoffs) {
+    expect_error(richR::richVolcano(frame, pvalue = bad), policy_cutoff_error)
+    expect_error(richR::richVolcano(frame, padj = bad), policy_cutoff_error)
+    expect_error(richR::ggvolcano(gsea, pvalue = bad), policy_cutoff_error)
+    expect_error(richR::ggVolcano(gsea, padj = bad), policy_cutoff_error)
+  }
+  expect_s3_class(richR::richVolcano(frame, pvalue = 1, padj = 1), "ggplot")
+  expect_s3_class(richR::richVolcano(gsea, padj = NULL), "ggplot")
+})

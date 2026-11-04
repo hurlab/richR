@@ -689,6 +689,11 @@ richGSEAcurve <- function(object, gseaRes, mycol = NULL,
     stop("pathways must be a character vector")
   }
 
+  # Cutoffs are validated whichever selection branch runs (explicit
+  # selections are not significance-filtered, but the arguments are checked).
+  .check_cutoff(pvalue, "pvalue")
+  .check_cutoff(padj, "padj", allow_null = TRUE)
+
   result_terms <- .gsea_result_terms(gseaRes_result)
 
   # Select pathways to display (identifiers)
@@ -710,19 +715,21 @@ richGSEAcurve <- function(object, gseaRes, mycol = NULL,
     }
   } else {
     # Use filtering criteria: the significance predicate (raw AND adjusted)
-    .check_cutoff(pvalue, "pvalue")
-    .check_cutoff(padj, "padj", allow_null = TRUE)
     sig_indices <- .sig_keep(gseaRes_result, pvalue, padj,
                              p_col = "pval", padj_col = "padj")
 
     sigpathway <- gseaRes_result$pathway[sig_indices]
     sig_nes <- gseaRes_result$NES[sig_indices]
+    if(length(sigpathway) == 0) {
+      stop("richGSEAcurve: no pathway passes the cutoffs (pvalue = ", pvalue,
+           ", padj = ", if (is.null(padj)) "NULL" else padj, ").", call. = FALSE)
+    }
 
     if(top > length(sigpathway)) {
       top <- length(sigpathway)
     }
-    sigpathway <- sigpathway[1:top]
-    sig_nes <- sig_nes[1:top]
+    sigpathway <- sigpathway[seq_len(top)]
+    sig_nes <- sig_nes[seq_len(top)]
   }
 
   # Apply gene set size filtering

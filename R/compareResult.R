@@ -251,6 +251,13 @@ compareGSEA<-function(x,object,gene=NULL,pathway=NULL,
               paste(filtered_out, collapse = ", "), call. = FALSE)
     }
   }
+  retained <- unique(unlist(sigpathway, use.names = FALSE))
+  if (!is.null(pathway)) retained <- intersect(pathway, retained)
+  if (!length(retained)) {
+    stop("compareGSEA: no pathway passes the cutoffs (pvalue = ", pvalue,
+         ", padj = ", if (is.null(padj)) "NULL" else padj, ") in any group",
+         if (!is.null(pathway)) " among the selected pathways", ".", call. = FALSE)
+  }
   # Value tables keyed by group and pathway identifier: one row per retained
   # pathway of each group, never aligned by position across groups.
   keyed_values <- function(column, value_name) {

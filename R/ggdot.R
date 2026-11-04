@@ -16,7 +16,7 @@
 ##' @importFrom ggplot2 guide_legend
 ##' @param object data.frame with enrichment results
 ##' @param top number of terms you want to display
-##' @param pvalue cutoff value of pvalue (if padj set as NULL)
+##' @param pvalue raw p-value cutoff: a term is kept when \code{Pvalue <= pvalue} and, unless \code{padj} is NULL, \code{Padj <= padj}
 ##' @param order order by Term or richFactor
 ##' @param low low color
 ##' @param high high color
@@ -36,12 +36,8 @@ ggdot_internal<-function(object,top=50,pvalue=0.05,order=FALSE,
                          low="lightpink",high="red",alpha=0.7,
                          font.x="bold",font.y="bold",fontsize.x=10,fontsize.y=10,
                          short=FALSE,
-                         padj=NULL,usePadj=TRUE,orderp=FALSE,filename=NULL,width=10,height=8){
-  if(!is.null(padj)){
-    object<-object[object$Padj<padj,]
-  }else{
-    object<-object[object$Pvalue<pvalue,]
-  }
+                         padj=0.05,usePadj=TRUE,orderp=FALSE,filename=NULL,width=10,height=8){
+  object <- .sig_filter(object, pvalue, padj)
   if(nrow(object)>=top){
     dd<-object[1:top,]
   }else{
@@ -82,7 +78,7 @@ ggdot_internal<-function(object,top=50,pvalue=0.05,order=FALSE,
 ##' @rdname richDot-methods
 ##' @param object richResult object
 ##' @param top number of terms you want to display
-##' @param pvalue cutoff value of pvalue (if padj set as NULL)
+##' @param pvalue raw p-value cutoff: a term is kept when \code{Pvalue <= pvalue} and, unless \code{padj} is NULL, \code{Padj <= padj}
 ##' @param order order by Term or richFactor
 ##' @param low low color
 ##' @param high high color
@@ -111,7 +107,7 @@ setMethod("richDot", signature(object = "richResult"),definition = function(obje
                                                                           low="lightpink",high="red",alpha=0.7,
                                                                           font.x="bold",font.y="bold",fontsize.x=10,fontsize.y=10,
                                                                           short=FALSE,
-                                                                          padj=NULL,usePadj=TRUE,orderp=FALSE,filename=NULL,width=10,height=8) {
+                                                                          padj=0.05,usePadj=TRUE,orderp=FALSE,filename=NULL,width=10,height=8) {
             ggdot_internal(object@result,top=top,pvalue=pvalue,order=order,
                            low=low,high=high,alpha=alpha,
                            font.x=font.x,font.y=font.y,fontsize.x=fontsize.x,fontsize.y=fontsize.y,
@@ -121,7 +117,7 @@ setMethod("richDot", signature(object = "richResult"),definition = function(obje
 ##' @rdname richDot-methods
 ##' @param object data.frame of enrichment results
 ##' @param top number of terms you want to display
-##' @param pvalue cutoff value of pvalue (if padj set as NULL)
+##' @param pvalue raw p-value cutoff: a term is kept when \code{Pvalue <= pvalue} and, unless \code{padj} is NULL, \code{Padj <= padj}
 ##' @param order order by Term or richFactor
 ##' @param low low color
 ##' @param high high color
@@ -150,7 +146,7 @@ setMethod("richDot", signature(object = "data.frame"),definition = function(obje
                                                                           low="lightpink",high="red",alpha=0.7,
                                                                           font.x="bold",font.y="bold",fontsize.x=10,fontsize.y=10,
                                                                           short=FALSE,
-                                                                          padj=NULL,usePadj=TRUE,orderp=FALSE,filename=NULL,width=10,height=8) {
+                                                                          padj=0.05,usePadj=TRUE,orderp=FALSE,filename=NULL,width=10,height=8) {
             ggdot_internal(object,top=top,pvalue=pvalue,order=order,
                            low=low,high=high,alpha=alpha,
                            font.x=font.x,font.y=font.y,fontsize.x=fontsize.x,fontsize.y=fontsize.y,

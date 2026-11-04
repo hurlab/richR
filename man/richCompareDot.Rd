@@ -18,7 +18,7 @@ richCompareDot(
   fontsize.x = 10,
   fontsize.y = 10,
   short = FALSE,
-  padj = NULL,
+  padj = 0.05,
   usePadj = TRUE,
   filename = NULL,
   width = 10,
@@ -39,7 +39,7 @@ comparedot(
   fontsize.x = 10,
   fontsize.y = 10,
   short = FALSE,
-  padj = NULL,
+  padj = 0.05,
   usePadj = TRUE,
   filename = NULL,
   width = 10,
@@ -50,7 +50,7 @@ comparedot(
 \arguments{
 \item{x}{dataframe of enrichment result}
 
-\item{pvalue}{cutoff value of pvalue (if padj set as NULL)}
+\item{pvalue}{raw p-value cutoff: a term is kept when \code{Pvalue <= pvalue} and, unless \code{padj} is NULL, \code{Padj <= padj}}
 
 \item{low}{low color}
 
@@ -83,8 +83,10 @@ comparedot(
 \item{height}{figure height}
 
 \item{include.all}{Preserve all supplied group labels on the x-axis,
-including groups with no retained rows. This plotting option uses the
-existing inclusive display cutoffs; it does not create placeholder terms.}
+including groups with no retained rows. With \code{include.all = TRUE}
+the plot skips \code{pvalue} and \code{padj} and draws every input row
+(filter in \code{compareResult()} instead); it does not create
+placeholder terms.}
 }
 \description{
 draw dotplot for multiple enrichment results

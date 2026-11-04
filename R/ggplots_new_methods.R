@@ -33,7 +33,7 @@
 #' }
 #' @rdname richLollipop-methods
 #' @export
-setGeneric("richLollipop", function(object, top = 20, pvalue = 0.05, padj = NULL,
+setGeneric("richLollipop", function(object, top = 20, pvalue = 0.05, padj = 0.05,
                                      usePadj = TRUE, low = "lightpink", high = "red",
                                      point.size = 4,
                                      short = FALSE, filename = NULL, width = 10, height = 8, ...)
@@ -41,7 +41,7 @@ setGeneric("richLollipop", function(object, top = 20, pvalue = 0.05, padj = NULL
 
 #' @rdname richLollipop-methods
 #' @export
-setMethod("richLollipop", signature(object = "richResult"), function(object, top = 20, pvalue = 0.05, padj = NULL,
+setMethod("richLollipop", signature(object = "richResult"), function(object, top = 20, pvalue = 0.05, padj = 0.05,
                                      usePadj = TRUE, low = "lightpink", high = "red",
                                      point.size = 4,
                                      short = FALSE, filename = NULL, width = 10, height = 8, ...) {
@@ -52,7 +52,7 @@ setMethod("richLollipop", signature(object = "richResult"), function(object, top
 
 #' @rdname richLollipop-methods
 #' @export
-setMethod("richLollipop", signature(object = "data.frame"), function(object, top = 20, pvalue = 0.05, padj = NULL,
+setMethod("richLollipop", signature(object = "data.frame"), function(object, top = 20, pvalue = 0.05, padj = 0.05,
                                      usePadj = TRUE, low = "lightpink", high = "red",
                                      point.size = 4,
                                      short = FALSE, filename = NULL, width = 10, height = 8, ...) {
@@ -63,7 +63,7 @@ setMethod("richLollipop", signature(object = "data.frame"), function(object, top
 
 #' @rdname richLollipop-methods
 #' @export
-setMethod("richLollipop", signature(object = "GSEAResult"), function(object, top = 20, pvalue = 0.05, padj = NULL,
+setMethod("richLollipop", signature(object = "GSEAResult"), function(object, top = 20, pvalue = 0.05, padj = 0.05,
                                      usePadj = TRUE, low = "lightpink", high = "red",
                                      point.size = 4,
                                      short = FALSE, filename = NULL, width = 10, height = 8, ...) {
@@ -84,8 +84,10 @@ setMethod("richLollipop", signature(object = "GSEAResult"), function(object, top
 #'
 #' @param object richResult, GSEAResult, or data.frame
 #' @param top max terms (default 50)
-#' @param pvalue p-value cutoff
-#' @param padj adjusted p-value cutoff
+#' @param pvalue p-value cutoff; sets the dashed reference line only when
+#'   \code{padj} is NULL (no rows are filtered)
+#' @param padj adjusted p-value cutoff; the dashed reference line is drawn at
+#'   \code{-log10(padj)} (no rows are filtered)
 #' @param usePadj use adjusted p-value for y-axis
 #' @param low low-end gradient colour (negative effect)
 #' @param mid midpoint gradient colour
@@ -108,7 +110,7 @@ setMethod("richLollipop", signature(object = "GSEAResult"), function(object, top
 #' }
 #' @rdname richVolcano-methods
 #' @export
-setGeneric("richVolcano", function(object, top = 50, pvalue = 0.05, padj = NULL,
+setGeneric("richVolcano", function(object, top = 50, pvalue = 0.05, padj = 0.05,
                                     usePadj = TRUE, low = "#2166ac", mid = "white", high = "#b2182b",
                                     size.range = c(2, 8), label.size = 3, label.top = 5,
                                     short = FALSE, filename = NULL, width = 10, height = 8, ...)
@@ -116,7 +118,7 @@ setGeneric("richVolcano", function(object, top = 50, pvalue = 0.05, padj = NULL,
 
 #' @rdname richVolcano-methods
 #' @export
-setMethod("richVolcano", signature(object = "richResult"), function(object, top = 50, pvalue = 0.05, padj = NULL,
+setMethod("richVolcano", signature(object = "richResult"), function(object, top = 50, pvalue = 0.05, padj = 0.05,
                                     usePadj = TRUE, low = "#2166ac", mid = "white", high = "#b2182b",
                                     size.range = c(2, 8), label.size = 3, label.top = 5,
                                     short = FALSE, filename = NULL, width = 10, height = 8, ...) {
@@ -128,7 +130,7 @@ setMethod("richVolcano", signature(object = "richResult"), function(object, top 
 
 #' @rdname richVolcano-methods
 #' @export
-setMethod("richVolcano", signature(object = "GSEAResult"), function(object, top = 50, pvalue = 0.05, padj = NULL,
+setMethod("richVolcano", signature(object = "GSEAResult"), function(object, top = 50, pvalue = 0.05, padj = 0.05,
                                     usePadj = TRUE, low = "#2166ac", mid = "white", high = "#b2182b",
                                     size.range = c(2, 8), label.size = 3, label.top = 5,
                                     short = FALSE, filename = NULL, width = 10, height = 8, ...) {
@@ -140,7 +142,7 @@ setMethod("richVolcano", signature(object = "GSEAResult"), function(object, top 
 
 #' @rdname richVolcano-methods
 #' @export
-setMethod("richVolcano", signature(object = "data.frame"), function(object, top = 50, pvalue = 0.05, padj = NULL,
+setMethod("richVolcano", signature(object = "data.frame"), function(object, top = 50, pvalue = 0.05, padj = 0.05,
                                     usePadj = TRUE, low = "#2166ac", mid = "white", high = "#b2182b",
                                     size.range = c(2, 8), label.size = 3, label.top = 5,
                                     short = FALSE, filename = NULL, width = 10, height = 8, ...) {
@@ -175,14 +177,14 @@ setMethod("richVolcano", signature(object = "data.frame"), function(object, top 
 #' }
 #' @rdname richCircle-methods
 #' @export
-setGeneric("richCircle", function(object, top = 15, pvalue = 0.05, padj = NULL,
+setGeneric("richCircle", function(object, top = 15, pvalue = 0.05, padj = 0.05,
                                    usePadj = TRUE, low = "#fee0d2", high = "#b2182b",
                                    short = FALSE, filename = NULL, width = 10, height = 8, ...)
   standardGeneric("richCircle"))
 
 #' @rdname richCircle-methods
 #' @export
-setMethod("richCircle", signature(object = "richResult"), function(object, top = 15, pvalue = 0.05, padj = NULL,
+setMethod("richCircle", signature(object = "richResult"), function(object, top = 15, pvalue = 0.05, padj = 0.05,
                                    usePadj = TRUE, low = "#fee0d2", high = "#b2182b",
                                    short = FALSE, filename = NULL, width = 10, height = 8, ...) {
   ggcircbar_internal(object@result, top = top, pvalue = pvalue, padj = padj,
@@ -192,7 +194,7 @@ setMethod("richCircle", signature(object = "richResult"), function(object, top =
 
 #' @rdname richCircle-methods
 #' @export
-setMethod("richCircle", signature(object = "data.frame"), function(object, top = 15, pvalue = 0.05, padj = NULL,
+setMethod("richCircle", signature(object = "data.frame"), function(object, top = 15, pvalue = 0.05, padj = 0.05,
                                    usePadj = TRUE, low = "#fee0d2", high = "#b2182b",
                                    short = FALSE, filename = NULL, width = 10, height = 8, ...) {
   ggcircbar_internal(object, top = top, pvalue = pvalue, padj = padj,
@@ -202,7 +204,7 @@ setMethod("richCircle", signature(object = "data.frame"), function(object, top =
 
 #' @rdname richCircle-methods
 #' @export
-setMethod("richCircle", signature(object = "GSEAResult"), function(object, top = 15, pvalue = 0.05, padj = NULL,
+setMethod("richCircle", signature(object = "GSEAResult"), function(object, top = 15, pvalue = 0.05, padj = 0.05,
                                    usePadj = TRUE, low = "#fee0d2", high = "#b2182b",
                                    short = FALSE, filename = NULL, width = 10, height = 8, ...) {
   df <- .gsea_to_ora_frame(object)
@@ -235,14 +237,14 @@ setMethod("richCircle", signature(object = "GSEAResult"), function(object, top =
 #' }
 #' @rdname richNES-methods
 #' @export
-setGeneric("richNES", function(object, top = 20, pvalue = 0.05, padj = NULL,
+setGeneric("richNES", function(object, top = 20, pvalue = 0.05, padj = 0.05,
                                 up.color = "#b2182b", down.color = "#2166ac",
                                 short = FALSE, filename = NULL, width = 10, height = 8, ...)
   standardGeneric("richNES"))
 
 #' @rdname richNES-methods
 #' @export
-setMethod("richNES", signature(object = "GSEAResult"), function(object, top = 20, pvalue = 0.05, padj = NULL,
+setMethod("richNES", signature(object = "GSEAResult"), function(object, top = 20, pvalue = 0.05, padj = 0.05,
                                 up.color = "#b2182b", down.color = "#2166ac",
                                 short = FALSE, filename = NULL, width = 10, height = 8, ...) {
   ggNES_internal(object@result, top = top, pvalue = pvalue, padj = padj,
@@ -252,7 +254,7 @@ setMethod("richNES", signature(object = "GSEAResult"), function(object, top = 20
 
 #' @rdname richNES-methods
 #' @export
-setMethod("richNES", signature(object = "data.frame"), function(object, top = 20, pvalue = 0.05, padj = NULL,
+setMethod("richNES", signature(object = "data.frame"), function(object, top = 20, pvalue = 0.05, padj = 0.05,
                                 up.color = "#b2182b", down.color = "#2166ac",
                                 short = FALSE, filename = NULL, width = 10, height = 8, ...) {
   ggNES_internal(object, top = top, pvalue = pvalue, padj = padj,
@@ -293,7 +295,7 @@ setMethod("richNES", signature(object = "data.frame"), function(object, top = 20
 #' }
 #' @rdname richScatter-methods
 #' @export
-setGeneric("richScatter", function(object, top = 50, pvalue = 0.05, padj = NULL,
+setGeneric("richScatter", function(object, top = 50, pvalue = 0.05, padj = 0.05,
                                     usePadj = TRUE, low = "#fee0d2", high = "#b2182b",
                                     point.size = 3, label.size = 3, label.top = 5,
                                     short = FALSE, filename = NULL, width = 10, height = 8, ...)
@@ -301,7 +303,7 @@ setGeneric("richScatter", function(object, top = 50, pvalue = 0.05, padj = NULL,
 
 #' @rdname richScatter-methods
 #' @export
-setMethod("richScatter", signature(object = "richResult"), function(object, top = 50, pvalue = 0.05, padj = NULL,
+setMethod("richScatter", signature(object = "richResult"), function(object, top = 50, pvalue = 0.05, padj = 0.05,
                                     usePadj = TRUE, low = "#fee0d2", high = "#b2182b",
                                     point.size = 3, label.size = 3, label.top = 5,
                                     short = FALSE, filename = NULL, width = 10, height = 8, ...) {
@@ -313,7 +315,7 @@ setMethod("richScatter", signature(object = "richResult"), function(object, top 
 
 #' @rdname richScatter-methods
 #' @export
-setMethod("richScatter", signature(object = "data.frame"), function(object, top = 50, pvalue = 0.05, padj = NULL,
+setMethod("richScatter", signature(object = "data.frame"), function(object, top = 50, pvalue = 0.05, padj = 0.05,
                                     usePadj = TRUE, low = "#fee0d2", high = "#b2182b",
                                     point.size = 3, label.size = 3, label.top = 5,
                                     short = FALSE, filename = NULL, width = 10, height = 8, ...) {
@@ -325,7 +327,7 @@ setMethod("richScatter", signature(object = "data.frame"), function(object, top 
 
 #' @rdname richScatter-methods
 #' @export
-setMethod("richScatter", signature(object = "GSEAResult"), function(object, top = 50, pvalue = 0.05, padj = NULL,
+setMethod("richScatter", signature(object = "GSEAResult"), function(object, top = 50, pvalue = 0.05, padj = 0.05,
                                     usePadj = TRUE, low = "#fee0d2", high = "#b2182b",
                                     point.size = 3, label.size = 3, label.top = 5,
                                     short = FALSE, filename = NULL, width = 10, height = 8, ...) {
@@ -361,14 +363,14 @@ setMethod("richScatter", signature(object = "GSEAResult"), function(object, top 
 #' }
 #' @rdname richECDF-methods
 #' @export
-setGeneric("richECDF", function(object, top = 30, pvalue = 0.05, padj = NULL,
+setGeneric("richECDF", function(object, top = 30, pvalue = 0.05, padj = 0.05,
                                  line.color = "#1b7837", line.size = 1.2, point.size = 3,
                                  short = FALSE, filename = NULL, width = 10, height = 8, ...)
   standardGeneric("richECDF"))
 
 #' @rdname richECDF-methods
 #' @export
-setMethod("richECDF", signature(object = "GSEAResult"), function(object, top = 30, pvalue = 0.05, padj = NULL,
+setMethod("richECDF", signature(object = "GSEAResult"), function(object, top = 30, pvalue = 0.05, padj = 0.05,
                                  line.color = "#1b7837", line.size = 1.2, point.size = 3,
                                  short = FALSE, filename = NULL, width = 10, height = 8, ...) {
   ggecdf_internal(object@result, top = top, pvalue = pvalue, padj = padj,
@@ -378,7 +380,7 @@ setMethod("richECDF", signature(object = "GSEAResult"), function(object, top = 3
 
 #' @rdname richECDF-methods
 #' @export
-setMethod("richECDF", signature(object = "data.frame"), function(object, top = 30, pvalue = 0.05, padj = NULL,
+setMethod("richECDF", signature(object = "data.frame"), function(object, top = 30, pvalue = 0.05, padj = 0.05,
                                  line.color = "#1b7837", line.size = 1.2, point.size = 3,
                                  short = FALSE, filename = NULL, width = 10, height = 8, ...) {
   ggecdf_internal(object, top = top, pvalue = pvalue, padj = padj,
@@ -421,7 +423,7 @@ setMethod("richECDF", signature(object = "data.frame"), function(object, top = 3
 #' }
 #' @rdname richTermSim-methods
 #' @export
-setGeneric("richTermSim", function(object, top = 20, pvalue = 0.05, padj = NULL,
+setGeneric("richTermSim", function(object, top = 20, pvalue = 0.05, padj = 0.05,
                                     usePadj = TRUE, low = "grey80", high = "#b2182b",
                                     label.size = 3, sim.cutoff = 0.2, size.range = c(3, 10),
                                     short = FALSE, sep = ",",
@@ -430,7 +432,7 @@ setGeneric("richTermSim", function(object, top = 20, pvalue = 0.05, padj = NULL,
 
 #' @rdname richTermSim-methods
 #' @export
-setMethod("richTermSim", signature(object = "richResult"), function(object, top = 20, pvalue = 0.05, padj = NULL,
+setMethod("richTermSim", signature(object = "richResult"), function(object, top = 20, pvalue = 0.05, padj = 0.05,
                                     usePadj = TRUE, low = "grey80", high = "#b2182b",
                                     label.size = 3, sim.cutoff = 0.2, size.range = c(3, 10),
                                     short = FALSE, sep = ",",
@@ -444,7 +446,7 @@ setMethod("richTermSim", signature(object = "richResult"), function(object, top 
 
 #' @rdname richTermSim-methods
 #' @export
-setMethod("richTermSim", signature(object = "data.frame"), function(object, top = 20, pvalue = 0.05, padj = NULL,
+setMethod("richTermSim", signature(object = "data.frame"), function(object, top = 20, pvalue = 0.05, padj = 0.05,
                                     usePadj = TRUE, low = "grey80", high = "#b2182b",
                                     label.size = 3, sim.cutoff = 0.2, size.range = c(3, 10),
                                     short = FALSE, sep = ",",
@@ -458,7 +460,7 @@ setMethod("richTermSim", signature(object = "data.frame"), function(object, top 
 
 #' @rdname richTermSim-methods
 #' @export
-setMethod("richTermSim", signature(object = "GSEAResult"), function(object, top = 20, pvalue = 0.05, padj = NULL,
+setMethod("richTermSim", signature(object = "GSEAResult"), function(object, top = 20, pvalue = 0.05, padj = 0.05,
                                     usePadj = TRUE, low = "grey80", high = "#b2182b",
                                     label.size = 3, sim.cutoff = 0.2, size.range = c(3, 10),
                                     short = FALSE, sep = ",",
@@ -502,7 +504,7 @@ setMethod("richTermSim", signature(object = "GSEAResult"), function(object, top 
 #' @rdname richGeneDot-methods
 #' @export
 setGeneric("richGeneDot", function(object, fc = NULL, top = 10, max.genes = 30,
-                                    pvalue = 0.05, padj = NULL, usePadj = TRUE,
+                                    pvalue = 0.05, padj = 0.05, usePadj = TRUE,
                                     low = "#2166ac", mid = "white", high = "#b2182b",
                                     short = FALSE, sep = ",",
                                     filename = NULL, width = 12, height = 8, ...)
@@ -511,7 +513,7 @@ setGeneric("richGeneDot", function(object, fc = NULL, top = 10, max.genes = 30,
 #' @rdname richGeneDot-methods
 #' @export
 setMethod("richGeneDot", signature(object = "richResult"), function(object, fc = NULL, top = 10, max.genes = 30,
-                                    pvalue = 0.05, padj = NULL, usePadj = TRUE,
+                                    pvalue = 0.05, padj = 0.05, usePadj = TRUE,
                                     low = "#2166ac", mid = "white", high = "#b2182b",
                                     short = FALSE, sep = ",",
                                     filename = NULL, width = 12, height = 8, ...) {
@@ -524,7 +526,7 @@ setMethod("richGeneDot", signature(object = "richResult"), function(object, fc =
 #' @rdname richGeneDot-methods
 #' @export
 setMethod("richGeneDot", signature(object = "data.frame"), function(object, fc = NULL, top = 10, max.genes = 30,
-                                    pvalue = 0.05, padj = NULL, usePadj = TRUE,
+                                    pvalue = 0.05, padj = 0.05, usePadj = TRUE,
                                     low = "#2166ac", mid = "white", high = "#b2182b",
                                     short = FALSE, sep = ",",
                                     filename = NULL, width = 12, height = 8, ...) {
@@ -537,7 +539,7 @@ setMethod("richGeneDot", signature(object = "data.frame"), function(object, fc =
 #' @rdname richGeneDot-methods
 #' @export
 setMethod("richGeneDot", signature(object = "GSEAResult"), function(object, fc = NULL, top = 10, max.genes = 30,
-                                    pvalue = 0.05, padj = NULL, usePadj = TRUE,
+                                    pvalue = 0.05, padj = 0.05, usePadj = TRUE,
                                     low = "#2166ac", mid = "white", high = "#b2182b",
                                     short = FALSE, sep = ",",
                                     filename = NULL, width = 12, height = 8, ...) {
@@ -582,7 +584,7 @@ setMethod("richGeneDot", signature(object = "GSEAResult"), function(object, fc =
 #' @rdname richGeneHeat-methods
 #' @export
 setGeneric("richGeneHeat", function(object, fc = NULL, top = 10, max.genes = 30,
-                                     pvalue = 0.05, padj = NULL, usePadj = TRUE,
+                                     pvalue = 0.05, padj = 0.05, usePadj = TRUE,
                                      low = "#2166ac", mid = "white", high = "#b2182b",
                                      na.fill = "grey90", border.color = "grey40",
                                      label.cutoff = 1.5, short = FALSE, sep = ",",
@@ -592,7 +594,7 @@ setGeneric("richGeneHeat", function(object, fc = NULL, top = 10, max.genes = 30,
 #' @rdname richGeneHeat-methods
 #' @export
 setMethod("richGeneHeat", signature(object = "richResult"), function(object, fc = NULL, top = 10, max.genes = 30,
-                                     pvalue = 0.05, padj = NULL, usePadj = TRUE,
+                                     pvalue = 0.05, padj = 0.05, usePadj = TRUE,
                                      low = "#2166ac", mid = "white", high = "#b2182b",
                                      na.fill = "grey90", border.color = "grey40",
                                      label.cutoff = 1.5, short = FALSE, sep = ",",
@@ -607,7 +609,7 @@ setMethod("richGeneHeat", signature(object = "richResult"), function(object, fc 
 #' @rdname richGeneHeat-methods
 #' @export
 setMethod("richGeneHeat", signature(object = "data.frame"), function(object, fc = NULL, top = 10, max.genes = 30,
-                                     pvalue = 0.05, padj = NULL, usePadj = TRUE,
+                                     pvalue = 0.05, padj = 0.05, usePadj = TRUE,
                                      low = "#2166ac", mid = "white", high = "#b2182b",
                                      na.fill = "grey90", border.color = "grey40",
                                      label.cutoff = 1.5, short = FALSE, sep = ",",
@@ -622,7 +624,7 @@ setMethod("richGeneHeat", signature(object = "data.frame"), function(object, fc 
 #' @rdname richGeneHeat-methods
 #' @export
 setMethod("richGeneHeat", signature(object = "GSEAResult"), function(object, fc = NULL, top = 10, max.genes = 30,
-                                     pvalue = 0.05, padj = NULL, usePadj = TRUE,
+                                     pvalue = 0.05, padj = 0.05, usePadj = TRUE,
                                      low = "#2166ac", mid = "white", high = "#b2182b",
                                      na.fill = "grey90", border.color = "grey40",
                                      label.cutoff = 1.5, short = FALSE, sep = ",",
@@ -665,7 +667,7 @@ setMethod("richGeneHeat", signature(object = "GSEAResult"), function(object, fc 
 #' }
 #' @rdname richGeneBar-methods
 #' @export
-setGeneric("richGeneBar", function(object, top = 10, pvalue = 0.05, padj = NULL, usePadj = TRUE,
+setGeneric("richGeneBar", function(object, top = 10, pvalue = 0.05, padj = 0.05, usePadj = TRUE,
                                     low = "lightpink", high = "red",
                                     max.genes = 5, bar.color = "#b2182b", bar.alpha = 0.85,
                                     text.size = 3, short = FALSE, sep = ",",
@@ -674,7 +676,7 @@ setGeneric("richGeneBar", function(object, top = 10, pvalue = 0.05, padj = NULL,
 
 #' @rdname richGeneBar-methods
 #' @export
-setMethod("richGeneBar", signature(object = "richResult"), function(object, top = 10, pvalue = 0.05, padj = NULL, usePadj = TRUE,
+setMethod("richGeneBar", signature(object = "richResult"), function(object, top = 10, pvalue = 0.05, padj = 0.05, usePadj = TRUE,
                                     low = "lightpink", high = "red",
                                     max.genes = 5, bar.color = "#b2182b", bar.alpha = 0.85,
                                     text.size = 3, short = FALSE, sep = ",",
@@ -688,7 +690,7 @@ setMethod("richGeneBar", signature(object = "richResult"), function(object, top 
 
 #' @rdname richGeneBar-methods
 #' @export
-setMethod("richGeneBar", signature(object = "data.frame"), function(object, top = 10, pvalue = 0.05, padj = NULL, usePadj = TRUE,
+setMethod("richGeneBar", signature(object = "data.frame"), function(object, top = 10, pvalue = 0.05, padj = 0.05, usePadj = TRUE,
                                     low = "lightpink", high = "red",
                                     max.genes = 5, bar.color = "#b2182b", bar.alpha = 0.85,
                                     text.size = 3, short = FALSE, sep = ",",
@@ -702,7 +704,7 @@ setMethod("richGeneBar", signature(object = "data.frame"), function(object, top 
 
 #' @rdname richGeneBar-methods
 #' @export
-setMethod("richGeneBar", signature(object = "GSEAResult"), function(object, top = 10, pvalue = 0.05, padj = NULL, usePadj = TRUE,
+setMethod("richGeneBar", signature(object = "GSEAResult"), function(object, top = 10, pvalue = 0.05, padj = 0.05, usePadj = TRUE,
                                     low = "lightpink", high = "red",
                                     max.genes = 5, bar.color = "#b2182b", bar.alpha = 0.85,
                                     text.size = 3, short = FALSE, sep = ",",
@@ -725,7 +727,14 @@ setMethod("richGeneBar", signature(object = "GSEAResult"), function(object, top 
   sep <- if (length(object@sep) && nchar(object@sep)) object@sep else ","
   if ("pval"    %in% names(df) && !"Pvalue" %in% names(df)) names(df)[names(df) == "pval"]    <- "Pvalue"
   if ("padj"    %in% names(df) && !"Padj"   %in% names(df)) names(df)[names(df) == "padj"]    <- "Padj"
-  if ("pathway" %in% names(df) && !"Term"   %in% names(df)) names(df)[names(df) == "pathway"] <- "Term"
+  # The identifier (pathway) becomes Annot; Term is the label, or the
+  # identifier for a legacy result without Term.
+  id_col <- if ("pathway" %in% names(df)) "pathway" else "Term"
+  # Term is the display label: the label, or the identifier for a legacy result
+  # without Term, with the identifier appended where pathways share a label.
+  if ("pathway" %in% names(df)) {
+    df$Term <- .gsea_display_labels(df$pathway, df$pathway, .gsea_result_terms(df))
+  }
   if ("size"    %in% names(df) && !"Significant" %in% names(df)) names(df)[names(df) == "size"] <- "Significant"
   if (!"Annotated" %in% names(df) && "Significant" %in% names(df)) df$Annotated <- df$Significant
   if (!"RichFactor" %in% names(df) && "Significant" %in% names(df)) df$RichFactor <- 1
@@ -736,6 +745,6 @@ setMethod("richGeneBar", signature(object = "GSEAResult"), function(object, top 
       else ""
     }, character(1))
   }
-  if (!"Annot" %in% names(df) && "Term" %in% names(df)) df$Annot <- df$Term
+  if (!"Annot" %in% names(df) && id_col %in% names(df)) df$Annot <- df[[id_col]]
   df
 }

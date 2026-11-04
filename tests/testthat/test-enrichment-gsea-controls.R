@@ -226,3 +226,26 @@ test_that("seeded GSEA restores RNG after backend errors and seed NULL advances 
   )
   expect_false(identical(.Random.seed, old_seed))
 })
+
+test_that("GSEA bounds gene-set sizes only through minSize and maxSize", {
+  # SPEC-RICHR-002 D4: minGSSize / maxGSSize were accepted and recorded by
+  # richGSEA_internal() but never reached fgsea.
+  internal_formals <- names(formals(richR:::richGSEA_internal))
+  expect_false("minGSSize" %in% internal_formals)
+  expect_false("maxGSSize" %in% internal_formals)
+  backend <- function(...) {
+    data.frame(pathway = "T1", pval = 0.01, NES = 1, size = 2,
+               leadingEdge = I(list(c("A", "B"))))
+  }
+  result <- testthat::with_mocked_bindings(
+    fgseaMultilevel = backend,
+    richR::richGSEA(c(A = 2, B = 1, C = -1, D = -2), gsea_test_annotation(),
+                    minSize = 1, maxSize = 3),
+    .package = "richR"
+  )
+  options <- richR::enrichmentInfo(result)$options
+  expect_false("minGSSize" %in% names(options))
+  expect_false("maxGSSize" %in% names(options))
+  expect_identical(options$minSize, 1)
+  expect_identical(options$maxSize, 3)
+})

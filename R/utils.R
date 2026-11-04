@@ -2,11 +2,63 @@
 ##  ORA helper functions (shared across enrichment functions)
 ## ----------------------------------------------------------------
 
+#' Validate a reporting cutoff
+#'
+#' The one validation rule shared by every entry point that takes a raw or an
+#' adjusted p-value cutoff: a finite numeric scalar in (0, 1].
+#' @param value cutoff value
+#' @param name argument name used in the error message
+#' @param allow_null accept NULL (an inactive adjusted cutoff)
+#' @return \code{value}, invisibly
+#' @keywords internal
+.check_cutoff <- function(value, name, allow_null = FALSE) {
+  if (is.null(value) && isTRUE(allow_null)) return(invisible(value))
+  if (length(value) != 1L || !is.numeric(value) || !is.finite(value) ||
+      value <= 0 || value > 1) {
+    stop(name, " must be between 0 and 1: one finite numeric scalar in (0, 1].",
+         call. = FALSE)
+  }
+  invisible(value)
+}
+
+#' Significance predicate shared by every reporting filter
+#'
+#' Keeps a row when its raw p-value is non-NA and \code{<= pvalue} and, when
+#' \code{padj} is non-NULL, its adjusted p-value is non-NA and \code{<= padj}.
+#' The selection never contains NA, so base indexing never creates NA rows.
+#' This is the only place in the package where a significance cutoff is
+#' compared; it does not validate (see \code{.check_cutoff}).
+#' @param df result data.frame
+#' @param pvalue raw p-value cutoff
+#' @param padj adjusted p-value cutoff, or NULL for raw-p-only filtering
+#' @param p_col name of the raw p-value column
+#' @param padj_col name of the adjusted p-value column
+#' @return logical vector of length \code{nrow(df)} without NA
+#' @keywords internal
+.sig_keep <- function(df, pvalue, padj, p_col = "Pvalue", padj_col = "Padj") {
+  p <- df[[p_col]]
+  keep <- !is.na(p) & p <= pvalue
+  if (!is.null(padj)) {
+    q <- df[[padj_col]]
+    keep <- keep & !is.na(q) & q <= padj
+  }
+  keep
+}
+
+#' Validate the cutoffs and keep the rows passing the significance predicate
+#' @inheritParams .sig_keep
+#' @return the rows of \code{df} kept by \code{.sig_keep}
+#' @keywords internal
+.sig_filter <- function(df, pvalue, padj, p_col = "Pvalue", padj_col = "Padj") {
+  .check_cutoff(pvalue, "pvalue")
+  .check_cutoff(padj, "padj", allow_null = TRUE)
+  df[.sig_keep(df, pvalue, padj, p_col = p_col, padj_col = padj_col), , drop = FALSE]
+}
+
 #' Validate common enrichment inputs
 #' @param x gene vector or data.frame
 #' @param annot annotation data.frame (2+ columns: GeneID, Term)
 #' @param pvalue p-value cutoff
-#' @param padj adjusted p-value cutoff (or NULL)
 #' @param padj.method p-value adjustment method
 #' @param minSize minimum significant genes
 #' @param maxSize maximum significant genes
@@ -15,7 +67,7 @@
 #' @importFrom stats as.dist cor hclust na.omit setNames
 #' @importFrom utils data write.table
 #' @keywords internal
-.validate_enrichment_input <- function(x, annot = NULL, pvalue = 0.05, padj = NULL,
+.validate_enrichment_input <- function(x, annot = NULL, pvalue = 0.05,
                                         padj.method = "BH", minSize = 1, maxSize = 500) {
   # Validate gene input
   if (is.data.frame(x)) {
@@ -32,13 +84,8 @@
   if (any(duplicated(genes[!is.na(genes)]))) {
     warning("Duplicated genes detected in input; duplicates will be removed")
   }
-  # Validate p-value parameters
-  if (!is.null(pvalue) && (pvalue < 0 || pvalue > 1)) {
-    stop("pvalue must be between 0 and 1")
-  }
-  if (!is.null(padj) && (padj < 0 || padj > 1)) {
-    stop("padj must be between 0 and 1")
-  }
+  # Validate the raw p-value cutoff (the adjusted cutoff is checked by the caller)
+  .check_cutoff(pvalue, "pvalue")
   # Validate adjustment method
   if (length(padj.method) != 1L || is.na(padj.method) ||
       !padj.method %in% stats::p.adjust.methods) {
@@ -159,7 +206,7 @@
 .compute_ora_stats <- function(k, M, N, n, padj.method = "BH") {
   # k = significant genes per term, M = annotated genes per term
   # N = total annotated genes, n = total input genes in annotation
-  rhs <- hyper_bench_vector(k, M, N, n)
+  rhs <- if (length(k) > 0) hyper_bench_vector(k, M, N, n) else setNames(numeric(0), character(0))
   lhs <- stats::p.adjust(rhs, method = padj.method)
   RichFactor <- k / M
   FoldEnrichment <- RichFactor * N / n
@@ -187,18 +234,16 @@
                                 minGSSize, maxGSSize, keepRich) {
   if (nrow(resultFis) == 0) return(resultFis)
   resultFis <- resultFis[order(resultFis$Pvalue), ]
-  # Upper bounds always apply
+  # The tested family is already bounded by [minGSSize, maxGSSize] before
+  # adjustment; re-applying the bound here never admits a term outside it.
+  resultFis <- subset(resultFis, Annotated >= minGSSize & Annotated <= maxGSSize)
   resultFis <- subset(resultFis, Significant <= maxSize)
-  resultFis <- subset(resultFis, Annotated <= maxGSSize)
-  lower_bounds <- (resultFis$Significant >= minSize & resultFis$Annotated >= minGSSize) |
+  # keepRich exempts fully rich terms from minSize only (REQ-011)
+  lower_bounds <- resultFis$Significant >= minSize |
     (isTRUE(keepRich) & resultFis$RichFactor == 1)
   resultFis <- resultFis[lower_bounds, , drop = FALSE]
-  # Filter by p-value
-  if (!is.null(padj)) {
-    resultFis <- resultFis[resultFis$Padj < padj, ]
-  } else {
-    resultFis <- resultFis[resultFis$Pvalue < pvalue, ]
-  }
+  # Significance predicate (raw AND adjusted, <=, NA rows dropped)
+  resultFis <- .sig_filter(resultFis, pvalue, padj)
   rownames(resultFis) <- resultFis$Annot
   resultFis
 }
@@ -287,6 +332,9 @@
 #' @param minGSSize minimum annotated genes for testing
 #' @param maxGSSize maximum annotated genes for testing
 #' @param keepRich keep terms with RichFactor == 1
+#' @param padj.family family adjusted by \code{padj.method}: \code{"overlap"}
+#'   (size-eligible terms with query overlap >= 1) or \code{"all"} (every
+#'   size-eligible term, zero-overlap terms contributing p = 1)
 #' @param organism organism name
 #' @param ontology ontology type
 #' @param keytype key type
@@ -298,11 +346,13 @@
 #' @return richResult S4 object
 #' @keywords internal
 .run_ora <- function(x, annot, term_names = NULL, extra_cols = NULL,
-                     pvalue = 0.05, padj = NULL, padj.method = "BH",
+                     pvalue = 0.05, padj = 0.05, padj.method = "BH",
                      minSize = 2, maxSize = 500, minGSSize = 10, maxGSSize = 500,
                      keepRich = TRUE, organism = NULL, ontology = "",
                      keytype = "", filename = NULL, sep = ",", universe = NULL,
-                     annotation_provenance = NULL, metadata_ontology = ontology) {
+                     annotation_provenance = NULL, metadata_ontology = ontology,
+                     padj.family = c("overlap", "all")) {
+  padj.family <- match.arg(padj.family)
   normalization <- if (!is.data.frame(annot) && is.list(annot) &&
                        all(c("data", "counts") %in% names(annot))) {
     annot
@@ -310,8 +360,9 @@
     .normalize_annotation(annot, func_name = "ORA")
   }
   annot <- normalization$data
-  .validate_enrichment_input(x, annot = annot, pvalue = pvalue, padj = padj,
+  .validate_enrichment_input(x, annot = annot, pvalue = pvalue,
                              padj.method = padj.method, minSize = minSize, maxSize = maxSize)
+  .check_cutoff(padj, "padj", allow_null = TRUE)
   raw_input <- if (is.data.frame(x)) rownames(x) else as.vector(x)
   raw_input <- as.character(raw_input)
   valid_input <- raw_input[!is.na(raw_input) & nzchar(trimws(raw_input))]
@@ -372,10 +423,17 @@
   gene2ao <- sf(annot[, c(2, 1)])
   fgene2ao <- gene2ao[effective_input]
   fao2gene <- reverseList(fgene2ao)
-  k <- name_table(fao2gene)
+  overlap_k <- name_table(fao2gene)
+  # N and n are fixed here, before any term-size filtering, and never recomputed.
   n <- length(effective_input)
-  M <- ao2gene_num[names(k)]
   N <- length(effective_universe)
+  # Tested family (D2): universe-intersected term size in [minGSSize, maxGSSize];
+  # "overlap" keeps terms the query touches, "all" adds zero-overlap terms (p = 1).
+  eligible <- names(ao2gene_num)[ao2gene_num >= minGSSize & ao2gene_num <= maxGSSize]
+  family <- if (padj.family == "all") eligible else intersect(names(overlap_k), eligible)
+  k <- setNames(as.integer(overlap_k[family]), family)
+  k[is.na(k)] <- 0L
+  M <- ao2gene_num[family]
   stats <- .compute_ora_stats(k, M, N, n, padj.method)
   rhs_gene <- unlist(lapply(fao2gene, function(g) paste(unique(g), sep = "", collapse = sep)))
   GeneID <- rhs_gene[names(stats$rhs)]
@@ -394,6 +452,8 @@
     zscore = stats$zscore, Pvalue = as.vector(stats$rhs), Padj = stats$lhs,
     GeneID = GeneID
   )
+  # Zero-overlap terms of the "all" family are adjusted over but never reported.
+  resultFis <- resultFis[resultFis$Significant > 0, , drop = FALSE]
   if (!is.null(extra_cols)) {
     resultFis <- cbind(resultFis, extra_cols[resultFis$Annot, , drop = FALSE])
   }
@@ -421,12 +481,18 @@
     effective_count = as.integer(length(effective_input)),
     excluded_by_universe_ids = setdiff(input[input %in% annotation_genes], effective_universe)
   )
-  testing <- list(family_policy = "positive_overlap_before_reporting_filters",
-                  tested_count = as.integer(length(stats$rhs)),
+  family_policy <- if (padj.family == "all") {
+    "size_bounded_all_eligible"
+  } else {
+    "size_bounded_positive_overlap"
+  }
+  testing <- list(family_policy = family_policy,
+                  tested_count = as.integer(length(family)),
                   effective_N = as.integer(N), effective_n = as.integer(n))
   options <- list(pvalue = pvalue, padj = padj, minSize = minSize,
                   maxSize = maxSize, minGSSize = minGSSize,
                   maxGSSize = maxGSSize, keepRich = keepRich,
+                  padj.family = padj.family,
                   padj.method = padj.method, ontology = metadata_ontology,
                   keytype = keytype, universe = if (is.null(universe)) NULL else universe)
   if (is.null(annotation_provenance)) {

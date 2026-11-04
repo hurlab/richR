@@ -10,7 +10,7 @@ gggenedot_internal(
   top = 10,
   max.genes = 30,
   pvalue = 0.05,
-  padj = NULL,
+  padj = 0.05,
   usePadj = TRUE,
   low = "#2166ac",
   mid = "white",

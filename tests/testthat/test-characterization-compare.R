@@ -1,5 +1,5 @@
 # Characterization baseline (REQ-004): richLevel(), compareResult(),
-# compareGSEA() (padj = NULL and the current failure mode for non-NULL padj)
+# compareGSEA() (padj = NULL, and non-NULL padj after the SPEC-RICHR-002 B1 fix)
 # and richCluster(), as produced by richR 0.1.5. Known defects are pinned as
 # they stand (REQ-005): a later fix must show up as a snapshot change.
 
@@ -9,7 +9,7 @@ compare_annot <- function() .char_read("ora_annot.csv", character = TRUE)
 
 compare_ora <- function(genes) {
   suppressMessages(enrich(
-    genes, compare_annot(), pvalue = 0.5, minSize = 2, minGSSize = 3,
+    genes, compare_annot(), pvalue = 0.5, padj = NULL, minSize = 2, minGSSize = 3,
     keepRich = TRUE
   ))
 }
@@ -18,10 +18,10 @@ test_that("richLevel() pins Level2 and Level3 enrichment on bundled KEGG levels"
   kegg <- .char_read("kegg_annot.csv", character = TRUE)
   ko <- data.frame(GeneID = kegg$GeneID, PATH = kegg$Term, stringsAsFactors = FALSE)
   level2 <- suppressMessages(richLevel(
-    compare_query_a(), ko, level = "Level2", pvalue = 0.5, minSize = 2, minGSSize = 3
+    compare_query_a(), ko, level = "Level2", pvalue = 0.5, padj = NULL, minSize = 2, minGSSize = 3
   ))
   level3 <- suppressMessages(richLevel(
-    compare_query_a(), ko, level = "Level3", pvalue = 0.5, minSize = 2, minGSSize = 3
+    compare_query_a(), ko, level = "Level3", pvalue = 0.5, padj = NULL, minSize = 2, minGSSize = 3
   ))
   expect_s4_class(level2, "richResult")
   expect_s4_class(level3, "richResult")
@@ -40,13 +40,13 @@ test_that("compareResult() pins group stacking, cutoffs, include.all and extra i
   .char_nonempty(first@result)
   .char_nonempty(second@result)
 
-  by_pvalue <- compareResult(list(first = first, second = second), pvalue = 0.5)
-  by_padj <- compareResult(list(first = first, second = second), padj = 0.2)
+  by_pvalue <- compareResult(list(first = first, second = second), pvalue = 0.5, padj = NULL)
+  by_padj <- compareResult(list(first = first, second = second), pvalue = 1, padj = 0.2)
   include_all <- compareResult(
-    list(first = first, second = second, none = NULL), pvalue = 0.5, include.all = TRUE
+    list(first = first, second = second, none = NULL), pvalue = 0.5, padj = NULL, include.all = TRUE
   )
   from_frames <- compareResult(
-    list(first = first@result, second = second@result), pvalue = 0.5
+    list(first = first@result, second = second@result), pvalue = 0.5, padj = NULL
   )
   expect_identical(levels(include_all$group), c("first", "second", "none"))
   expect_snapshot_value(
@@ -68,7 +68,7 @@ gsea_pair <- function() {
     out <- NULL
     utils::capture.output(
       out <- richGSEA(stats::setNames(df$score, df$GeneID), annot, minSize = 3,
-                      maxSize = 20, pvalue = 1, seed = 42, nproc = 1)
+                      maxSize = 20, pvalue = 1, padj = 1, seed = 42, nproc = 1)
     )
     out
   }
@@ -77,14 +77,18 @@ gsea_pair <- function() {
 
 test_that("compareGSEA() with padj = NULL keeps the shape of the enrichment-curve data", {
   fx <- gsea_pair()
-  plot_obj <- compareGSEA(fx$results, fx$annot)
+  plot_obj <- compareGSEA(fx$results, fx$annot, padj = NULL)
   expect_s3_class(plot_obj, "ggplot")
   curve <- .char_nonempty(plot_obj$data)
+  # SPEC-RICHR-002 D3: facets (Group) show the Term label; the identifier is
+  # kept in a `pathway` column.
   expect_identical(
     vapply(curve, function(col) class(col)[1L], character(1)),
-    c(x = "numeric", y = "numeric", Group = "character", group = "character")
+    c(x = "numeric", y = "numeric", Group = "character", group = "character",
+      pathway = "character")
   )
   expect_setequal(curve$Group, c("top pathway", "down pathway", "up pathway"))
+  expect_setequal(curve$pathway, c("T4", "T2", "T1"))
   expect_setequal(curve$group, c("A", "B"))
   expect_identical(length(plot_obj$layers), 6L)
 })
@@ -92,7 +96,7 @@ test_that("compareGSEA() with padj = NULL keeps the shape of the enrichment-curv
 test_that("compareGSEA() with padj = NULL pins the enrichment-curve data behind the plot", {
   .char_skip_unless_recorded_fgsea()
   fx <- gsea_pair()
-  plot_obj <- compareGSEA(fx$results, fx$annot)
+  plot_obj <- compareGSEA(fx$results, fx$annot, padj = NULL)
   expect_s3_class(plot_obj, "ggplot")
   .char_nonempty(plot_obj$data)
   expect_snapshot_value(
@@ -105,12 +109,21 @@ test_that("compareGSEA() with padj = NULL pins the enrichment-curve data behind 
   )
 })
 
-test_that("compareGSEA() with a non-NULL padj fails today and the failure is pinned", {
-  # Known defect (research.md, plan.md B1): with a non-NULL `padj` the function
-  # never defines `Padj` and then filters on it. M2 fixes this; until then the
-  # failure itself is the pinned behaviour.
+test_that("compareGSEA() with a non-NULL padj applies both cutoffs to the fixture pair", {
+  # SPEC-RICHR-002 B1: a non-NULL `padj` used to fail with "object 'Padj' not
+  # found"; it now applies the raw and the adjusted cutoff together. On this
+  # fixture every pathway with pval < 0.05 also has padj < 0.05, so the curve
+  # data equal the padj = NULL curve.
   fx <- gsea_pair()
-  expect_snapshot(error = TRUE, compareGSEA(fx$results, fx$annot, padj = 0.05))
+  with_padj <- compareGSEA(fx$results, fx$annot, padj = 0.05)
+  without_padj <- compareGSEA(fx$results, fx$annot, padj = NULL)
+  expect_s3_class(with_padj, "ggplot")
+  curve <- .char_nonempty(with_padj$data)
+  expect_identical(curve, without_padj$data)
+  expect_snapshot_value(
+    list(drawn = sort(unique(paste(curve$group, curve$Group, sep = "@")))),
+    style = "deparse"
+  )
 })
 
 test_that("richCluster() pins kappa clusters for data.frame and richResult input", {

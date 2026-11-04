@@ -10,7 +10,7 @@
   term_names = NULL,
   extra_cols = NULL,
   pvalue = 0.05,
-  padj = NULL,
+  padj = 0.05,
   padj.method = "BH",
   minSize = 2,
   maxSize = 500,
@@ -24,7 +24,8 @@
   sep = ",",
   universe = NULL,
   annotation_provenance = NULL,
-  metadata_ontology = ontology
+  metadata_ontology = ontology,
+  padj.family = c("overlap", "all")
 )
 }
 \arguments{
@@ -67,6 +68,10 @@
 \item{annotation_provenance}{optional annotation provenance captured from an Annot object}
 
 \item{metadata_ontology}{ontology label retained for diagnostics}
+
+\item{padj.family}{family adjusted by \code{padj.method}: \code{"overlap"}
+(size-eligible terms with query overlap >= 1) or \code{"all"} (every
+size-eligible term, zero-overlap terms contributing p = 1)}
 }
 \value{
 richResult S4 object

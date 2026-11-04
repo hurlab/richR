@@ -9,12 +9,10 @@ richGSEA_internal(
   object,
   keytype = "",
   pvalue = 0.05,
-  padj = NULL,
+  padj = 0.05,
   KEGG = FALSE,
   minSize = 15,
   maxSize = 500,
-  minGSSize = 10,
-  maxGSSize = 500,
   padj.method = "BH",
   organism = NULL,
   ontology = NULL,
@@ -41,13 +39,13 @@ richGSEA_internal(
 
 \item{KEGG}{a logical evaluating to TRUE or FALSE indicating whether KEGG GSEA were peformed or not.}
 
-\item{minSize}{Minimal size of a gene set to test. All pathways below the threshold are excluded.}
+\item{minSize}{Minimal size of a gene set to test, counted as the gene-set
+membership intersected with the ranked genes (passed to fgsea). Smaller
+gene sets are not tested.}
 
-\item{maxSize}{Maximal size of a gene set to test. All pathways above the threshold are excluded.}
-
-\item{minGSSize}{minimal size of genes annotated by ontology term for testing.}
-
-\item{maxGSSize}{maximal size of each geneset for analyzing}
+\item{maxSize}{Maximal size of a gene set to test, counted as the gene-set
+membership intersected with the ranked genes (passed to fgsea). Larger
+gene sets are not tested.}
 
 \item{padj.method}{p value adjust method}
 

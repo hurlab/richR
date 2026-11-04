@@ -14,7 +14,7 @@ richNetwork(
   gene,
   top = 50,
   pvalue = 0.05,
-  padj = NULL,
+  padj = 0.05,
   usePadj = TRUE,
   low = "orange",
   high = "red",
@@ -47,7 +47,7 @@ richNetwork(
   gene,
   top = 50,
   pvalue = 0.05,
-  padj = NULL,
+  padj = 0.05,
   usePadj = TRUE,
   low = "orange",
   high = "red",
@@ -80,7 +80,7 @@ richNetwork(
   gene = NULL,
   top = 50,
   pvalue = 0.05,
-  padj = NULL,
+  padj = 0.05,
   usePadj = TRUE,
   low = "orange",
   high = "red",
@@ -113,7 +113,7 @@ richNetwork(
   gene,
   top = 50,
   pvalue = 0.05,
-  padj = NULL,
+  padj = 0.05,
   usePadj = TRUE,
   low = "orange",
   high = "red",
@@ -146,7 +146,7 @@ richNetwork(
   gene,
   top = 50,
   pvalue = 0.05,
-  padj = NULL,
+  padj = 0.05,
   usePadj = TRUE,
   low = "orange",
   high = "red",
@@ -181,7 +181,7 @@ richNetwork(
 
 \item{top}{number of terms to display}
 
-\item{pvalue}{cutoff value of pvalue (if padj set as NULL)}
+\item{pvalue}{raw p-value cutoff: a term is kept when \code{Pvalue <= pvalue} and, unless \code{padj} is NULL, \code{Padj <= padj}}
 
 \item{padj}{cutoff value of p adjust value}
 

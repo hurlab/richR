@@ -8,7 +8,7 @@ ggscatter_internal(
   resultFis,
   top = 50,
   pvalue = 0.05,
-  padj = NULL,
+  padj = 0.05,
   usePadj = TRUE,
   low = "#fee0d2",
   high = "#b2182b",

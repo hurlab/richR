@@ -206,7 +206,16 @@
     "A", "A", "B", "B", "B", "B", "B", "B", "B", "B", "B", "B", "B", 
     "B", "B", "B", "B", "B", "B", "B", "B", "B", "B", "B", "B", "B", 
     "B", "B", "B", "B", "B", "B", "B", "B", "B", "B", "B", "B", "B", 
-    "B", "B", "B", "B", "B", "B", "B", "B", "B", "B", "B")), row.names = c("A.1", 
+    "B", "B", "B", "B", "B", "B", "B", "B", "B", "B", "B"), pathway = c("T4", 
+    "T4", "T4", "T4", "T4", "T4", "T4", "T4", "T4", "T4", "T4", "T4", 
+    "T2", "T2", "T2", "T2", "T2", "T2", "T2", "T2", "T2", "T2", "T2", 
+    "T2", "T2", "T2", "T2", "T2", "T2", "T2", "T1", "T1", "T1", "T1", 
+    "T1", "T1", "T1", "T1", "T1", "T1", "T1", "T1", "T1", "T1", "T1", 
+    "T1", "T1", "T1", "T4", "T4", "T4", "T4", "T4", "T4", "T4", "T4", 
+    "T4", "T4", "T4", "T4", "T1", "T1", "T1", "T1", "T1", "T1", "T1", 
+    "T1", "T1", "T1", "T1", "T1", "T1", "T1", "T1", "T1", "T1", "T1", 
+    "T2", "T2", "T2", "T2", "T2", "T2", "T2", "T2", "T2", "T2", "T2", 
+    "T2", "T2", "T2", "T2", "T2", "T2", "T2")), row.names = c("A.1", 
     "A.2", "A.3", "A.4", "A.5", "A.6", "A.7", "A.8", "A.9", "A.10", 
     "A.11", "A.12", "A.13", "A.14", "A.15", "A.16", "A.17", "A.18", 
     "A.19", "A.20", "A.21", "A.22", "A.23", "A.24", "A.25", "A.26", 
@@ -221,15 +230,10 @@
     "B.44", "B.45", "B.46", "B.47", "B.48"), class = "data.frame"), 
         layers = 6L)
 
-# compareGSEA() with a non-NULL padj fails today and the failure is pinned
+# compareGSEA() with a non-NULL padj applies both cutoffs to the fixture pair
 
-    Code
-      compareGSEA(fx$results, fx$annot, padj = 0.05)
-    Condition
-      Error in `filter()`:
-      i In argument: `padj < Padj`.
-      Caused by error:
-      ! object 'Padj' not found
+    list(drawn = c("A@down pathway", "A@top pathway", "A@up pathway", 
+    "B@down pathway", "B@top pathway", "B@up pathway"))
 
 # richCluster() pins kappa clusters for data.frame and richResult input
 

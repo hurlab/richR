@@ -2,6 +2,120 @@
 
 ## Version 0.2.0 (unreleased)
 
+### Significance cutoffs (changes reported results)
+
+- Every function that reports or plots enrichment results now applies one
+  significance rule: a term is kept when its raw p-value is at most `pvalue`
+  **and**, unless `padj` is `NULL`, its adjusted p-value is at most `padj`.
+  Both comparisons use `<=`, and a row with a missing p-value (or a missing
+  adjusted p-value while `padj` is set) is dropped. In 0.1.x the comparisons
+  were strict (`<`) and a non-`NULL` `padj` replaced the raw cutoff instead
+  of adding to it. The rule covers the ORA functions (`enrich()`,
+  `richGO()`, `richKEGG()`, `richLevel()`, `richDAVID()`), `richGSEA()`,
+  `compareResult()`, `compareGSEA()`, `richCompareDot()`, `getPathways()`,
+  `filterPathways()`, `richGSEAcurve()` and the plot functions.
+- The defaults are now `pvalue = 0.05` and `padj = 0.05` everywhere,
+  including the plot functions; in 0.1.x `padj` defaulted to `NULL`. A
+  default call therefore reports fewer terms than in 0.1.5, and on random or
+  weak input it can report none. To get the old behaviour back:
+  - `padj = NULL` filters on the raw p-value only, as the 0.1.x defaults did;
+  - `pvalue = 1` filters on the adjusted p-value alone, as a 0.1.x call with
+    `padj` set did;
+  - `pvalue = 1, padj = 1` disables significance filtering (size filters
+    still apply).
+- Cutoffs are validated with one rule everywhere: a single finite number in
+  (0, 1]. `richGSEA()` now rejects `pvalue = 0` and `padj = 0`, which it
+  accepted in 0.1.x.
+- `compareResult()` and `compareGSEA()` no longer apply the extra
+  `Padj < 1` / `Pvalue < 1` guards of 0.1.x; terms with a p-value or an
+  adjusted p-value of exactly 1 are kept when the cutoffs allow them.
+- `getPathways()` and `filterPathways()` follow the same rule: both
+  `padj_cutoff` and `pval_cutoff` apply together (in 0.1.x `pval_cutoff`
+  was used only when `padj_cutoff` was `NULL`). `padj_cutoff = NULL` filters
+  on the raw p-value only, and `pval_cutoff = NULL` applies no raw cutoff.
+- `richCompareDot(include.all = TRUE)` draws every input row without
+  applying `pvalue` or `padj`; filter in `compareResult()` instead.
+- `richVolcano()` does not filter rows; with the new default `padj = 0.05`
+  its dashed reference line is drawn at the adjusted cutoff, where in 0.1.x
+  it was drawn at `pvalue`. Pass `padj = NULL` to draw it at `pvalue`.
+- Filtering at analysis time is permanent: rows removed by `richGO()`,
+  `richKEGG()`, `richGSEA()` and the other analysis functions are not stored
+  in the result, so a later plot or `compareResult()` call with cutoffs of 1
+  cannot bring them back. Run the analysis with `pvalue = 1, padj = 1` when
+  you want to choose cutoffs later.
+- `richGSEAcurve()` applies `pvalue` and `padj` only when it picks the
+  pathways itself; its explicit `pathways` and `pathway_pattern` selections
+  are not significance-filtered, by design, and choose among the rows the
+  `GSEAResult` holds.
+- Printing a `richResult` or `GSEAResult` shows the stored cutoffs with the
+  inclusive rule, for example `(pvalue <= 0.05, padj <= 0.05)`; in 0.1.x a
+  `richResult` printed `(pvalue < 0.05 )` and never the adjusted cutoff.
+  `summary(<GSEAResult>)` counts the rows passing the stored cutoffs instead
+  of a fixed `padj < 0.05`.
+- `richDAVID()` is deprecated and warns on every call: it depends on
+  RDAVIDWebService, which is no longer available from Bioconductor, and it
+  will be removed in the next minor release. Use `enrich()`, `richGO()` or
+  `richKEGG()` with a locally built annotation instead. Its documentation now
+  states that Benjamini, DAVID's adaptive FDR and Bonferroni are distinct
+  quantities and that DAVID applies `count = minSize` on the server, so
+  `keepRich` cannot restore smaller terms.
+
+### ORA tested family (changes adjusted p-values)
+
+- ORA now adjusts p-values over the terms whose annotated size lies in
+  [`minGSSize`, `maxGSSize`] (inclusive) and that share at least one gene
+  with the query, the convention of clusterProfiler and DOSE. In 0.1.x the
+  size bounds were applied after adjustment, so terms outside them still
+  entered the adjustment; adjusted p-values can therefore be smaller than in
+  0.1.5 when the annotation holds terms outside the size bounds. `minSize`,
+  `maxSize`, `keepRich` and the cutoffs remain reporting filters and never
+  change an adjusted value.
+- New argument `padj.family` on `enrich()`, `richGO()`, `richKEGG()` and
+  `richLevel()` (and through `...` on `batchEnrich()`). The default
+  `"overlap"` is the family above; `"all"` adjusts over every size-eligible
+  term, zero-overlap terms contributing p = 1 (they are never reported).
+  The default family is a convention, not an FDR guarantee: with a universe
+  of 100 single-gene terms and one selected gene under the null
+  (`minGSSize = 1, minSize = 1`), the only overlapping term has p = 0.01,
+  BH over that one term gives 0.01, and a null term is reported every time;
+  BH over all 100 terms gives 1. Use `padj.family = "all"` when that matters.
+  `richGO()` adjusts within each ontology and `richLevel()` within each
+  level. `enrichmentInfo()` records the family in `testing$family_policy`
+  and the argument in `options$padj.family`.
+- `keepRich = TRUE` now exempts fully rich terms (`RichFactor == 1`) from
+  the `minSize` filter only. It no longer admits terms below `minGSSize`,
+  which are outside the tested family. With the default sizes
+  (`minGSSize = 10`, `minSize = 2`) every tested term already has at least
+  10 annotated genes, so `keepRich` has no effect unless `minGSSize` is
+  lowered below `minSize`.
+
+### GSEA
+
+- `richGSEA()` keys gene sets by annotation identifier. Distinct gene sets
+  that share a label were merged into one set in 0.1.x; they are now tested
+  separately. `@result$pathway` holds the identifier (for example a KEGG or
+  GO ID), and a new `Term` column, directly after `leadingEdge`, holds the
+  label. Code that compares `pathway` with pathway names must switch to
+  `Term`, for example `subset(result(res), Term == "Cell cycle")`.
+- `richGSEAcurve(pathways = )`, `compareGSEA(pathway = )`,
+  `richGSEAplot(term = )` and `getGenes(<GSEAResult>, term = )` accept an
+  identifier, a KEGG identifier with or without its organism prefix
+  (`"hsa04110"` or `"04110"`), or a unique `Term` label. A label shared by
+  several pathways, or a value that matches nothing, is an error.
+  `richGSEAplot()` also still draws a `GSEAResult` saved from 0.1.x, whose
+  `pathway` column holds labels.
+- Plots of a `GSEAResult` show the `Term` label; where two pathways share a
+  label, the identifier is appended (`"label [ID]"`) so they are drawn as two
+  categories with their own values.
+- Reactome pathways that share a name are still tested as one gene set,
+  because `buildAnnot(anntype = "Reactome")` returns no identifier column.
+  This is fixed in a later milestone of 0.2.0.
+- Removed the unused `minGSSize` and `maxGSSize` arguments of the internal
+  GSEA routine: they were validated and recorded but never passed to fgsea,
+  and the exported `richGSEA()` methods never exposed them. The GSEA family
+  is bounded by `minSize` / `maxSize` on the gene-set members found in the
+  ranked list.
+
 ### Requirements and packaging
 
 - richR now requires R 4.6 or later (`Depends: R (>= 4.6)`). The package
@@ -28,6 +142,20 @@
 
 ### Bug fixes
 
+- `compareGSEA()` with a `padj` cutoff no longer stops with an error: in
+  0.1.x it referred to an undefined local `Padj` cutoff. The caller's
+  `pvalue` and `padj` are now applied as described under "Significance
+  cutoffs".
+- `compareGSEA()` builds its NES, `padj` and `pval` tables keyed by group and
+  pathway. In 0.1.x, groups whose retained pathways differed in set or order
+  received values from the wrong pathway, and pathways retained only by a
+  later group were dropped.
+- `richGSEAcurve()` and `compareGSEA()` stop with "no pathway passes the
+  cutoffs" when the cutoffs leave nothing to draw, instead of failing with an
+  unrelated data-frame error; the stricter 0.2.0 defaults make this case more
+  common. `richGSEAcurve()` and `richVolcano()` (with its aliases
+  `ggvolcano()` and `ggVolcano()`) now validate `pvalue` and `padj` even when
+  they do not filter rows.
 - `detail(<GSEAResult>)` now returns `as.data.frame(x@result)` with a message
   that the class has no `detail` slot. In 0.1.5 the call failed with
   `no slot of name "detail"` because an outdated duplicate method read a slot
@@ -37,7 +165,9 @@
 
 These changes do not alter results: the `NAMESPACE` file, and so the set of
 exported functions, is unchanged from 0.1.5, and the only characterization
-snapshot that changed is the `detail()` bug fix above.
+snapshot they changed is the `detail()` bug fix above. (The GSEA and
+`compareGSEA()` snapshots were later re-pinned for the behaviour changes
+described in the sections above.)
 
 - Removed `R/misc.R`, which held outdated duplicate definitions of 32 functions
   and 37 S4 methods or coercions that silently overrode, or were overridden by,
@@ -51,12 +181,6 @@ snapshot that changed is the `detail()` bug fix above.
 - Added characterization tests (testthat edition 3 snapshots on small
   fixtures) that pin the ORA, GSEA, `richLevel`, `compareResult`,
   `compareGSEA`, `richCluster`, accessor and coercion behaviour of 0.1.5.
-
-### Known issues
-
-- `compareGSEA()` with a `padj` cutoff still fails with
-  `object 'Padj' not found`, as in 0.1.5. The characterization tests record
-  this behaviour; it is not fixed in this development snapshot.
 
 ## Version 0.1.5 (2026-10-20)
 

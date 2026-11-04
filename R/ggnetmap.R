@@ -4,7 +4,7 @@
 ##' @param gene vector contains gene names or dataframe with DEGs information
 ##' @param top number of terms to display
 ##' @param top.display top number to display
-##' @param pvalue cutoff value of pvalue (if padj set as NULL)
+##' @param pvalue raw p-value cutoff: a term is kept when \code{Pvalue <= pvalue} and, unless \code{padj} is NULL, \code{Padj <= padj}
 ##' @param padj cutoff value of p adjust value
 ##' @param usePadj use adjust p value as color or not
 ##' @param low color used for small value
@@ -41,7 +41,7 @@
 #' }
 ##' @export
 ##' @author Kai Guo
-richNetmap<-function(richRes,gene=NULL,top=50,top.display=NULL,pvalue = 0.05, padj = NULL,usePadj=TRUE,low = "orange",high = "red",
+richNetmap<-function(richRes,gene=NULL,top=50,top.display=NULL,pvalue = 0.05, padj = 0.05,usePadj=TRUE,low = "orange",high = "red",
                    weightcut = 0.2, useTerm = TRUE, writeCyt = FALSE,cytoscapeFile = "cytoscape.txt",cytoscapeFormat="graphml",
                    label.color = "black", label.size = 2,node.shape=NULL, layout = "fruchtermanreingold",savefig=FALSE,
                    visNet=FALSE,smooth=TRUE,nodeselect=FALSE,edit=FALSE,savehtml=FALSE,filename="network",

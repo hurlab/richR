@@ -21,7 +21,7 @@ richDot(
   fontsize.x = 10,
   fontsize.y = 10,
   short = FALSE,
-  padj = NULL,
+  padj = 0.05,
   usePadj = TRUE,
   orderp = FALSE,
   filename = NULL,
@@ -43,7 +43,7 @@ richDot(
   fontsize.x = 10,
   fontsize.y = 10,
   short = FALSE,
-  padj = NULL,
+  padj = 0.05,
   usePadj = TRUE,
   orderp = FALSE,
   filename = NULL,
@@ -64,7 +64,7 @@ richDot(
   fontsize.x = 10,
   fontsize.y = 10,
   short = FALSE,
-  padj = NULL,
+  padj = 0.05,
   usePadj = TRUE,
   orderp = FALSE,
   filename = NULL,
@@ -85,7 +85,7 @@ richDot(
   fontsize.x = 10,
   fontsize.y = 10,
   short = FALSE,
-  padj = NULL,
+  padj = 0.05,
   usePadj = TRUE,
   orderp = FALSE,
   filename = NULL,
@@ -99,7 +99,7 @@ richDot(
 
 \item{top}{number of terms you want to display}
 
-\item{pvalue}{cutoff value of pvalue (if padj set as NULL)}
+\item{pvalue}{raw p-value cutoff: a term is kept when \code{Pvalue <= pvalue} and, unless \code{padj} is NULL, \code{Padj <= padj}}
 
 \item{order}{order by Term or richFactor}
 

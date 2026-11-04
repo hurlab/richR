@@ -19,7 +19,7 @@ richGSEAcurve(
   max_genes = NULL,
   top = 10,
   pvalue = 0.05,
-  padj = NULL,
+  padj = 0.05,
   gseaParam = 1,
   ticksSize = 0.2,
   plot_title = "GSEA Enrichment Plot",
@@ -47,7 +47,7 @@ plotGSEA(
   max_genes = NULL,
   top = 10,
   pvalue = 0.05,
-  padj = NULL,
+  padj = 0.05,
   gseaParam = 1,
   ticksSize = 0.2,
   plot_title = "GSEA Enrichment Plot",
@@ -74,9 +74,12 @@ plotGSEA(
 
 \item{show_direction}{logical, whether to use directional coloring based on NES}
 
-\item{pathways}{specific pathway names to display (if NULL, use top/pvalue/padj filtering)}
+\item{pathways}{pathways to display (if NULL, use top/pvalue/padj filtering):
+pathway identifiers, KEGG identifiers with or without organism prefix, or
+unique \code{Term} labels; a label shared by several pathways, or a value
+matching nothing, is an error}
 
-\item{pathway_pattern}{regex pattern for pathway matching}
+\item{pathway_pattern}{regex pattern matched against pathway identifiers and \code{Term} labels}
 
 \item{category}{pathway category filter}
 
@@ -86,9 +89,15 @@ plotGSEA(
 
 \item{top}{number of terms you want to display (used when pathways is NULL)}
 
-\item{pvalue}{cutoff value of pvalue (if padj set as NULL, used when pathways is NULL)}
+\item{pvalue}{raw p-value cutoff, used only when \code{pathways} and
+\code{pathway_pattern} are NULL: a pathway is drawn when
+\code{pval <= pvalue} and, unless \code{padj} is NULL,
+\code{padj <= padj}. The explicit \code{pathways} and
+\code{pathway_pattern} selections are not significance-filtered by design;
+they choose among the rows the \code{GSEAResult} already holds.}
 
-\item{padj}{cutoff value of p adjust value (used when pathways is NULL)}
+\item{padj}{adjusted p-value cutoff (used only when \code{pathways} and
+\code{pathway_pattern} are NULL); NULL filters on the raw p-value only}
 
 \item{gseaParam}{GSEA parameter for enrichment score calculation}
 

@@ -11,17 +11,30 @@
 #' @param ontology ontology type
 #' @param minSize minimal number of genes included in significant terms
 #' @param maxSize maximum number of genes included in significant terms
-#' @param minGSSize minimal size of genes annotated by ontology term for testing.
-#' @param maxGSSize maximal size of each geneset for analyzing
-#' @param keepRich keep terms with rich factor value equal 1 or not (default: TRUE)
+#' @param minGSSize minimum annotated term size for testing: the number of the term's genes in the background. \code{[minGSSize, maxGSSize]} (inclusive) bounds the tested family before p-value adjustment.
+#' @param maxGSSize maximum annotated term size for testing (inclusive upper bound of the tested family; see \code{minGSSize}).
+#' @param keepRich keep terms with rich factor value equal 1 even when their overlap is below \code{minSize} (default: TRUE). It exempts only the \code{minSize} reporting filter and never admits a term outside the tested family.
+#' @param padj.family family of terms that \code{padj.method} adjusts over:
+#'   \code{"overlap"} (default) holds the size-eligible terms (see \code{minGSSize})
+#'   that share at least one gene with the query; \code{"all"} holds every
+#'   size-eligible term, zero-overlap terms contributing p = 1 (they are never
+#'   reported). \code{minSize}, \code{maxSize}, \code{keepRich} and the cutoffs are
+#'   applied afterwards and never change an adjusted value. The default family
+#'   matches clusterProfiler/DOSE but is a convention, not an FDR guarantee: with a
+#'   universe of 100 single-gene terms and one selected gene under the null (with
+#'   \code{minGSSize = 1, minSize = 1}), the only overlapping term has p = 0.01 and
+#'   BH over that one term gives 0.01, so a null term is reported every time; BH
+#'   over all 100 gives 1. Use \code{padj.family = "all"} for adjustment over every
+#'   size-eligible term.
+#'   Terms are the entries of the requested \code{level}, so each call adjusts over that hierarchy level only (one family per level).
 #' @param filename output filename
 #' @param padj.method pvalue adjust method(default:"BH")
 #' @param sep character string used to separate the genes when concatenating
 #' @author Kai Guo
-richLevel_internal<-function(x,kodata,level="Level2",pvalue =0.05, padj=NULL,
+richLevel_internal<-function(x,kodata,level="Level2",pvalue =0.05, padj=0.05,
                              organism=NULL,keytype="SYMBOL",ontology="",minSize=2,maxSize=500,
                              minGSSize = 10, maxGSSize = 500,
-                             keepRich=TRUE, filename=NULL,padj.method="BH",sep=","){
+                             keepRich=TRUE, filename=NULL,padj.method="BH",sep=",",padj.family=c("overlap","all")){
   path_env <- new.env(parent = emptyenv())
   utils::data("path", package = "richR", envir = path_env)
   annot<-left_join(kodata,path_env$path,by=c('PATH'="ko"))
@@ -29,7 +42,7 @@ richLevel_internal<-function(x,kodata,level="Level2",pvalue =0.05, padj=NULL,
   annot<-annot[!is.na(annot[,2]),]
   result<-enrich(x = x,object = annot,pvalue=pvalue,padj=padj,organism=organism,minSize=minSize,
               maxSize=maxSize,minGSSize = minGSSize, maxGSSize = maxGSSize,keepRich=keepRich,keytype=keytype,ontology=ontology,filename=filename,
-              padj.method=padj.method,sep = sep)
+              padj.method=padj.method,sep = sep,padj.family=padj.family)
   return(result)
 }
 #' Pathway Enrichment analysis for different level function
@@ -45,9 +58,22 @@ richLevel_internal<-function(x,kodata,level="Level2",pvalue =0.05, padj=NULL,
 #' @param ontology ontology type
 #' @param minSize minimal number of genes included in significant terms
 #' @param maxSize maximum number of genes included in significant terms
-#' @param minGSSize minimal size of genes annotated by ontology term for testing.
-#' @param maxGSSize maximal size of each geneset for analyzing
-#' @param keepRich keep terms with rich factor value equal 1 or not (default: TRUE)
+#' @param minGSSize minimum annotated term size for testing: the number of the term's genes in the background. \code{[minGSSize, maxGSSize]} (inclusive) bounds the tested family before p-value adjustment.
+#' @param maxGSSize maximum annotated term size for testing (inclusive upper bound of the tested family; see \code{minGSSize}).
+#' @param keepRich keep terms with rich factor value equal 1 even when their overlap is below \code{minSize} (default: TRUE). It exempts only the \code{minSize} reporting filter and never admits a term outside the tested family.
+#' @param padj.family family of terms that \code{padj.method} adjusts over:
+#'   \code{"overlap"} (default) holds the size-eligible terms (see \code{minGSSize})
+#'   that share at least one gene with the query; \code{"all"} holds every
+#'   size-eligible term, zero-overlap terms contributing p = 1 (they are never
+#'   reported). \code{minSize}, \code{maxSize}, \code{keepRich} and the cutoffs are
+#'   applied afterwards and never change an adjusted value. The default family
+#'   matches clusterProfiler/DOSE but is a convention, not an FDR guarantee: with a
+#'   universe of 100 single-gene terms and one selected gene under the null (with
+#'   \code{minGSSize = 1, minSize = 1}), the only overlapping term has p = 0.01 and
+#'   BH over that one term gives 0.01, so a null term is reported every time; BH
+#'   over all 100 gives 1. Use \code{padj.family = "all"} for adjustment over every
+#'   size-eligible term.
+#'   Terms are the entries of the requested \code{level}, so each call adjusts over that hierarchy level only (one family per level).
 #' @param filename output filename
 #' @param padj.method pvalue adjust method(default:"BH")
 #' @param sep character string used to separate the genes when concatenating
@@ -60,14 +86,14 @@ richLevel_internal<-function(x,kodata,level="Level2",pvalue =0.05, padj=NULL,
 #' }
 #' @export
 #' @author Kai Guo
-setMethod("richLevel", signature(kodata = "data.frame"),definition = function(x,kodata,level="Level2",pvalue =0.05, padj=NULL,
+setMethod("richLevel", signature(kodata = "data.frame"),definition = function(x,kodata,level="Level2",pvalue =0.05, padj=0.05,
                                                                               organism=NULL,keytype="SYMBOL",ontology="KEGG",minSize=2,maxSize=500,
                                                                               minGSSize = 10, maxGSSize = 500,
-                                                                              keepRich=TRUE, filename=NULL,padj.method="BH",sep=",") {
+                                                                              keepRich=TRUE, filename=NULL,padj.method="BH",sep=",",padj.family=c("overlap","all")) {
   richLevel_internal(x,kodata=kodata,level=level, pvalue=pvalue,padj=padj,
                     organism=organism,keytype=keytype,ontology=ontology,minSize=minSize,
                     maxSize=maxSize,minGSSize = minGSSize, maxGSSize = maxGSSize,keepRich=keepRich,filename=filename,
-                    padj.method=padj.method,sep=sep)
+                    padj.method=padj.method,sep=sep,padj.family=padj.family)
 })
 
 #' Pathway Enrichment analysis for different level function
@@ -82,9 +108,22 @@ setMethod("richLevel", signature(kodata = "data.frame"),definition = function(x,
 #' @param ontology ontology type
 #' @param minSize minimal number of genes included in significant terms
 #' @param maxSize maximum number of genes included in significant terms
-#' @param minGSSize minimal size of genes annotated by ontology term for testing.
-#' @param maxGSSize maximal size of each geneset for analyzing
-#' @param keepRich keep terms with rich factor value equal 1 or not (default: TRUE)
+#' @param minGSSize minimum annotated term size for testing: the number of the term's genes in the background. \code{[minGSSize, maxGSSize]} (inclusive) bounds the tested family before p-value adjustment.
+#' @param maxGSSize maximum annotated term size for testing (inclusive upper bound of the tested family; see \code{minGSSize}).
+#' @param keepRich keep terms with rich factor value equal 1 even when their overlap is below \code{minSize} (default: TRUE). It exempts only the \code{minSize} reporting filter and never admits a term outside the tested family.
+#' @param padj.family family of terms that \code{padj.method} adjusts over:
+#'   \code{"overlap"} (default) holds the size-eligible terms (see \code{minGSSize})
+#'   that share at least one gene with the query; \code{"all"} holds every
+#'   size-eligible term, zero-overlap terms contributing p = 1 (they are never
+#'   reported). \code{minSize}, \code{maxSize}, \code{keepRich} and the cutoffs are
+#'   applied afterwards and never change an adjusted value. The default family
+#'   matches clusterProfiler/DOSE but is a convention, not an FDR guarantee: with a
+#'   universe of 100 single-gene terms and one selected gene under the null (with
+#'   \code{minGSSize = 1, minSize = 1}), the only overlapping term has p = 0.01 and
+#'   BH over that one term gives 0.01, so a null term is reported every time; BH
+#'   over all 100 gives 1. Use \code{padj.family = "all"} for adjustment over every
+#'   size-eligible term.
+#'   Terms are the entries of the requested \code{level}, so each call adjusts over that hierarchy level only (one family per level).
 #' @param filename output filename
 #' @param padj.method pvalue adjust method(default:"BH")
 #' @param sep character string used to separate the genes when concatenating
@@ -96,12 +135,12 @@ setMethod("richLevel", signature(kodata = "data.frame"),definition = function(x,
 #' }
 #' @export
 #' @author Kai Guo
-setMethod("richLevel", signature(kodata = "Annot"),definition = function(x,kodata,level="Level2",pvalue =0.05, padj=NULL,
+setMethod("richLevel", signature(kodata = "Annot"),definition = function(x,kodata,level="Level2",pvalue =0.05, padj=0.05,
                                                                          organism=NULL,keytype="SYMBOL",ontology="",minSize=2,maxSize=500,
                                                                          minGSSize = 10, maxGSSize = 500,
-                                                                         keepRich=TRUE, filename=NULL,padj.method="BH",sep=",") {
+                                                                         keepRich=TRUE, filename=NULL,padj.method="BH",sep=",",padj.family=c("overlap","all")) {
   richLevel_internal(x,kodata@annot,level=level,pvalue=pvalue,padj=padj,
                     organism=kodata@species,keytype=kodata@keytype,ontology=kodata@anntype,minSize=minSize,
                     maxSize=maxSize,minGSSize = minGSSize, maxGSSize = maxGSSize,keepRich=keepRich,filename=filename,
-                    padj.method=padj.method,sep=sep)
+                    padj.method=padj.method,sep=sep,padj.family=padj.family)
 })

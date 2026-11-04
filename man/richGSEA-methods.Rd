@@ -9,7 +9,7 @@ richGSEA(
   object,
   keytype = "",
   pvalue = 0.05,
-  padj = NULL,
+  padj = 0.05,
   KEGG = FALSE,
   minSize = 15,
   ontology = "",
@@ -39,11 +39,13 @@ richGSEA(
 
 \item{KEGG}{logical, whether KEGG GSEA were performed}
 
-\item{minSize}{Minimal size of a gene set to test}
+\item{minSize}{Minimal size of a gene set to test, counted as the gene-set
+membership intersected with the ranked genes (passed to fgsea)}
 
 \item{ontology}{ontology type}
 
-\item{maxSize}{Maximal size of a gene set to test}
+\item{maxSize}{Maximal size of a gene set to test, counted as the gene-set
+membership intersected with the ranked genes (passed to fgsea)}
 
 \item{padj.method}{p value adjust method}
 

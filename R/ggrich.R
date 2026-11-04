@@ -29,17 +29,13 @@
 ##' @param repel use ggrepel text function or not
 ##' @param segment.size segment size for ggrepel text
 ##' @param sep character string used to separate the genes when concatenating
-ggrich_internal <- function(object,top=50, pvalue=0.05, padj=NULL,
+ggrich_internal <- function(object,top=50, pvalue=0.05, padj=0.05,
                             usePadj =TRUE, useTerm=TRUE,low="orange",high="red",
                             writeCyt=FALSE, cytoscapeFile="network-file-for-cytoscape.txt",
                             label.color = "black", label.size = 2, node.shape=NULL,
                             layout = "fruchtermanreingold",savefig=FALSE,filename="network",
                             width=7,height=7,node.alpha=0.7,repel=TRUE,segment.size=0.2,sep=","){
-  if(!is.null(padj)){
-    object<-object[object$Padj<padj,]
-  }else{
-    object<-object[object$Pvalue<pvalue,]
-  }
+  object <- .sig_filter(object, pvalue, padj)
   if(nrow(object)>=top){
     object<-object[1:top,]
   }
@@ -137,7 +133,7 @@ ggrich_internal <- function(object,top=50, pvalue=0.05, padj=NULL,
 ##' }
 ##' @export
 ##' @author Kai Guo
-setMethod("richNetplot", signature(object = "richResult"),definition = function(object,top=50, pvalue=0.05, padj=NULL,
+setMethod("richNetplot", signature(object = "richResult"),definition = function(object,top=50, pvalue=0.05, padj=0.05,
                                                                            usePadj =TRUE, useTerm=TRUE,low="orange",high="red",
                                                                            writeCyt=FALSE, cytoscapeFile="network-file-for-cytoscape.txt",
                                                                            label.color = "black", label.size = 2, node.shape=NULL,
@@ -184,7 +180,7 @@ setMethod("richNetplot", signature(object = "richResult"),definition = function(
 ##' }
 ##' @export
 ##' @author Kai Guo
-setMethod("richNetplot", signature(object = "data.frame"),definition = function(object,top=50, pvalue=0.05, padj=NULL,
+setMethod("richNetplot", signature(object = "data.frame"),definition = function(object,top=50, pvalue=0.05, padj=0.05,
                                                                            usePadj =TRUE, useTerm=TRUE,low="orange",high="red",
                                                                            writeCyt=FALSE, cytoscapeFile="network-file-for-cytoscape.txt",
                                                                            label.color = "black", label.size = 2, node.shape=NULL,
@@ -231,20 +227,14 @@ setMethod("richNetplot", signature(object = "data.frame"),definition = function(
 #' res<-richKEGG(gene,object = hsako)
 #' richNetplot(res)
 ##' }
-setMethod("richNetplot", signature(object = "GSEAResult"),definition = function(object,top=50, pvalue=0.05, padj=NULL,
+setMethod("richNetplot", signature(object = "GSEAResult"),definition = function(object,top=50, pvalue=0.05, padj=0.05,
                                                                               usePadj =TRUE, useTerm=TRUE,low="orange",high="red",
                                                                               writeCyt=FALSE, cytoscapeFile="network-file-for-cytoscape.txt",
                                                                               label.color = "black", label.size = 2, node.shape=NULL,
                                                                               layout = "fruchtermanreingold",savefig=FALSE,filename="network",
                                                                               width=7,height=7,node.alpha=0.7,repel=TRUE,segment.size=0.2,sep=",") {
   sep <- object@sep
-  object<-object@result
-  if(is.list(object$leadingEdge)){
-    object$leadingEdge<-unlist(lapply(object$leadingEdge, function(x)paste(x,collapse = sep,sep="")))
-  }
-  object$Annot<-object$pathway
-  object<-object[,c(9,1:3,8)]
-  colnames(object)<-c("Annot","Term","Pvalue","Padj","GeneID")
+  object <- .gsea_network_frame(object@result, sep = sep)
   ggrich_internal(object,top=top,pvalue=pvalue,padj=padj,
                   usePadj=usePadj,useTerm=useTerm,low=low,high=high,
                   writeCyt=writeCyt, cytoscapeFile=cytoscapeFile,

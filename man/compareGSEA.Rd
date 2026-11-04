@@ -11,7 +11,7 @@ compareGSEA(
   pathway = NULL,
   mycol = NULL,
   pvalue = 0.05,
-  padj = NULL,
+  padj = 0.05,
   label = FALSE,
   gseaParam = 1,
   ticksSize = 0.2,
@@ -26,13 +26,20 @@ compareGSEA(
 
 \item{gene}{list of a vector include all log2FC with gene name (optional)}
 
-\item{pathway}{pathways you want to display (optional)}
+\item{pathway}{pathways you want to display (optional): pathway identifiers,
+KEGG identifiers with or without organism prefix, or unique \code{Term}
+labels, resolved over all groups before significance filtering; a label
+shared by several pathways, or a value matching nothing, is an error, and a
+pathway removed by the cutoffs in every group is warned about}
 
 \item{mycol}{a vector indicate the colors used for the figure}
 
-\item{pvalue}{cutoff value of pvalue (if padj set as NULL)}
+\item{pvalue}{raw p-value cutoff in (0, 1]: a pathway is kept in a group
+when its \code{pval <= pvalue} and, unless \code{padj} is NULL, its
+\code{padj} is \code{<=} the \code{padj} cutoff}
 
-\item{padj}{cutoff value of p adjust value}
+\item{padj}{adjusted p-value cutoff in (0, 1], applied together with
+\code{pvalue}; NULL filters on the raw p-value only}
 
 \item{label}{display the NES values or not}
 

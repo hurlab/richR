@@ -17,8 +17,10 @@ NULL
 #'
 #' @param resultFis data.frame of enrichment results (columns: Term, Pvalue, Padj)
 #' @param top number of top terms to display (default 20)
-#' @param pvalue p-value cutoff when \code{padj} is NULL
-#' @param padj adjusted-p cutoff (takes precedence when non-NULL)
+#' @param pvalue p-value cutoff: a term is kept when \code{Pvalue <= pvalue}
+#'   and, unless \code{padj} is NULL, \code{Padj <= padj}
+#' @param padj adjusted-p cutoff applied together with \code{pvalue}; NULL
+#'   filters on the raw p-value only
 #' @param usePadj logical; colour by adjusted p-value?
 #' @param low low-end gradient colour (default \code{"lightpink"})
 #' @param high high-end gradient colour (default \code{"red"})
@@ -32,7 +34,7 @@ NULL
 gglollipop_internal <- function(resultFis,
                                 top      = 20,
                                 pvalue   = 0.05,
-                                padj     = NULL,
+                                padj     = 0.05,
                                 usePadj  = TRUE,
                                 low      = "lightpink",
                                 high     = "red",
@@ -76,8 +78,10 @@ gglollipop_internal <- function(resultFis,
 #'
 #' @param resultFis data.frame with GSEA or ORA results (columns vary; NES/pval/padj for GSEA, FoldEnrichment/Pvalue/Padj for ORA)
 #' @param top max number of top terms to display (default 50)
-#' @param pvalue p-value cutoff
-#' @param padj adjusted-p cutoff (overrides \code{pvalue} when supplied)
+#' @param pvalue p-value cutoff; sets the reference line only when \code{padj}
+#'   is NULL (no rows are filtered)
+#' @param padj adjusted-p cutoff; the dashed reference line is drawn at
+#'   \code{-log10(padj)} (no rows are filtered)
 #' @param usePadj logical, use adjusted p-value column for significance (default TRUE)
 #' @param low colour for down-regulated (negative-effect) points (default \code{"#2166ac"})
 #' @param mid colour at zero effect (default \code{"white"})
@@ -94,7 +98,7 @@ gglollipop_internal <- function(resultFis,
 ggvolcano_internal <- function(resultFis,
                                top        = 50,
                                pvalue     = 0.05,
-                               padj       = NULL,
+                               padj       = 0.05,
                                usePadj    = TRUE,
                                low        = "#2166ac",
                                mid        = "white",
@@ -107,6 +111,10 @@ ggvolcano_internal <- function(resultFis,
                                width      = 10,
                                height     = 8) {
 
+  # No row is filtered here; the cutoffs only place the reference line, but
+  # they are validated with the shared rule like every other entry point.
+  .check_cutoff(pvalue, "pvalue")
+  .check_cutoff(padj, "padj", allow_null = TRUE)
   resultFis <- .standardise_gsea_cols(resultFis)
   if (nrow(resultFis) > top) resultFis <- resultFis[seq_len(top), ]
   if (isTRUE(short)) resultFis$Term <- vapply(resultFis$Term, function(x) .paste.char(x, n = 6), character(1))
@@ -189,7 +197,7 @@ ggvolcano_internal <- function(resultFis,
 ggcircbar_internal <- function(resultFis,
                                top    = 15,
                                pvalue = 0.05,
-                               padj   = NULL,
+                               padj   = 0.05,
                                usePadj = TRUE,
                                low    = "#fee0d2",
                                high   = "#b2182b",
@@ -240,7 +248,7 @@ ggcircbar_internal <- function(resultFis,
 ggNES_internal <- function(resultFis,
                            top        = 20,
                            pvalue     = 0.05,
-                           padj       = NULL,
+                           padj       = 0.05,
                            up.color   = "#b2182b",
                            down.color = "#2166ac",
                            short      = FALSE,
@@ -249,8 +257,7 @@ ggNES_internal <- function(resultFis,
                            height     = 8) {
 
   resultFis <- .standardise_gsea_cols(resultFis)
-  if (!is.null(padj))  resultFis <- resultFis[resultFis$Padj < padj, ]
-  else                 resultFis <- resultFis[resultFis$Pvalue < pvalue, ]
+  resultFis <- .sig_filter(resultFis, pvalue, padj)
 
   resultFis <- resultFis[order(resultFis$NES, decreasing = TRUE), ]
   if (nrow(resultFis) > top) resultFis <- resultFis[seq_len(top), ]
@@ -301,7 +308,7 @@ ggNES_internal <- function(resultFis,
 ggscatter_internal <- function(resultFis,
                                top        = 50,
                                pvalue     = 0.05,
-                               padj       = NULL,
+                               padj       = 0.05,
                                usePadj    = TRUE,
                                low        = "#fee0d2",
                                high       = "#b2182b",
@@ -385,7 +392,7 @@ ggscatter_internal <- function(resultFis,
 ggecdf_internal <- function(resultFis,
                             top        = 30,
                             pvalue     = 0.05,
-                            padj       = NULL,
+                            padj       = 0.05,
                             line.color = "#1b7837",
                             line.size  = 1.2,
                             point.size = 3,
@@ -395,8 +402,7 @@ ggecdf_internal <- function(resultFis,
                             height     = 8) {
 
   resultFis <- .standardise_gsea_cols(resultFis)
-  if (!is.null(padj))  resultFis <- resultFis[resultFis$Padj < padj, ]
-  else                 resultFis <- resultFis[resultFis$Pvalue < pvalue, ]
+  resultFis <- .sig_filter(resultFis, pvalue, padj)
   resultFis <- resultFis[order(resultFis$NES), ]
   if (nrow(resultFis) > top) resultFis <- resultFis[seq_len(top), ]
   if (nrow(resultFis) == 0) { message("No significant terms to plot."); return(invisible(NULL)) }
@@ -442,7 +448,7 @@ ggecdf_internal <- function(resultFis,
 ggtermsim_internal <- function(resultFis,
                                top        = 20,
                                pvalue     = 0.05,
-                               padj       = NULL,
+                               padj       = 0.05,
                                usePadj    = TRUE,
                                low        = "grey80",
                                high       = "#b2182b",
@@ -561,7 +567,7 @@ gggenedot_internal <- function(resultFis,
                                top        = 10,
                                max.genes  = 30,
                                pvalue     = 0.05,
-                               padj       = NULL,
+                               padj       = 0.05,
                                usePadj    = TRUE,
                                low        = "#2166ac",
                                mid        = "white",
@@ -582,8 +588,8 @@ gggenedot_internal <- function(resultFis,
   if (is.null(fc)) {
     # No fold-change: colour by -log10(Pvalue/Padj), no size mapping
     neg_log <- if (isTRUE(usePadj) && "Padj" %in% names(resultFis)) -log10(resultFis$Padj) else -log10(resultFis$Pvalue)
-    pval_map <- stats::setNames(neg_log, resultFis$Term)
-    melted$neg_log_p <- pval_map[as.character(melted$Term)]
+    # keyed by result row, never by label: rows sharing a label keep their own value
+    melted$neg_log_p <- neg_log[melted$.row]
     color_label <- if (isTRUE(usePadj)) "-log10(Padj)" else "-log10(Pvalue)"
     p <- ggplot2::ggplot(melted, ggplot2::aes(x = Gene, y = Term, color = neg_log_p)) +
       ggplot2::geom_point(size = 4, alpha = 0.85) +
@@ -635,7 +641,7 @@ gggeneheat_internal <- function(resultFis,
                                 top          = 10,
                                 max.genes    = 30,
                                 pvalue       = 0.05,
-                                padj         = NULL,
+                                padj         = 0.05,
                                 usePadj      = TRUE,
                                 low          = "#2166ac",
                                 mid          = "white",
@@ -665,8 +671,8 @@ gggeneheat_internal <- function(resultFis,
 
   if (is.null(fc)) {
     neg_log <- if (isTRUE(usePadj) && "Padj" %in% names(resultFis)) -log10(resultFis$Padj) else -log10(resultFis$Pvalue)
-    pval_map <- stats::setNames(neg_log, resultFis$Term)
-    melted$neg_log_p <- ifelse(is.na(melted$present), NA_real_, pval_map[as.character(melted$Term)])
+    # keyed by result row, never by label: rows sharing a label keep their own value
+    melted$neg_log_p <- ifelse(is.na(melted$present), NA_real_, neg_log[melted$.row])
     fill_label <- if (isTRUE(usePadj)) "-log10(Padj)" else "-log10(Pvalue)"
     p <- ggplot2::ggplot(melted, ggplot2::aes(x = Gene, y = Term, fill = neg_log_p)) +
       ggplot2::geom_tile(color = border.color, linewidth = 0.5) +
@@ -720,7 +726,7 @@ gggeneheat_internal <- function(resultFis,
 gggenebar_internal <- function(resultFis,
                                top       = 10,
                                pvalue    = 0.05,
-                               padj      = NULL,
+                               padj      = 0.05,
                                usePadj   = TRUE,
                                low       = "lightpink",
                                high      = "red",
@@ -773,9 +779,7 @@ gggenebar_internal <- function(resultFis,
 #' @keywords internal
 #' @noRd
 .filter_and_top <- function(df, top, pvalue, padj) {
-  if (!is.null(padj))  df <- df[df$Padj < padj, , drop = FALSE]
-  else                 df <- df[df$Pvalue < pvalue, , drop = FALSE]
-  df <- df[!is.na(df$Pvalue), , drop = FALSE]
+  df <- .sig_filter(df, pvalue, padj)
   if (nrow(df) > top) df <- df[seq_len(top), , drop = FALSE]
   df
 }
@@ -786,7 +790,12 @@ gggenebar_internal <- function(resultFis,
 .standardise_gsea_cols <- function(df) {
   if ("pval"    %in% names(df) && !"Pvalue" %in% names(df)) names(df)[names(df) == "pval"]    <- "Pvalue"
   if ("padj"    %in% names(df) && !"Padj"   %in% names(df)) names(df)[names(df) == "padj"]    <- "Padj"
-  if ("pathway" %in% names(df) && !"Term"   %in% names(df)) names(df)[names(df) == "pathway"] <- "Term"
+  if ("pathway" %in% names(df) && !"Term"   %in% names(df)) {
+    names(df)[names(df) == "pathway"] <- "Term"
+  } else if ("pathway" %in% names(df)) {
+    # GSEA result: Term is the display label, unique per pathway identifier
+    df$Term <- .gsea_display_labels(df$pathway, df$pathway, .gsea_result_terms(df))
+  }
   if ("size"    %in% names(df) && !"Significant" %in% names(df)) names(df)[names(df) == "size"] <- "Significant"
   df
 }
@@ -798,7 +807,8 @@ gggenebar_internal <- function(resultFis,
   rows <- lapply(seq_len(nrow(resultFis)), function(i) {
     genes <- unlist(strsplit(as.character(resultFis$GeneID[i]), split = sep))
     genes <- utils::head(genes, max.genes)
-    data.frame(Term = resultFis$Term[i], Gene = genes, stringsAsFactors = FALSE)
+    data.frame(Term = resultFis$Term[i], Gene = genes, .row = rep(i, length(genes)),
+               stringsAsFactors = FALSE)
   })
   melted <- do.call(rbind, rows)
   if (is.null(fc)) {

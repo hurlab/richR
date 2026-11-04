@@ -4,7 +4,7 @@
 \alias{.handleEmptyResult}
 \title{Handle empty enrichment results gracefully}
 \usage{
-.handleEmptyResult(resultFis, pvalue = 0.05, padj = NULL, func_name = "enrich")
+.handleEmptyResult(resultFis, pvalue = 0.05, padj = 0.05, func_name = "enrich")
 }
 \arguments{
 \item{resultFis}{result data.frame (possibly zero-row)}

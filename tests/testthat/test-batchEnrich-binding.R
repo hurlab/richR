@@ -9,11 +9,11 @@ batch_binding_annotation <- function() {
 test_that("batchEnrich binds differing columns from real native ORA results", {
   annot <- batch_binding_annotation()
   first <- suppressMessages(richR::enrich(
-    c("A", "B"), annot, pvalue = 0.1, minSize = 1, minGSSize = 1,
+    c("A", "B"), annot, pvalue = 0.1, padj = NULL, minSize = 1, minGSSize = 1,
     keepRich = FALSE
   ))
   second <- suppressMessages(richR::enrich(
-    c("C", "D"), annot, pvalue = 0.1, minSize = 1, minGSSize = 1,
+    c("C", "D"), annot, pvalue = 0.1, padj = NULL, minSize = 1, minGSSize = 1,
     keepRich = FALSE
   ))
   first@result$extra_first <- "first"
@@ -27,7 +27,7 @@ test_that("batchEnrich binds differing columns from real native ORA results", {
     {
       batched <- suppressMessages(richR::batchEnrich(
         list(first = c("A", "B"), second = c("C", "D")), annot,
-        pvalue = 0.1, minSize = 1, minGSSize = 1,
+        pvalue = 0.1, padj = NULL, minSize = 1, minGSSize = 1,
         keepRich = FALSE, verbose = FALSE
       ))
     },

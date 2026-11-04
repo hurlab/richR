@@ -38,6 +38,12 @@ pin_gsea <- function(res) {
 # Version-independent invariants: result columns and classes, the set of
 # pathways, the row count, the sign of ES and NES, and the non-fgsea slots.
 # None of these depends on fgsea's permutation draws.
+#
+# SPEC-RICHR-002 D3: `pathway` holds the annotation identifiers (T1..T5 in
+# gsea_annot.csv) and the label follows in `Term`.
+gsea_labels <- c(T1 = "up pathway", T2 = "down pathway", T3 = "mixed pathway",
+                 T4 = "top pathway", T5 = "middle pathway")
+
 expect_gsea_invariants <- function(res, pathways, es_sign) {
   expect_s4_class(res, "GSEAResult")
   out <- res@result
@@ -45,8 +51,9 @@ expect_gsea_invariants <- function(res, pathways, es_sign) {
     vapply(out, function(col) class(col)[1L], character(1)),
     c(pathway = "character", pval = "numeric", padj = "numeric",
       log2err = "numeric", ES = "numeric", NES = "numeric", size = "integer",
-      leadingEdge = "character")
+      leadingEdge = "character", Term = "character")
   )
+  expect_identical(out$Term, unname(gsea_labels[out$pathway]))
   expect_setequal(out$pathway, pathways)
   expect_identical(nrow(out), length(pathways))
   expect_identical(sign(out$ES), unname(es_sign[out$pathway]))
@@ -57,41 +64,44 @@ expect_gsea_invariants <- function(res, pathways, es_sign) {
   expect_identical(res@sep, ",")
 }
 
+# SPEC-RICHR-002 D1 (REQ-015, REQ-018): pvalue = 1 keeps values equal to the
+# cutoff, so T5 (pval exactly 1, ES 0) is now reported. These runs mean
+# unrestricted reporting, so they pass padj = 1 with the 0.2.0 defaults.
 test_that("richGSEA() keeps its result shape, pathway set and effect signs for ranked list A", {
-  res <- run_gsea(gsea_ranked("gsea_ranked_a.csv"), pvalue = 1)
+  res <- run_gsea(gsea_ranked("gsea_ranked_a.csv"), pvalue = 1, padj = 1)
   expect_gsea_invariants(
-    res, c("top pathway", "down pathway", "up pathway", "mixed pathway"),
-    c("top pathway" = 1, "down pathway" = -1, "up pathway" = 1, "mixed pathway" = -1)
+    res, c("T4", "T2", "T1", "T3", "T5"),
+    c(T4 = 1, T2 = -1, T1 = 1, T3 = -1, T5 = 0)
   )
   expect_identical(res@pvalueCutoff, 1)
 })
 
 test_that("richGSEA() keeps its result shape, pathway set and effect signs for ranked list B", {
-  res <- run_gsea(gsea_ranked("gsea_ranked_b.csv"), pvalue = 1)
+  res <- run_gsea(gsea_ranked("gsea_ranked_b.csv"), pvalue = 1, padj = 1)
   expect_gsea_invariants(
-    res, c("top pathway", "down pathway", "up pathway", "mixed pathway"),
-    c("top pathway" = 1, "down pathway" = -1, "up pathway" = 1, "mixed pathway" = 1)
+    res, c("T4", "T2", "T1", "T3", "T5"),
+    c(T4 = 1, T2 = -1, T1 = 1, T3 = 1, T5 = 0)
   )
 })
 
 test_that("richGSEA() default pvalue filter keeps the three strong pathways on ranked list A", {
   res <- run_gsea(gsea_ranked("gsea_ranked_a.csv"))
   expect_gsea_invariants(
-    res, c("top pathway", "down pathway", "up pathway"),
-    c("top pathway" = 1, "down pathway" = -1, "up pathway" = 1)
+    res, c("T4", "T2", "T1"),
+    c(T4 = 1, T2 = -1, T1 = 1)
   )
   expect_identical(res@pvalueCutoff, 0.05)
 })
 
 test_that("richGSEA() pins NES, ES, pval, padj and leadingEdge for ranked list A", {
   .char_skip_unless_recorded_fgsea()
-  res <- run_gsea(gsea_ranked("gsea_ranked_a.csv"), pvalue = 1)
+  res <- run_gsea(gsea_ranked("gsea_ranked_a.csv"), pvalue = 1, padj = 1)
   expect_snapshot_value(pin_gsea(res), style = "deparse", tolerance = 1e-8)
 })
 
 test_that("richGSEA() pins the same pathways for the perturbed ranked list B", {
   .char_skip_unless_recorded_fgsea()
-  res <- run_gsea(gsea_ranked("gsea_ranked_b.csv"), pvalue = 1)
+  res <- run_gsea(gsea_ranked("gsea_ranked_b.csv"), pvalue = 1, padj = 1)
   expect_snapshot_value(pin_gsea(res), style = "deparse", tolerance = 1e-8)
 })
 

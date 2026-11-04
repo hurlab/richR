@@ -8,7 +8,7 @@ ggrich_internal(
   object,
   top = 50,
   pvalue = 0.05,
-  padj = NULL,
+  padj = 0.05,
   usePadj = TRUE,
   useTerm = TRUE,
   low = "orange",

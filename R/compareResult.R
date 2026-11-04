@@ -2,13 +2,16 @@
 #' @param x Non-empty list of richResult objects, result data.frames, or NULL
 #'   entries. Unnamed lists receive positional Group labels; explicit names
 #'   must be nonblank and unique.
-#' @param pvalue Strict raw p-value cutoff used when \code{padj} is NULL; such
-#'   rows must also satisfy \code{Padj < 1}.
-#' @param padj Strict adjusted p-value cutoff; when supplied, rows must also
-#'   satisfy \code{Pvalue < 1}.
+#' @param pvalue Raw p-value cutoff in (0, 1]: a row is kept when
+#'   \code{Pvalue <= pvalue} and, unless \code{padj} is NULL,
+#'   \code{Padj <= padj}. Rows with a missing \code{Pvalue} are dropped.
+#' @param padj Adjusted p-value cutoff in (0, 1], applied together with
+#'   \code{pvalue}; NULL filters on the raw p-value only. Use
+#'   \code{pvalue = 1} to filter on \code{Padj} alone and
+#'   \code{pvalue = 1, padj = 1} to keep every row with a p-value.
 #' @param include.all Preserve all input group names as factor levels in input order,
-#'   including groups with no retained rows. The same strict significance
-#'   filtering still applies, and no placeholder terms are created.
+#'   including groups with no retained rows. The same significance filtering
+#'   still applies, and no placeholder terms are created.
 #' @examples
 #' \dontrun{
 #' hsako <- buildAnnot(species="human",keytype="SYMBOL",anntype = "KEGG")
@@ -21,11 +24,13 @@
 #' }
 #' @author Kai Guo
 #' @export
-compareResult<-function (x, pvalue = 0.05, padj = NULL,include.all=FALSE)
+compareResult<-function (x, pvalue = 0.05, padj = 0.05,include.all=FALSE)
 {
   if (!is.list(x) || length(x) == 0L) {
     stop("x must be a non-empty list of enrichment results.", call. = FALSE)
   }
+  .check_cutoff(pvalue, "pvalue")
+  .check_cutoff(padj, "padj", allow_null = TRUE)
   if (is.null(names(x))) names(x) <- paste("Group", seq_along(x))
   .validate_named_list(x, "x")
 
@@ -44,13 +49,7 @@ compareResult<-function (x, pvalue = 0.05, padj = NULL,include.all=FALSE)
       stop("x group '", group, "' is missing required result column(s): ",
            paste(missing, collapse = ", "), call. = FALSE)
     }
-    if (is.null(padj)) {
-      value <- value[!is.na(value$Padj) & value$Padj < 1 &
-                       !is.na(value$Pvalue) & value$Pvalue < pvalue, , drop = FALSE]
-    } else {
-      value <- value[!is.na(value$Padj) & value$Padj < padj &
-                       !is.na(value$Pvalue) & value$Pvalue < 1, , drop = FALSE]
-    }
+    value <- value[.sig_keep(value, pvalue, padj), , drop = FALSE]
     value$group <- rep(group, nrow(value))
     value
   })
@@ -88,7 +87,7 @@ compareResult<-function (x, pvalue = 0.05, padj = NULL,include.all=FALSE)
 ##' @importFrom ggplot2 guide_colourbar
 ##' @importFrom ggplot2 guide_legend
 ##' @param x dataframe of enrichment result
-##' @param pvalue cutoff value of pvalue (if padj set as NULL)
+##' @param pvalue raw p-value cutoff: a term is kept when \code{Pvalue <= pvalue} and, unless \code{padj} is NULL, \code{Padj <= padj}
 ##' @param low low color
 ##' @param high high color
 ##' @param level the level for KEGG pathway
@@ -105,8 +104,10 @@ compareResult<-function (x, pvalue = 0.05, padj = NULL,include.all=FALSE)
 ##' @param width figure width
 ##' @param height figure height
 ##' @param include.all Preserve all supplied group labels on the x-axis,
-##'   including groups with no retained rows. This plotting option uses the
-##'   existing inclusive display cutoffs; it does not create placeholder terms.
+##'   including groups with no retained rows. With \code{include.all = TRUE}
+##'   the plot skips \code{pvalue} and \code{padj} and draws every input row
+##'   (filter in \code{compareResult()} instead); it does not create
+##'   placeholder terms.
 ##' @examples
 #' \dontrun{
 #' hsako <- buildAnnot(species="human",keytype="SYMBOL",anntype = "KEGG")
@@ -123,19 +124,17 @@ compareResult<-function (x, pvalue = 0.05, padj = NULL,include.all=FALSE)
 richCompareDot<-function (x, pvalue = 0.05, low = "lightpink", high = "red",level="Level3",
                       pathway=NULL,
                       alpha = 0.7, font.x = "bold", font.y = "bold", fontsize.x = 10,
-                      fontsize.y = 10, short = FALSE, padj = NULL, usePadj = TRUE,
+                      fontsize.y = 10, short = FALSE, padj = 0.05, usePadj = TRUE,
                       filename = NULL, width = 10, height = 8,include.all=FALSE)
 {
   group_levels <- if (is.factor(x$group)) levels(x$group) else unique(as.character(x$group))
+  .check_cutoff(pvalue, "pvalue")
+  .check_cutoff(padj, "padj", allow_null = TRUE)
   if(isTRUE(include.all)){
-    padj<-pvalue<-1.1
+    # include.all skips the significance predicate: every input row is drawn
     low<-"white"
-  }
-  if (!is.null(padj)) {
-    x <- x[x$Padj < padj, ]
-  }
-  else {
-    x <- x[x$Pvalue < pvalue, ]
+  } else {
+    x <- x[.sig_keep(x, pvalue, padj), , drop = FALSE]
   }
   if (isTRUE(short)) {
     x$Term <- unlist(lapply(x$Term, function(x) .paste.char(x)))
@@ -184,10 +183,17 @@ richCompareDot<-function (x, pvalue = 0.05, low = "lightpink", high = "red",leve
 #' @param x list of GSEAResult
 #' @param object Annot object
 #' @param gene list of a vector include all log2FC with gene name (optional)
-#' @param pathway pathways you want to display (optional)
+#' @param pathway pathways you want to display (optional): pathway identifiers,
+#'   KEGG identifiers with or without organism prefix, or unique \code{Term}
+#'   labels, resolved over all groups before significance filtering; a label
+#'   shared by several pathways, or a value matching nothing, is an error, and a
+#'   pathway removed by the cutoffs in every group is warned about
 #' @param mycol a vector indicate the colors used for the figure
-#' @param pvalue cutoff value of pvalue (if padj set as NULL)
-#' @param padj cutoff value of p adjust value
+#' @param pvalue raw p-value cutoff in (0, 1]: a pathway is kept in a group
+#'   when its \code{pval <= pvalue} and, unless \code{padj} is NULL, its
+#'   \code{padj} is \code{<=} the \code{padj} cutoff
+#' @param padj adjusted p-value cutoff in (0, 1], applied together with
+#'   \code{pvalue}; NULL filters on the raw p-value only
 #' @param label display the NES values or not
 #' @param gseaParam GSEA parameter for enrichment score calculation
 #' @param ticksSize size of the tick marks
@@ -209,15 +215,13 @@ richCompareDot<-function (x, pvalue = 0.05, low = "lightpink", high = "red",leve
 #' @author Kai Guo
 #' @export
 compareGSEA<-function(x,object,gene=NULL,pathway=NULL,
-                      mycol=NULL,pvalue = 0.05, padj = NULL,label=FALSE,
+                      mycol=NULL,pvalue = 0.05, padj = 0.05,label=FALSE,
                       gseaParam = 1, ticksSize = 0.2,ncol=2,scales="fixed"){
-  if (!is.null(padj)) {
-    Pvalue <- 1
-  }
-  else {
-    Padj <- 1
-  }
-  Pvalue=pvalue
+  # The cutoffs are compared by the significance predicate outside any data
+  # mask, so they can never resolve to the same-named columns (padj, pval) of
+  # the GSEA result table.
+  .check_cutoff(pvalue, "pvalue")
+  .check_cutoff(padj, "padj", allow_null = TRUE)
   if (is.null(names(x))) {
     names(x) <- paste("Group", seq_along(x))
   }
@@ -226,58 +230,55 @@ compareGSEA<-function(x,object,gene=NULL,pathway=NULL,
                "#7A142C","#5D90BA","#431A3D","#91612D","#6E568C","#E0367A","#D8D155","#64495D",
                "#7CC767")
   }
-  tmp <- lapply(x, function(x) filter(x, padj < Padj, pval <
-                                        Pvalue))
+  # Identifiers and labels of every group before significance filtering: the
+  # domain in which `pathway` selectors resolve.
+  id_pool <- unlist(lapply(x, function(g) as.character(g@result$pathway)), use.names = FALSE)
+  term_pool <- unlist(lapply(x, function(g) .gsea_result_terms(g@result)), use.names = FALSE)
+  if (!is.null(pathway)) {
+    pathway <- .gsea_resolve_selectors(pathway, id_pool, term_pool, what = "pathway")
+  }
+  tmp <- lapply(x, function(x) {
+    res <- x@result
+    keep <- .sig_keep(res, pvalue, padj, p_col = "pval", padj_col = "padj")
+    x@result <- res[keep, , drop = FALSE]
+    x
+  })
   sigpathway <- lapply(tmp, function(x) x$pathway)
-  NES <- do.call(rbind, lapply(tmp, function(x) {
-    nes <-x$NES
-    names(nes) <-x$pathway
-    return(nes)
-    }))
-  NES<-as.data.frame(NES)
-  NES$group <- rownames(NES)
-  value_cols <- setdiff(colnames(NES), "group")
-  NES <- data.frame(
-    group = rep(NES$group, times = length(value_cols)),
-    Group = rep(value_cols, each = nrow(NES)),
-    NES = unlist(NES[, value_cols], use.names = FALSE),
-    stringsAsFactors = FALSE
-  )
-  NES$hjustvar<-1.5
-  NES$vjustvar<-2
+  if (!is.null(pathway)) {
+    filtered_out <- setdiff(pathway, unlist(sigpathway, use.names = FALSE))
+    if (length(filtered_out)) {
+      warning("compareGSEA: pathway(s) removed by the significance cutoffs in every group: ",
+              paste(filtered_out, collapse = ", "), call. = FALSE)
+    }
+  }
+  retained <- unique(unlist(sigpathway, use.names = FALSE))
+  if (!is.null(pathway)) retained <- intersect(pathway, retained)
+  if (!length(retained)) {
+    stop("compareGSEA: no pathway passes the cutoffs (pvalue = ", pvalue,
+         ", padj = ", if (is.null(padj)) "NULL" else padj, ") in any group",
+         if (!is.null(pathway)) " among the selected pathways", ".", call. = FALSE)
+  }
+  # Value tables keyed by group and pathway identifier: one row per retained
+  # pathway of each group, never aligned by position across groups.
+  keyed_values <- function(column, value_name) {
+    rows <- lapply(names(tmp), function(g) {
+      res <- tmp[[g]]@result
+      out <- data.frame(group = rep(g, nrow(res)),
+                        Group = as.character(res$pathway),
+                        stringsAsFactors = FALSE)
+      out[[value_name]] <- res[[column]]
+      out
+    })
+    out <- do.call(rbind, rows)
+    rownames(out) <- NULL
+    out$hjustvar <- rep(1.5, nrow(out))
+    out$vjustvar <- rep(2, nrow(out))
+    out
+  }
+  NES <- keyed_values("NES", "NES")
   NES$annotateText <- paste0(NES$group,":(NES=",round(NES$NES,2),")\n")
-  padjs <- do.call(rbind, lapply(tmp, function(x) {
-    pad<-x$padj
-    names(pad)<-x$pathway
-    return(pad)
-    }))
-  padjs<-as.data.frame(padjs)
-  padjs$group <- rownames(padjs)
-  value_cols2 <- setdiff(colnames(padjs), "group")
-  padjs <- data.frame(
-    group = rep(padjs$group, times = length(value_cols2)),
-    Group = rep(value_cols2, each = nrow(padjs)),
-    Padj = unlist(padjs[, value_cols2], use.names = FALSE),
-    stringsAsFactors = FALSE
-  )
-  padjs$hjustvar<-1.5
-  padjs$vjustvar<-2
-  pvals <- do.call(rbind,lapply(tmp, function(x) {
-    pva<-x$pval
-    names(pva)<-x$pathway
-    return(pva)
-    }))
-  pvals <- as.data.frame(pvals)
-  pvals$group <- rownames(pvals)
-  value_cols3 <- setdiff(colnames(pvals), "group")
-  pvals <- data.frame(
-    group = rep(pvals$group, times = length(value_cols3)),
-    Group = rep(value_cols3, each = nrow(pvals)),
-    Pvalue = unlist(pvals[, value_cols3], use.names = FALSE),
-    stringsAsFactors = FALSE
-  )
-  pvals$hjustvar<-1.5
-  pvals$vjustvar<-2
+  padjs <- keyed_values("padj", "Padj")
+  pvals <- keyed_values("pval", "Pvalue")
   # names(tmp)<-names(x)
   if(is.null(gene)){
     fc <- lapply(x,function(x){
@@ -316,6 +317,20 @@ compareGSEA<-function(x,object,gene=NULL,pathway=NULL,
     path<-subset(path,Group%in%pathway)
     NES<-subset(NES,Group%in%pathway)
   }
+  # Facets (Group) show the Term label, unique per identifier; the identifier
+  # stays in a `pathway` column.
+  display <- stats::setNames(
+    .gsea_display_labels(unique(toPlot$Group), id_pool, term_pool),
+    unique(toPlot$Group)
+  )
+  relabel <- function(df) {
+    df$pathway <- df$Group
+    df$Group <- unname(display[as.character(df$Group)])
+    df
+  }
+  toPlot <- relabel(toPlot)
+  path <- relabel(path)
+  NES <- relabel(NES)
   tops<-max(toPlot$y)
   bottoms<-min(toPlot$y)
   ####

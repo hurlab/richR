@@ -19,9 +19,11 @@ filterPathways(
 
 \item{nes_cutoff}{absolute NES cutoff}
 
-\item{padj_cutoff}{padj cutoff}
+\item{padj_cutoff}{adjusted p-value cutoff in (0, 1]: a pathway is kept when
+\code{padj <= padj_cutoff}; NULL applies no adjusted cutoff}
 
-\item{pval_cutoff}{pval cutoff (used if padj_cutoff is NULL)}
+\item{pval_cutoff}{raw p-value cutoff in (0, 1], applied together with
+\code{padj_cutoff} (\code{pval <= pval_cutoff}); NULL applies no raw cutoff}
 
 \item{min_size}{minimum pathway size}
 

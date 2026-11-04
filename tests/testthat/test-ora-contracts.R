@@ -25,7 +25,7 @@ test_that("annotation membership normalization validates and deduplicates rows",
 
   identity_named <- data.frame(data = c("A", "B", "C"), counts = c("T", "T", "U"))
   direct <- suppressMessages(richR:::.run_ora(
-    "A", identity_named, pvalue = 1, minSize = 1, minGSSize = 1,
+    "A", identity_named, pvalue = 1, padj = 1, minSize = 1, minGSSize = 1,
     keepRich = FALSE
   ))
   expect_equal(direct@result$Annotated, 2)
@@ -48,7 +48,7 @@ test_that("ORA membership counts and keepRich filtering use both bounds", {
     Term = c("T1", "T1", "T1", "T2", "T2", "T3", "T4", "T5")
   )
   result <- suppressMessages(richR:::enrich_internal(
-    "A", annot, pvalue = 1, minSize = 1, maxSize = 10,
+    "A", annot, pvalue = 1, padj = 1, minSize = 1, maxSize = 10,
     minGSSize = 1, maxGSSize = 10, keepRich = FALSE
   ))
   expect_equal(result@result$Annotated[result@result$Annot == "T1"], 2)
@@ -63,10 +63,14 @@ test_that("ORA membership counts and keepRich filtering use both bounds", {
   false <- richR:::.filter_ora_result(fixture, 1, NULL, 2, 10, 2, 10, FALSE)
   true <- richR:::.filter_ora_result(fixture, 1, NULL, 2, 10, 2, 10, TRUE)
   expect_equal(false$Annot, "both")
-  expect_equal(true$Annot, c("both", "rich"))
-  expect_length(richR:::.filter_ora_result(
+  # keepRich exempts minSize only; "rich" (Annotated 1 < minGSSize 2) is outside
+  # the tested family (SPEC-RICHR-002 REQ-011).
+  expect_equal(true$Annot, "both")
+  # SPEC-RICHR-002 REQ-015 / REQ-018: a p-value equal to the cutoff is kept, so
+  # pvalue = 1 reports rows with p = 1.
+  expect_equal(richR:::.filter_ora_result(
     transform(fixture, Pvalue = 1), 1, NULL, 2, 10, 2, 10, TRUE
-  )$Annot, 0)
+  )$Annot, "both")
 })
 
 test_that("GO membership normalization precedes ontology selection", {
@@ -79,7 +83,7 @@ test_that("GO membership normalization precedes ontology selection", {
   )
 
   expect_warning(result <- suppressMessages(richR::richGO(
-    c("A", "B"), godata = annot, ontology = "BP", pvalue = 1,
+    c("A", "B"), godata = annot, ontology = "BP", pvalue = 1, padj = 1,
     minSize = 1, minGSSize = 1, keepRich = FALSE
   )), "excluded 1 invalid annotation row")
 
@@ -88,17 +92,17 @@ test_that("GO membership normalization precedes ontology selection", {
   expect_equal(result@result$Pvalue, stats::phyper(1, 2, 2, 2, lower.tail = FALSE))
 })
 
-test_that("ORA correction covers positive overlaps before reporting size filters", {
+test_that("ORA adjusts over the size-eligible overlap family and minSize filtering leaves Padj unchanged", {
   annot <- data.frame(
     GeneID = c("A", "B", "A", "C", "B", "C", "A", "D", "E", "F"),
     Term = c("T1", "T1", "T2", "T2", "T3", "T3", "T4", "T4", "T5", "T5")
   )
   full <- suppressMessages(richR:::enrich_internal(
-    c("A", "B", "C"), annot, pvalue = 1, minSize = 1,
+    c("A", "B", "C"), annot, pvalue = 1, padj = 1, minSize = 1,
     minGSSize = 1, keepRich = FALSE
   ))
   filtered <- suppressMessages(richR:::enrich_internal(
-    c("A", "B", "C"), annot, pvalue = 1, minSize = 2,
+    c("A", "B", "C"), annot, pvalue = 1, padj = 1, minSize = 2,
     minGSSize = 1, keepRich = FALSE
   ))
 

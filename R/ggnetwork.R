@@ -3,7 +3,7 @@
 ##' @param object richResult,GSEAResult object or dataframe
 ##' @param gene vector contains gene names or dataframe with DEGs information
 ##' @param top number of terms to display
-##' @param pvalue cutoff value of pvalue (if padj set as NULL)
+##' @param pvalue raw p-value cutoff: a term is kept when \code{Pvalue <= pvalue} and, unless \code{padj} is NULL, \code{Padj <= padj}
 ##' @param padj cutoff value of p adjust value
 ##' @param usePadj use p adjust value as color or not (should use with padj)
 ##' @param low color used for small value
@@ -40,17 +40,12 @@
 ##' @importFrom igraph V<-
 ##' @importFrom igraph write_graph
 ##' @author Kai Guo
-ggnetwork_internal<-function (object=object,gene=gene,top = 50, pvalue = 0.05, padj = NULL,usePadj=TRUE,low = "orange",high = "red",
+ggnetwork_internal<-function (object=object,gene=gene,top = 50, pvalue = 0.05, padj = 0.05,usePadj=TRUE,low = "orange",high = "red",
                               weightcut = 0.2, useTerm = TRUE, writeCyt = FALSE,cytoscapeFile = NULL,cytoscapeFormat="graphml",
                               label.color = "black", label.size = 2,node.shape=NULL, layout = "fruchtermanreingold",savefig=FALSE,
                               visNet=FALSE,smooth=TRUE,nodeselect=FALSE,edit=FALSE,savehtml=FALSE,filename=NULL,
                               width=7,height=7,segment.size=0.2,node.alpha=0.7,sep=",",...){
-  if (!is.null(padj)) {
-    object <- object[object$Padj < padj, ]
-  }
-  else {
-    object <- object[object$Pvalue < pvalue, ]
-  }
+  object <- .sig_filter(object, pvalue, padj)
   if (nrow(object) <= top) {
     object <- object
   }
@@ -205,7 +200,7 @@ ggnetwork_internal<-function (object=object,gene=gene,top = 50, pvalue = 0.05, p
 ##' @rdname richNetwork-methods
 ##' @param object richResult object
 ##' @param top number of terms to display
-##' @param pvalue cutoff value of pvalue (if padj set as NULL)
+##' @param pvalue raw p-value cutoff: a term is kept when \code{Pvalue <= pvalue} and, unless \code{padj} is NULL, \code{Padj <= padj}
 ##' @param padj cutoff value of p adjust value
 ##' @param usePadj use p adjust value as color or not
 ##' @param low color used for small value
@@ -233,7 +228,7 @@ ggnetwork_internal<-function (object=object,gene=gene,top = 50, pvalue = 0.05, p
 ##' @param ... additional arguments
 ##' @export
 ##' @author Kai Guo
-setMethod("richNetwork", signature(object = "richResult"),definition = function(object,top = 50, pvalue = 0.05, padj = NULL,usePadj=TRUE,low = "orange",high = "red",
+setMethod("richNetwork", signature(object = "richResult"),definition = function(object,top = 50, pvalue = 0.05, padj = 0.05,usePadj=TRUE,low = "orange",high = "red",
                                                                               weightcut = 0.2, useTerm = TRUE, writeCyt = FALSE,cytoscapeFile = NULL,cytoscapeFormat="graphml",
                                                                               label.color = "black", label.size = 2,node.shape=NULL, layout = "fruchtermanreingold",savefig=FALSE,
                                                                               visNet=FALSE,smooth=TRUE,nodeselect=FALSE,edit=FALSE,savehtml=FALSE,filename=NULL,
@@ -250,7 +245,7 @@ setMethod("richNetwork", signature(object = "richResult"),definition = function(
 ##' @param object data.frame of enrichment results
 ##' @param gene vector contains gene names
 ##' @param top number of terms to display
-##' @param pvalue cutoff value of pvalue (if padj set as NULL)
+##' @param pvalue raw p-value cutoff: a term is kept when \code{Pvalue <= pvalue} and, unless \code{padj} is NULL, \code{Padj <= padj}
 ##' @param padj cutoff value of p adjust value
 ##' @param usePadj use p adjust value as color or not
 ##' @param low color used for small value
@@ -279,7 +274,7 @@ setMethod("richNetwork", signature(object = "richResult"),definition = function(
 ##' @param ... additional arguments
 ##' @export
 ##' @author Kai Guo
-setMethod("richNetwork", signature(object = "data.frame"),definition = function(object,gene=NULL,top = 50, pvalue = 0.05, padj = NULL,usePadj=TRUE,low = "orange",high = "red",
+setMethod("richNetwork", signature(object = "data.frame"),definition = function(object,gene=NULL,top = 50, pvalue = 0.05, padj = 0.05,usePadj=TRUE,low = "orange",high = "red",
                                                                               weightcut = 0.2, useTerm = TRUE, writeCyt = FALSE,cytoscapeFile = NULL,cytoscapeFormat="graphml",
                                                                               label.color = "black", label.size = 2,node.shape=NULL, layout = "fruchtermanreingold",savefig=FALSE,
                                                                               visNet=FALSE,smooth=TRUE,nodeselect=FALSE,edit=FALSE,savehtml=FALSE,filename=NULL,
@@ -297,7 +292,7 @@ setMethod("richNetwork", signature(object = "data.frame"),definition = function(
 ##' @param object GSEAResult object
 ##' @param gene vector contains gene names
 ##' @param top number of terms to display
-##' @param pvalue cutoff value of pvalue (if padj set as NULL)
+##' @param pvalue raw p-value cutoff: a term is kept when \code{Pvalue <= pvalue} and, unless \code{padj} is NULL, \code{Padj <= padj}
 ##' @param padj cutoff value of p adjust value
 ##' @param usePadj use p adjust value as color or not
 ##' @param low color used for small value
@@ -325,18 +320,13 @@ setMethod("richNetwork", signature(object = "data.frame"),definition = function(
 ##' @param ... additional arguments
 ##' @export
 ##' @author Kai Guo
-setMethod("richNetwork", signature(object = "GSEAResult"),definition = function(object,gene,top = 50, pvalue = 0.05, padj = NULL,usePadj=TRUE,low = "orange",high = "red",
+setMethod("richNetwork", signature(object = "GSEAResult"),definition = function(object,gene,top = 50, pvalue = 0.05, padj = 0.05,usePadj=TRUE,low = "orange",high = "red",
                                                                               weightcut = 0.2, useTerm = TRUE, writeCyt = FALSE,cytoscapeFile = NULL,cytoscapeFormat="graphml",
                                                                               label.color = "black", label.size = 2,node.shape=NULL, layout = "fruchtermanreingold",savefig=FALSE,
                                                                               visNet=FALSE,smooth=TRUE,nodeselect=FALSE,edit=FALSE,savehtml=FALSE,filename="network",
                                                                               width=7,height=7,segment.size=0.2,node.alpha=0.7,...) {
   sep=object@sep
-  if(is.list(object@result$leadingEdge)){
-    object@result$leadingEdge<-unlist(lapply(object@result$leadingEdge, function(x)paste(x,collapse = sep, sep="")))
-  }
-  object@result$Annot<-object@result$pathway
-  object@result<-object@result[,c(9,1:3,7,8)]
-  colnames(object@result)<-c("Annot","Term","Pvalue","Padj","Significant","GeneID")
+  object@result <- .gsea_network_frame(object@result, sep = sep)
   ggnetwork_internal(object@result,gene=object@gene,top=top,pvalue=pvalue,padj=padj,usePadj=usePadj,weightcut=weightcut,useTerm=useTerm,
                      writeCyt=writeCyt,cytoscapeFile=cytoscapeFile,cytoscapeFormat=cytoscapeFormat,
                      label.color=label.color,label.size=label.size,node.shape=node.shape,

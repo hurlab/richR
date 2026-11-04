@@ -21,7 +21,7 @@ richBar_internal(
   short = FALSE,
   fontsize.text = 3,
   angle = 75,
-  padj = NULL,
+  padj = 0.05,
   usePadj = TRUE,
   orderp = FALSE,
   filename = NULL,
@@ -33,7 +33,7 @@ richBar_internal(
   object,
   top = 50,
   pvalue = 0.05,
-  padj = NULL,
+  padj = 0.05,
   order = FALSE,
   usePadj = TRUE,
   fontsize.x = 10,
@@ -53,7 +53,7 @@ richBar_internal(
   object,
   top = 50,
   pvalue = 0.05,
-  padj = NULL,
+  padj = 0.05,
   order = FALSE,
   usePadj = TRUE,
   fontsize.x = 10,
@@ -74,7 +74,7 @@ richBar_internal(
 
 \item{top}{number of terms you want to display,}
 
-\item{pvalue}{cutoff value of pvalue (if padj set as NULL)}
+\item{pvalue}{raw p-value cutoff: a term is kept when \code{Pvalue <= pvalue} and, unless \code{padj} is NULL, \code{Padj <= padj}}
 
 \item{order}{order by Term or richFactor}
 

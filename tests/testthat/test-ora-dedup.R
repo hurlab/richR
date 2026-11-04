@@ -35,7 +35,7 @@ test_that("duplicated ORA input preserves first-seen order and the exact tail pr
     Term = c("T1", "T1", "T2", "T2", "T3", "T3")
   )
   result <- suppressWarnings(suppressMessages(richR::enrich(
-    c("B", "A", "B"), annot, pvalue = 1, minSize = 1,
+    c("B", "A", "B"), annot, pvalue = 1, padj = 1, minSize = 1,
     minGSSize = 1, keepRich = FALSE
   )))
 
@@ -55,7 +55,7 @@ test_that("ORA preserves data-frame input detail metadata", {
   input <- data.frame(logFC = c(1.5, -2), row.names = c("A", "B"))
 
   result <- suppressMessages(richR::enrich(
-    input, annot, pvalue = 1, minSize = 1, minGSSize = 1,
+    input, annot, pvalue = 1, padj = 1, minSize = 1, minGSSize = 1,
     keepRich = FALSE
   ))
 

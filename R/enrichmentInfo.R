@@ -2,6 +2,21 @@
 #'
 #' Metadata is recorded on newly created Annot, richResult, and GSEAResult
 #' objects. Legacy objects return an explicit unavailable record.
+#'
+#' The \code{testing} element names the family that \code{padj.method}
+#' adjusted over (\code{family_policy}) and its size (\code{tested_count}):
+#' \describe{
+#'   \item{\code{"size_bounded_positive_overlap"}}{ORA with
+#'     \code{padj.family = "overlap"} (default): terms whose annotated size in
+#'     the background lies in \code{[minGSSize, maxGSSize]} and that share at
+#'     least one gene with the query.}
+#'   \item{\code{"size_bounded_all_eligible"}}{ORA with
+#'     \code{padj.family = "all"}: every term whose annotated size lies in
+#'     \code{[minGSSize, maxGSSize]}, zero-overlap terms contributing p = 1.}
+#'   \item{\code{"fgsea_returned_before_filtering"}}{GSEA: every pathway
+#'     returned by fgsea, before the significance cutoffs.}
+#' }
+#' For ORA results, \code{options$padj.family} records the family argument.
 #' @param x Annot, richResult, or GSEAResult object
 #' @return A named list containing diagnostics and provenance
 #' @export

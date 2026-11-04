@@ -1,12 +1,6 @@
 .validate_gsea_inputs <- function(x, pvalue, padj, minSize, maxSize,
-                                 minGSSize, maxGSSize, padj.method,
+                                 padj.method,
                                  eps, scoreType, nproc, BPPARAM, seed) {
-  scalar_probability <- function(value, name) {
-    if (length(value) != 1L || !is.numeric(value) || !is.finite(value) ||
-        value < 0 || value > 1) {
-      stop(name, " must be one finite numeric scalar between 0 and 1.", call. = FALSE)
-    }
-  }
   scalar_size <- function(value, name, allow_infinite = FALSE) {
     if (length(value) != 1L || !is.numeric(value) || is.na(value) ||
         value < 1 || (!is.finite(value) && !allow_infinite) ||
@@ -24,13 +18,11 @@
     stop("GSEA stats must have unique, non-missing, non-blank gene names.",
          call. = FALSE)
   }
-  scalar_probability(pvalue, "pvalue")
-  if (!is.null(padj)) scalar_probability(padj, "padj")
+  .check_cutoff(pvalue, "pvalue")
+  .check_cutoff(padj, "padj", allow_null = TRUE)
   scalar_size(minSize, "minSize")
   scalar_size(maxSize, "maxSize", allow_infinite = TRUE)
-  scalar_size(minGSSize, "minGSSize")
-  scalar_size(maxGSSize, "maxGSSize", allow_infinite = TRUE)
-  if (minSize > maxSize || minGSSize > maxGSSize) {
+  if (minSize > maxSize) {
     stop("Minimum GSEA size must not exceed its maximum size.", call. = FALSE)
   }
   if (length(padj.method) != 1L || is.na(padj.method) ||
@@ -69,6 +61,224 @@
   invisible(TRUE)
 }
 
+# ---- GSEA gene-set identity ---------------------------------------------------
+# Gene sets are keyed by identifier, never by label: distinct identifiers that
+# share a label stay distinct gene sets. The identifier column is located by the
+# builder names below (first present wins); a frame carrying none of them uses
+# column 2 (the positional rule of .normalize_annotation). The label is the
+# column named `Annot`. Note the naming trap: in an annotation a column named
+# `Term` holds identifiers (MSigDB layout); in a GSEA result `Term` holds labels.
+.gsea_id_names <- c("GOALL", "PATH", "Module", "Term")
+
+#' Annotation membership frame for GSEA (gene, identifier, label)
+#' @param object annotation data.frame or Annot object
+#' @return data.frame with columns GeneID, pathway, label (label NA when absent)
+#' @keywords internal
+#' @noRd
+.gsea_annotation_frame <- function(object) {
+  annot <- if (methods::is(object, "Annot")) object@annot else object
+  if (!is.data.frame(annot) || ncol(annot) < 2L) {
+    return(annot)
+  }
+  id_col <- intersect(.gsea_id_names, colnames(annot))
+  id_col <- if (length(id_col)) id_col[1L] else colnames(annot)[2L]
+  label <- if ("Annot" %in% colnames(annot)) annot[["Annot"]] else NA_character_
+  data.frame(GeneID = annot[[1L]], pathway = annot[[id_col]],
+             label = rep_len(as.character(label), nrow(annot)),
+             stringsAsFactors = FALSE)
+}
+
+#' Gene-set memberships keyed by identifier
+#' @param object annotation data.frame or Annot object
+#' @return named list of gene vectors, one per identifier
+#' @keywords internal
+#' @noRd
+.gsea_memberships <- function(object) {
+  frame <- .gsea_annotation_frame(object)
+  split(as.character(frame$GeneID), as.character(frame$pathway))
+}
+
+#' Gene-set memberships for the pathways of a GSEA result
+#'
+#' Keyed by identifier; a result computed before gene sets were keyed by
+#' identifier stores the label in `pathway`, so a pathway absent from the
+#' identifier-keyed sets takes the label-keyed membership instead.
+#' @param object annotation data.frame or Annot object
+#' @param ids the `pathway` column of the GSEA result
+#' @return named list of gene vectors
+#' @keywords internal
+#' @noRd
+.gsea_result_memberships <- function(object, ids) {
+  sets <- .gsea_memberships(object)
+  missing <- setdiff(as.character(ids), names(sets))
+  if (length(missing)) {
+    frame <- .gsea_annotation_frame(object)
+    by_label <- split(as.character(frame$GeneID), as.character(frame$label))
+    sets <- c(sets, by_label[intersect(missing, names(by_label))])
+  }
+  sets
+}
+
+#' Identifier-to-label map
+#'
+#' Missing or blank labels are skipped (the identifier is used instead, see
+#' .gsea_terms). An identifier carrying several labels keeps the first
+#' non-missing label in annotation row order, with one warning naming the
+#' affected identifiers.
+#' @param frame output of .gsea_annotation_frame
+#' @param func_name name used in the warning
+#' @return named character vector (names = identifiers)
+#' @keywords internal
+#' @noRd
+.gsea_label_map <- function(frame, func_name = "richGSEA") {
+  ids <- as.character(frame$pathway)
+  labels <- as.character(frame$label)
+  keep <- !is.na(ids) & nzchar(trimws(ids)) & !is.na(labels) & nzchar(trimws(labels))
+  ids <- ids[keep]
+  labels <- labels[keep]
+  first <- !duplicated(ids)
+  map <- stats::setNames(labels[first], ids[first])
+  conflicting <- unique(ids[labels != map[ids]])
+  if (length(conflicting)) {
+    warning(func_name, ": identifier(s) with conflicting labels; using the first label ",
+            "in annotation row order: ", paste(conflicting, collapse = ", "),
+            call. = FALSE)
+  }
+  map
+}
+
+#' Labels for identifiers (the identifier itself where no label exists)
+#' @keywords internal
+#' @noRd
+.gsea_terms <- function(ids, map) {
+  ids <- as.character(ids)
+  terms <- unname(map[ids])
+  missing <- is.na(terms)
+  terms[missing] <- ids[missing]
+  terms
+}
+
+#' Labels of a GSEA result table: the `Term` column, or `pathway` for a legacy
+#' result without `Term`
+#' @keywords internal
+#' @noRd
+.gsea_result_terms <- function(result) {
+  ids <- as.character(result$pathway)
+  if (!"Term" %in% colnames(result)) {
+    return(ids)
+  }
+  terms <- as.character(result$Term)
+  missing <- is.na(terms) | !nzchar(trimws(terms))
+  terms[missing] <- ids[missing]
+  terms
+}
+
+#' Display labels that stay unique per identifier
+#'
+#' A label shared by several of the given identifiers gets the identifier
+#' appended, so facets, legends and network nodes never merge distinct gene sets.
+#' @param ids identifiers to label
+#' @param id_pool,term_pool identifiers and their labels
+#' @keywords internal
+#' @noRd
+.gsea_display_labels <- function(ids, id_pool, term_pool) {
+  ids <- as.character(ids)
+  terms <- as.character(term_pool)[match(ids, as.character(id_pool))]
+  terms[is.na(terms)] <- ids[is.na(terms)]
+  u_ids <- unique(ids)
+  u_terms <- terms[match(u_ids, ids)]
+  shared <- u_terms %in% u_terms[duplicated(u_terms)]
+  u_terms[shared] <- paste0(u_terms[shared], " [", u_ids[shared], "]")
+  u_terms[match(ids, u_ids)]
+}
+
+#' Canonical KEGG pathway identifier (5 digits), NA for a non-KEGG identifier
+#' @keywords internal
+#' @noRd
+.kegg_canonical_id <- function(x) {
+  x <- as.character(x)
+  is_kegg <- !is.na(x) & grepl("^([a-z]{2,4})?[0-9]{5}$", x)
+  out <- rep(NA_character_, length(x))
+  out[is_kegg] <- sub("^[a-z]{2,4}", "", x[is_kegg])
+  out
+}
+
+#' Resolve pathway selectors to identifiers
+#'
+#' Each selector resolves, in order, by exact identifier, by KEGG identifier
+#' with the organism prefix stripped, then by a unique label. A label carried by
+#' several identifiers, or a selector matching nothing, is an error.
+#' @param selectors character vector of selectors
+#' @param ids candidate identifiers
+#' @param terms labels of `ids`
+#' @param what selector name used in messages
+#' @return character vector of resolved identifiers (unique, selector order)
+#' @keywords internal
+#' @noRd
+.gsea_resolve_selectors <- function(selectors, ids, terms, what = "pathway") {
+  ids <- as.character(ids)
+  terms <- as.character(terms)
+  canon_ids <- .kegg_canonical_id(ids)
+  resolved <- character()
+  for (selector in as.character(selectors)) {
+    hit <- unique(ids[ids == selector])
+    if (!length(hit)) {
+      canon <- .kegg_canonical_id(selector)
+      if (!is.na(canon)) hit <- unique(ids[!is.na(canon_ids) & canon_ids == canon])
+    }
+    if (!length(hit)) {
+      hit <- unique(ids[!is.na(terms) & terms == selector])
+    }
+    if (length(hit) > 1L) {
+      stop(what, " '", selector, "' matches several pathways: ",
+           paste(hit, collapse = ", "), ". Use a pathway identifier.", call. = FALSE)
+    }
+    if (!length(hit)) {
+      stop(what, " '", selector, "' was not found in the GSEA results.", call. = FALSE)
+    }
+    resolved <- c(resolved, hit)
+  }
+  unique(resolved)
+}
+
+#' KEGG level columns for GSEA pathways
+#'
+#' KEGG identifiers (5 digits, optionally organism-prefixed) join the bundled
+#' `path` table on `ko`; any other value joins on the `Level3` name.
+#' @keywords internal
+#' @noRd
+.gsea_kegg_levels <- function(pathway, path) {
+  canon <- .kegg_canonical_id(pathway)
+  idx <- ifelse(is.na(canon), match(as.character(pathway), path$Level3),
+                match(canon, path$ko))
+  levels <- path[idx, , drop = FALSE]
+  rownames(levels) <- NULL
+  levels
+}
+
+#' ORA-shaped network frame from a GSEA result, built by column name
+#' @param result GSEA result table
+#' @param sep gene separator for a list-column leadingEdge
+#' @return data.frame with Annot, Term, Pvalue, Padj, Significant, GeneID
+#' @keywords internal
+#' @noRd
+.gsea_network_frame <- function(result, sep = ",") {
+  le <- result$leadingEdge
+  if (is.list(le)) {
+    le <- vapply(le, function(x) paste(x, collapse = sep), character(1))
+  }
+  ids <- as.character(result$pathway)
+  data.frame(
+    Annot = ids,
+    Term = .gsea_display_labels(ids, ids, .gsea_result_terms(result)),
+    Pvalue = result$pval,
+    Padj = result$padj,
+    Significant = result$size,
+    GeneID = as.character(le),
+    stringsAsFactors = FALSE
+  )
+}
+
 #' Enrichment analysis for any type of annotation data
 #' @param x a vector include all log2FC with gene name
 #' @param object annotation file for all genes
@@ -76,10 +286,12 @@
 #' @param pvalue pvalue cutoff value
 #' @param padj adjust p value cut off method
 #' @param KEGG a logical evaluating to TRUE or FALSE indicating whether KEGG GSEA were peformed or not.
-#' @param minSize Minimal size of a gene set to test. All pathways below the threshold are excluded.
-#' @param maxSize Maximal size of a gene set to test. All pathways above the threshold are excluded.
-#' @param minGSSize minimal size of genes annotated by ontology term for testing.
-#' @param maxGSSize maximal size of each geneset for analyzing
+#' @param minSize Minimal size of a gene set to test, counted as the gene-set
+#'   membership intersected with the ranked genes (passed to fgsea). Smaller
+#'   gene sets are not tested.
+#' @param maxSize Maximal size of a gene set to test, counted as the gene-set
+#'   membership intersected with the ranked genes (passed to fgsea). Larger
+#'   gene sets are not tested.
 #' @param padj.method p value adjust method
 #' @param organism organism name
 #' @param ontology ontology type
@@ -93,14 +305,12 @@
 #' @param annotation_provenance optional annotation provenance captured from an Annot object
 #' @importFrom fgsea fgseaMultilevel
 #' @author Kai Guo
-richGSEA_internal<-function(x,object,keytype="",pvalue=0.05,padj=NULL,KEGG=FALSE,minSize=15,maxSize=500,
-                            minGSSize = 10, maxGSSize = 500,
+richGSEA_internal<-function(x,object,keytype="",pvalue=0.05,padj=0.05,KEGG=FALSE,minSize=15,maxSize=500,
                             padj.method="BH",organism=NULL,ontology=NULL,table=TRUE,sep=",",
                             eps=NULL,scoreType=NULL,nproc=NULL,BPPARAM=NULL,seed=NULL,
                             annotation_provenance=NULL){
-  .validate_gsea_inputs(x, pvalue, padj, minSize, maxSize, minGSSize,
-                        maxGSSize, padj.method, eps, scoreType, nproc,
-                        BPPARAM, seed)
+  .validate_gsea_inputs(x, pvalue, padj, minSize, maxSize, padj.method,
+                        eps, scoreType, nproc, BPPARAM, seed)
   rng_summary <- list(seed = NULL, RNGkind = RNGkind(), backend = NULL)
   if (!is.null(seed)) {
     had_seed <- exists(".Random.seed", envir = .GlobalEnv, inherits = FALSE)
@@ -122,10 +332,10 @@ richGSEA_internal<-function(x,object,keytype="",pvalue=0.05,padj=NULL,KEGG=FALSE
   metadata_padj <- padj
   original_input_ids <- names(x)
   x<-sort(x)
-  if("Annot"%in%colnames(object)){
-    object[,2]<-object$Annot
-  }
-  normalization <- .normalize_annotation(object, func_name = "richGSEA")
+  # Memberships come from gene-identifier pairs; labels are attached afterwards.
+  identity_frame <- .gsea_annotation_frame(object)
+  normalization <- .normalize_annotation(identity_frame, func_name = "richGSEA")
+  label_map <- .gsea_label_map(identity_frame, func_name = "richGSEA")
   object <- normalization$data[, 1:2, drop = FALSE]
   normalization$counts$eligible_rows <- as.integer(nrow(object))
   normalization$counts$effective_rows <- normalization$counts$eligible_rows
@@ -145,20 +355,27 @@ richGSEA_internal<-function(x,object,keytype="",pvalue=0.05,padj=NULL,KEGG=FALSE
   if(isTRUE(table)){
     res$leadingEdge<-unlist(lapply(res$leadingEdge, function(x)paste(gsub(" ","",x),collapse = sep,sep="")))
   }
-  if(is.null(padj)){
-    res<-res[!is.na(res$pval) & res$pval<pvalue, , drop = FALSE]
-    padj=numeric()
-  }else{
-    res<-res[!is.na(res$padj) & res$padj<padj, , drop = FALSE]
+  # Term (the label) goes directly after leadingEdge, so fgsea's columns keep
+  # their positions and KEGG level columns follow it.
+  res$Term <- .gsea_terms(res$pathway, label_map)
+  le_pos <- match("leadingEdge", colnames(res))
+  if (!is.na(le_pos)) {
+    cols <- colnames(res)
+    res <- res[, c(cols[seq_len(le_pos)], "Term",
+                   setdiff(cols[-seq_len(le_pos)], "Term")), drop = FALSE]
   }
+  # richR's own padj (above) is computed over the full returned family before
+  # the significance predicate runs.
+  res <- res[.sig_keep(res, pvalue, padj, p_col = "pval", padj_col = "padj"), ,
+             drop = FALSE]
+  if (is.null(padj)) padj <- numeric()
   res<-res[order(res$pval),]
   res <- res[!is.na(res$pathway),]
   if(isTRUE(KEGG)){
     path_env <- new.env(parent = emptyenv())
     utils::data("path", package = "richR", envir = path_env)
     path <- path_env$path
-    rownames(path)<-path$Level3
-    res<-cbind(res,path[res$pathway,])
+    res<-cbind(res,.gsea_kegg_levels(res$pathway, path))
   }
   if(is.null(organism)){
     organism=character()
@@ -207,8 +424,7 @@ richGSEA_internal<-function(x,object,keytype="",pvalue=0.05,padj=NULL,KEGG=FALSE
                   tested_count = as.integer(tested_count),
                   effective_N = NA_integer_, effective_n = NA_integer_)
   options <- list(pvalue = pvalue, padj = metadata_padj, minSize = minSize,
-                  maxSize = maxSize, minGSSize = minGSSize,
-                  maxGSSize = maxGSSize, padj.method = padj.method,
+                  maxSize = maxSize, padj.method = padj.method,
                   ontology = ontology, keytype = keytype, KEGG = KEGG,
                   table = table, sep = sep, eps = eps, scoreType = scoreType,
                   nproc = nproc,
@@ -235,9 +451,11 @@ richGSEA_internal<-function(x,object,keytype="",pvalue=0.05,padj=NULL,KEGG=FALSE
 #' @param pvalue pvalue cutoff value
 #' @param padj adjust p value cut off
 #' @param KEGG logical, whether KEGG GSEA were performed
-#' @param minSize Minimal size of a gene set to test
+#' @param minSize Minimal size of a gene set to test, counted as the gene-set
+#'   membership intersected with the ranked genes (passed to fgsea)
 #' @param ontology ontology type
-#' @param maxSize Maximal size of a gene set to test
+#' @param maxSize Maximal size of a gene set to test, counted as the gene-set
+#'   membership intersected with the ranked genes (passed to fgsea)
 #' @param padj.method pvalue adjust method
 #' @param organism organism name
 #' @param table leadingEdge as vector
@@ -247,6 +465,18 @@ richGSEA_internal<-function(x,object,keytype="",pvalue=0.05,padj=NULL,KEGG=FALSE
 #' @param nproc optional fgsea worker count
 #' @param BPPARAM optional BiocParallel backend
 #' @param seed optional seed scoped to this GSEA call
+#' @details Gene sets are keyed by identifier, so distinct identifiers that
+#'   share a label are tested as distinct gene sets. The identifier column is
+#'   the first of \code{GOALL}, \code{PATH}, \code{Module} or \code{Term}
+#'   present in \code{object}; an annotation carrying none of these names uses
+#'   its second column. The label is the column named \code{Annot}.
+#'   \code{result$pathway} holds the identifier and \code{result$Term}
+#'   (directly after \code{leadingEdge}) the label: the identifier itself when
+#'   no label exists, and the first non-missing label in annotation row order
+#'   when an identifier carries several labels (with a warning naming those
+#'   identifiers). With \code{KEGG = TRUE}, KEGG identifiers (five digits,
+#'   optionally organism-prefixed) are joined to the KEGG levels by identifier,
+#'   other values by the \code{Level3} name.
 #' @export
 #' @examples
 #' \dontrun{
@@ -258,7 +488,7 @@ richGSEA_internal<-function(x,object,keytype="",pvalue=0.05,padj=NULL,KEGG=FALSE
 #' res<-richGSEA(gene,object = hsako)
 #' }
 #' @author Kai Guo
-setMethod("richGSEA", signature(object = "data.frame"),definition = function(x,object,keytype="",pvalue=0.05,padj=NULL,KEGG=FALSE,minSize=15,ontology="",
+setMethod("richGSEA", signature(object = "data.frame"),definition = function(x,object,keytype="",pvalue=0.05,padj=0.05,KEGG=FALSE,minSize=15,ontology="",
                                                                              maxSize=500,padj.method="BH",organism=NULL,table=TRUE,sep=",",
                                                                              eps=NULL,scoreType=NULL,nproc=NULL,BPPARAM=NULL,seed=NULL) {
   richGSEA_internal(x,object,keytype=keytype,pvalue=pvalue,padj=padj,KEGG=KEGG,minSize=minSize,ontology=ontology,
@@ -272,9 +502,11 @@ setMethod("richGSEA", signature(object = "data.frame"),definition = function(x,o
 #' @param pvalue pvalue cutoff value
 #' @param padj adjust p value cut off
 #' @param KEGG logical, whether KEGG GSEA were performed
-#' @param minSize Minimal size of a gene set to test
+#' @param minSize Minimal size of a gene set to test, counted as the gene-set
+#'   membership intersected with the ranked genes (passed to fgsea)
 #' @param ontology ontology type
-#' @param maxSize Maximal size of a gene set to test
+#' @param maxSize Maximal size of a gene set to test, counted as the gene-set
+#'   membership intersected with the ranked genes (passed to fgsea)
 #' @param padj.method pvalue adjust method
 #' @param organism organism name
 #' @param table leadingEdge as vector
@@ -294,7 +526,9 @@ setMethod("richGSEA", signature(object = "data.frame"),definition = function(x,o
 #' @param nproc optional fgsea worker count
 #' @param BPPARAM optional BiocParallel backend
 #' @param seed optional seed scoped to this GSEA call
-setMethod("richGSEA", signature(object = "Annot"),definition = function(x,object,keytype="",pvalue=0.05,padj=NULL,KEGG=FALSE,minSize=15,ontology="",
+#' @details Gene sets are keyed by identifier and labelled afterwards; see the
+#'   \code{data.frame} method for the identifier and label rules.
+setMethod("richGSEA", signature(object = "Annot"),definition = function(x,object,keytype="",pvalue=0.05,padj=0.05,KEGG=FALSE,minSize=15,ontology="",
                                                                         maxSize=500,padj.method="BH",organism=NULL,table=TRUE,sep=",",
                                                                         eps=NULL,scoreType=NULL,nproc=NULL,BPPARAM=NULL,seed=NULL) {
   provenance <- .annotation_provenance(object)
@@ -336,7 +570,6 @@ richGSEAplot <- function(term, object, gseaRes, top = 10, default = TRUE) {
   x <- gseaRes@input
   x <- sort(x)
 
-  annot <- object@annot
   gseaRes_result <- gseaRes@result
 
   if(nrow(gseaRes_result) == 0) {
@@ -347,18 +580,20 @@ richGSEAplot <- function(term, object, gseaRes, top = 10, default = TRUE) {
     top <- nrow(gseaRes_result)
   }
 
-  if(!is.null(annot$Annot)) {
-    annot[,2] <- annot$Annot
-  }
-
-  annod <- sf(annot)
+  # Gene sets keyed by identifier (never by label); titles show the Term label.
+  # `term` resolves like every other GSEA selector: identifier, KEGG identifier
+  # with or without organism prefix, or a unique label.
+  annod <- .gsea_result_memberships(object, gseaRes_result$pathway)
+  titles <- .gsea_result_terms(gseaRes_result)
+  term <- .gsea_resolve_selectors(term, gseaRes_result$pathway, titles, what = "term")
 
   if(length(term) > 1 & !is.null(gseaRes_result)) {
     if(isTRUE(default)) {
       plotGseaTable(annod[term], stats = x, gseaRes_result, gseaParam = 0.5)
     } else {
-      res <- lapply(gseaRes_result$pathway[1:top], function(y) {
-        plotEnrichment(annod[[y]], stats = x) + ggtitle(y)
+      res <- lapply(gseaRes_result$pathway[seq_len(top)], function(y) {
+        plotEnrichment(annod[[y]], stats = x) +
+          ggtitle(titles[match(y, gseaRes_result$pathway)])
       })
       if (!requireNamespace("cowplot", quietly = TRUE))
         stop("Package 'cowplot' is required for grid GSEA plots. Install it with install.packages('cowplot').")
@@ -377,14 +612,23 @@ richGSEAplot <- function(term, object, gseaRes, top = 10, default = TRUE) {
 #' @param up_color color for up-regulated pathways (positive NES)
 #' @param down_color color for down-regulated pathways (negative NES)
 #' @param show_direction logical, whether to use directional coloring based on NES
-#' @param pathways specific pathway names to display (if NULL, use top/pvalue/padj filtering)
-#' @param pathway_pattern regex pattern for pathway matching
+#' @param pathways pathways to display (if NULL, use top/pvalue/padj filtering):
+#'   pathway identifiers, KEGG identifiers with or without organism prefix, or
+#'   unique \code{Term} labels; a label shared by several pathways, or a value
+#'   matching nothing, is an error
+#' @param pathway_pattern regex pattern matched against pathway identifiers and \code{Term} labels
 #' @param category pathway category filter
 #' @param min_genes minimum gene set size filter
 #' @param max_genes maximum gene set size filter
 #' @param top number of terms you want to display (used when pathways is NULL)
-#' @param pvalue cutoff value of pvalue (if padj set as NULL, used when pathways is NULL)
-#' @param padj cutoff value of p adjust value (used when pathways is NULL)
+#' @param pvalue raw p-value cutoff, used only when \code{pathways} and
+#'   \code{pathway_pattern} are NULL: a pathway is drawn when
+#'   \code{pval <= pvalue} and, unless \code{padj} is NULL,
+#'   \code{padj <= padj}. The explicit \code{pathways} and
+#'   \code{pathway_pattern} selections are not significance-filtered by design;
+#'   they choose among the rows the \code{GSEAResult} already holds.
+#' @param padj adjusted p-value cutoff (used only when \code{pathways} and
+#'   \code{pathway_pattern} are NULL); NULL filters on the raw p-value only
 #' @param gseaParam GSEA parameter for enrichment score calculation
 #' @param ticksSize size of the tick marks
 #' @param plot_title title for the plot
@@ -420,7 +664,7 @@ richGSEAcurve <- function(object, gseaRes, mycol = NULL,
                      up_color = "#E31A1C", down_color = "#1F78B4", show_direction = TRUE,
                      pathways = NULL, pathway_pattern = NULL, category = NULL,
                      min_genes = NULL, max_genes = NULL, top = 10,
-                     pvalue = 0.05, padj = NULL, gseaParam = 1, ticksSize = 0.2,
+                     pvalue = 0.05, padj = 0.05, gseaParam = 1, ticksSize = 0.2,
                      plot_title = "GSEA Enrichment Plot", show_pathway_names = FALSE,
                      pathway_name_size = 10, line_alpha = 0.8, point_alpha = 0.6,
                      legend_position = "bottom", legend_ncol = 2,
@@ -445,42 +689,47 @@ richGSEAcurve <- function(object, gseaRes, mycol = NULL,
     stop("pathways must be a character vector")
   }
 
-  # Select pathways to display
+  # Cutoffs are validated whichever selection branch runs (explicit
+  # selections are not significance-filtered, but the arguments are checked).
+  .check_cutoff(pvalue, "pvalue")
+  .check_cutoff(padj, "padj", allow_null = TRUE)
+
+  result_terms <- .gsea_result_terms(gseaRes_result)
+
+  # Select pathways to display (identifiers)
   if(!is.null(pathways)) {
-    # Use user-specified pathways
-    sigpathway <- pathways[pathways %in% gseaRes_result$pathway]
-    if(length(sigpathway) == 0) {
-      stop("None of the specified pathways found in GSEA results")
-    }
+    # Resolve user selectors: identifier, prefix-stripped KEGG identifier, unique label
+    sigpathway <- .gsea_resolve_selectors(pathways, gseaRes_result$pathway,
+                                          result_terms, what = "pathways")
     # Get corresponding NES values
     pathway_indices <- match(sigpathway, gseaRes_result$pathway)
     sig_nes <- gseaRes_result$NES[pathway_indices]
   } else if(!is.null(pathway_pattern)) {
-    # Use pattern-based selection
-    pattern_indices <- grepl(pathway_pattern, gseaRes_result$pathway, ignore.case = TRUE)
+    # Use pattern-based selection on identifiers and labels
+    pattern_indices <- grepl(pathway_pattern, gseaRes_result$pathway, ignore.case = TRUE) |
+      grepl(pathway_pattern, result_terms, ignore.case = TRUE)
     sigpathway <- gseaRes_result$pathway[pattern_indices]
     sig_nes <- gseaRes_result$NES[pattern_indices]
     if(length(sigpathway) == 0) {
       stop("No pathways match the specified pattern")
     }
   } else {
-    # Use filtering criteria
-    if(!is.null(padj)) {
-      cutoff <- padj
-      sig_indices <- gseaRes_result$padj < cutoff
-    } else {
-      cutoff <- pvalue
-      sig_indices <- gseaRes_result$pval < cutoff
-    }
+    # Use filtering criteria: the significance predicate (raw AND adjusted)
+    sig_indices <- .sig_keep(gseaRes_result, pvalue, padj,
+                             p_col = "pval", padj_col = "padj")
 
     sigpathway <- gseaRes_result$pathway[sig_indices]
     sig_nes <- gseaRes_result$NES[sig_indices]
+    if(length(sigpathway) == 0) {
+      stop("richGSEAcurve: no pathway passes the cutoffs (pvalue = ", pvalue,
+           ", padj = ", if (is.null(padj)) "NULL" else padj, ").", call. = FALSE)
+    }
 
     if(top > length(sigpathway)) {
       top <- length(sigpathway)
     }
-    sigpathway <- sigpathway[1:top]
-    sig_nes <- sig_nes[1:top]
+    sigpathway <- sigpathway[seq_len(top)]
+    sig_nes <- sig_nes[seq_len(top)]
   }
 
   # Apply gene set size filtering
@@ -502,6 +751,11 @@ richGSEAcurve <- function(object, gseaRes, mycol = NULL,
   if(length(sigpathway) == 0) {
     stop("No pathways remaining after filtering")
   }
+
+  # From here on `sig_ids` holds the identifiers and `sigpathway` the display
+  # labels (Term, unique per identifier) used for facets, colours and legends.
+  sig_ids <- sigpathway
+  sigpathway <- .gsea_display_labels(sig_ids, gseaRes_result$pathway, result_terms)
 
   # Set up colors based on direction preference
   if(show_direction) {
@@ -551,8 +805,13 @@ richGSEAcurve <- function(object, gseaRes, mycol = NULL,
 
   # Calculate GSEA curves
   fc <- x
-  res <- lapply(sigpathway, function(pathway) {
-    .calGSEA(object, pathway, fc, gseaParam = gseaParam, ticksSize = ticksSize)
+  res <- lapply(seq_along(sig_ids), function(i) {
+    curve <- .calGSEA(object, sig_ids[i], fc, gseaParam = gseaParam, ticksSize = ticksSize)
+    curve$toPlot$pathway <- sig_ids[i]
+    curve$toPlot$Group <- sigpathway[i]
+    curve$pathway$pathway <- sig_ids[i]
+    curve$pathway$Group <- sigpathway[i]
+    curve
   })
 
   toPlot <- do.call(rbind, lapply(res, '[[', 'toPlot'))
@@ -596,7 +855,7 @@ richGSEAcurve <- function(object, gseaRes, mycol = NULL,
   if(legend_position != "none") {
     if(show_direction) {
       # Create pathway labels with NES values and group by direction
-      pathway_indices <- match(sigpathway, gseaRes_result$pathway)
+      pathway_indices <- match(sig_ids, gseaRes_result$pathway)
       nes_values <- round(gseaRes_result$NES[pathway_indices], 2)
 
       # Create labels with pathway names and NES values
@@ -700,7 +959,7 @@ richGSEAcurve <- function(object, gseaRes, mycol = NULL,
     return(list(
       plot = p,
       data = toPlot,
-      pathways = sigpathway,
+      pathways = stats::setNames(sig_ids, sigpathway),
       directions = if(show_direction) pathway_direction else NULL,
       nes_values = sig_nes,
       pathway_colors = pathway_colors,
@@ -712,10 +971,30 @@ richGSEAcurve <- function(object, gseaRes, mycol = NULL,
   }
 }
 
+#' Keep GSEA result rows passing the significance predicate
+#'
+#' \code{pval_cutoff} and \code{padj_cutoff} are validated with the shared rule;
+#' \code{padj_cutoff = NULL} filters on the raw p-value only, and
+#' \code{pval_cutoff = NULL} applies no raw cutoff.
+#' @param result GSEA result data.frame (\code{pval}, \code{padj} columns)
+#' @param pval_cutoff raw p-value cutoff or NULL
+#' @param padj_cutoff adjusted p-value cutoff or NULL
+#' @keywords internal
+#' @noRd
+.gsea_sig_filter <- function(result, pval_cutoff, padj_cutoff) {
+  .check_cutoff(pval_cutoff, "pval_cutoff", allow_null = TRUE)
+  .check_cutoff(padj_cutoff, "padj_cutoff", allow_null = TRUE)
+  if (is.null(pval_cutoff)) pval_cutoff <- 1
+  result[.sig_keep(result, pval_cutoff, padj_cutoff, p_col = "pval", padj_col = "padj"), ,
+         drop = FALSE]
+}
+
 #' Get available pathways from GSEA results
 #' @param gseaRes GSEAResult object
-#' @param padj_cutoff padj cutoff for filtering (if NULL, no filtering applied)
-#' @param pval_cutoff pvalue cutoff for filtering (used if padj_cutoff is NULL)
+#' @param padj_cutoff adjusted p-value cutoff in (0, 1]: a pathway is kept when
+#'   \code{padj <= padj_cutoff}; NULL applies no adjusted cutoff
+#' @param pval_cutoff raw p-value cutoff in (0, 1], applied together with
+#'   \code{padj_cutoff} (\code{pval <= pval_cutoff}); NULL applies no raw cutoff
 #' @param min_size minimum pathway size
 #' @param max_size maximum pathway size
 #' @export
@@ -732,11 +1011,7 @@ getPathways <- function(gseaRes, padj_cutoff = 0.05, pval_cutoff = 0.05, min_siz
   result <- gseaRes@result
 
   # Apply significance filtering
-  if(!is.null(padj_cutoff)) {
-    result <- result[result$padj < padj_cutoff, ]
-  } else if(!is.null(pval_cutoff)) {
-    result <- result[result$pval < pval_cutoff, ]
-  }
+  result <- .gsea_sig_filter(result, pval_cutoff, padj_cutoff)
 
   # Apply size filtering
   if(!is.null(min_size)) {
@@ -753,6 +1028,8 @@ getPathways <- function(gseaRes, padj_cutoff = 0.05, pval_cutoff = 0.05, min_siz
 #' @param gseaRes GSEAResult object
 #' @param keyword search term (can be regex pattern)
 #' @param ignore_case whether to ignore case when searching
+#' @return pathway identifiers whose identifier or \code{Term} label matches,
+#'   named by their \code{Term} label
 #' @export
 #' @examples
 #' \dontrun{
@@ -765,8 +1042,12 @@ searchPathways <- function(gseaRes, keyword, ignore_case = TRUE) {
     stop("gseaRes must be a GSEAResult object")
   }
 
-  pathways <- gseaRes@result$pathway
-  matched <- pathways[grepl(keyword, pathways, ignore.case = ignore_case)]
+  pathways <- as.character(gseaRes@result$pathway)
+  terms <- .gsea_result_terms(gseaRes@result)
+  hit <- grepl(keyword, pathways, ignore.case = ignore_case) |
+    grepl(keyword, terms, ignore.case = ignore_case)
+  # identifiers, named by their Term label
+  matched <- stats::setNames(pathways[hit], terms[hit])
 
   if(length(matched) == 0) {
     message("No pathways found matching the keyword: ", keyword)
@@ -879,6 +1160,7 @@ getPathwayStats <- function(gseaRes, top = 10) {
   # Create summary
   summary_stats <- data.frame(
     pathway = top_pathways$pathway,
+    Term = .gsea_result_terms(top_pathways),
     NES = round(top_pathways$NES, 3),
     pvalue = formatC(top_pathways$pval, format = "e", digits = 2),
     padj = formatC(top_pathways$padj, format = "e", digits = 2),
@@ -893,8 +1175,10 @@ getPathwayStats <- function(gseaRes, top = 10) {
 #' Filter pathways by multiple criteria
 #' @param gseaRes GSEAResult object
 #' @param nes_cutoff absolute NES cutoff
-#' @param padj_cutoff padj cutoff
-#' @param pval_cutoff pval cutoff (used if padj_cutoff is NULL)
+#' @param padj_cutoff adjusted p-value cutoff in (0, 1]: a pathway is kept when
+#'   \code{padj <= padj_cutoff}; NULL applies no adjusted cutoff
+#' @param pval_cutoff raw p-value cutoff in (0, 1], applied together with
+#'   \code{padj_cutoff} (\code{pval <= pval_cutoff}); NULL applies no raw cutoff
 #' @param min_size minimum pathway size
 #' @param max_size maximum pathway size
 #' @param direction filter by direction ("up", "down", or "both")
@@ -918,11 +1202,7 @@ filterPathways <- function(gseaRes, nes_cutoff = NULL, padj_cutoff = 0.05, pval_
   }
 
   # Apply significance filtering
-  if(!is.null(padj_cutoff)) {
-    result <- result[result$padj < padj_cutoff, ]
-  } else if(!is.null(pval_cutoff)) {
-    result <- result[result$pval < pval_cutoff, ]
-  }
+  result <- .gsea_sig_filter(result, pval_cutoff, padj_cutoff)
 
   # Apply size filtering
   if(!is.null(min_size)) {
@@ -952,9 +1232,11 @@ filterPathways <- function(gseaRes, nes_cutoff = NULL, padj_cutoff = 0.05, pval_
 #' @param pvalue pvalue cutoff value
 #' @param padj adjust p value cut off
 #' @param KEGG logical, whether KEGG GSEA were performed
-#' @param minSize Minimal size of a gene set to test
+#' @param minSize Minimal size of a gene set to test, counted as the gene-set
+#'   membership intersected with the ranked genes (passed to fgsea)
 #' @param ontology ontology type
-#' @param maxSize Maximal size of a gene set to test
+#' @param maxSize Maximal size of a gene set to test, counted as the gene-set
+#'   membership intersected with the ranked genes (passed to fgsea)
 #' @param padj.method p value adjust method
 #' @param organism organism name
 #' @param table leadingEdge as vector
@@ -979,7 +1261,7 @@ filterPathways <- function(gseaRes, nes_cutoff = NULL, padj_cutoff = 0.05, pval_
 #' @author Kai Guo
 parGSEA<-function(x,object,log2FC="log2FoldChange",gene.col=NULL,
                   simplify=FALSE,keytype="",
-                  pvalue=0.05,padj=NULL,KEGG=FALSE,minSize=15,ontology="",
+                  pvalue=0.05,padj=0.05,KEGG=FALSE,minSize=15,ontology="",
                   maxSize=500,padj.method="BH",organism=NULL,table=TRUE,sep=",",
                   eps=NULL,scoreType=NULL,nproc=NULL,BPPARAM=NULL,seed=NULL){
   fc<-x[,log2FC]
@@ -999,8 +1281,13 @@ parGSEA<-function(x,object,log2FC="log2FoldChange",gene.col=NULL,
 
 ###
 .calGSEA<-function (obj,sigpathway, fc, gseaParam = 1, ticksSize = 0.2){
-  obj<-split(obj[,1],obj[,ncol(obj)])
-  pathway <- obj[[sigpathway]]
+  frame <- .gsea_annotation_frame(obj)
+  pathway <- split(as.character(frame$GeneID), as.character(frame$pathway))[[sigpathway]]
+  if (is.null(pathway)) {
+    # A result computed before gene sets were keyed by identifier stores the
+    # label in `pathway`; its gene set was the label-keyed membership.
+    pathway <- split(as.character(frame$GeneID), as.character(frame$label))[[sigpathway]]
+  }
   stats <- fc
   rnk <- rank(-stats)
   ord <- order(rnk)

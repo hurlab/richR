@@ -13,6 +13,10 @@ searchPathways(gseaRes, keyword, ignore_case = TRUE)
 
 \item{ignore_case}{whether to ignore case when searching}
 }
+\value{
+pathway identifiers whose identifier or \code{Term} label matches,
+  named by their \code{Term} label
+}
 \description{
 Search pathways by keyword
 }

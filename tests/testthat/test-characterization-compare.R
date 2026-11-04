@@ -80,11 +80,15 @@ test_that("compareGSEA() with padj = NULL keeps the shape of the enrichment-curv
   plot_obj <- compareGSEA(fx$results, fx$annot)
   expect_s3_class(plot_obj, "ggplot")
   curve <- .char_nonempty(plot_obj$data)
+  # SPEC-RICHR-002 D3: facets (Group) show the Term label; the identifier is
+  # kept in a `pathway` column.
   expect_identical(
     vapply(curve, function(col) class(col)[1L], character(1)),
-    c(x = "numeric", y = "numeric", Group = "character", group = "character")
+    c(x = "numeric", y = "numeric", Group = "character", group = "character",
+      pathway = "character")
   )
   expect_setequal(curve$Group, c("top pathway", "down pathway", "up pathway"))
+  expect_setequal(curve$pathway, c("T4", "T2", "T1"))
   expect_setequal(curve$group, c("A", "B"))
   expect_identical(length(plot_obj$layers), 6L)
 })

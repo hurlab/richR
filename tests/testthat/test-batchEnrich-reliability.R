@@ -52,9 +52,18 @@ test_that("batchEnrich returns valid all-empty reports and errors when all fail"
   expect_identical(empty$status$n_terms, c(0L, 0L))
   expect_identical(empty$status$error, c(NA_character_, NA_character_))
 
-  suppressWarnings(expect_warning(expect_error(richR::batchEnrich(
-    list(first = character(), second = "unmapped"), annot, verbose = FALSE
-  ), "all enrichment analyses failed"), "failed for 'first'"))
+  # Both groups fail, so batchEnrich warns once per group before it errors;
+  # edition 3 expect_warning() consumes one matching warning and lets the other
+  # bubble up, so nesting asserts both.
+  expect_warning(
+    expect_warning(
+      expect_error(richR::batchEnrich(
+        list(first = character(), second = "unmapped"), annot, verbose = FALSE
+      ), "all enrichment analyses failed"),
+      "failed for 'first'"
+    ),
+    "failed for 'second'"
+  )
 })
 
 test_that("batchEnrich reports a group-specific invalid-input failure", {

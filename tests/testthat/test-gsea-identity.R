@@ -452,3 +452,41 @@ test_that("gene plots map each gene row to its own term row's p-value", {
   dot <- richGeneDot(df, pvalue = 1, padj = 1)$data
   expect_equal(dot$neg_log_p[match(c("ga", "gb"), dot$Gene)], -log10(c(0.01, 0.02)))
 })
+
+# ---- Post-review: richGSEAplot() resolves term like the other selectors -------
+
+# A GSEAResult computed before gene sets were keyed by identifier: `pathway`
+# holds the label and there is no Term column.
+label_keyed_result <- function() {
+  res <- consumer_result()
+  annot <- consumer_annot()
+  res@result$pathway <- annot$Annot[match(res@result$pathway, annot$Term)]
+  res@result$Term <- NULL
+  res
+}
+
+test_that("richGSEAplot() draws the same gene set for an identifier and its label", {
+  skip_if_not_installed("fgsea")
+  res <- consumer_result()
+  by_id <- richGSEAplot("04110", consumer_annot(), res)
+  expect_no_warning(by_label <- richGSEAplot("Cell cycle", consumer_annot(), res))
+  expect_identical(by_label$data, by_id$data)
+  by_kegg <- richGSEAplot("hsa04110", consumer_annot(), res)
+  expect_identical(by_kegg$data, by_id$data)
+})
+
+test_that("richGSEAplot() supports a label-keyed result from before 0.2.0", {
+  skip_if_not_installed("fgsea")
+  by_id <- richGSEAplot("04110", consumer_annot(), consumer_result())
+  expect_no_warning(legacy <- richGSEAplot("Cell cycle", consumer_annot(),
+                                           label_keyed_result()))
+  expect_identical(legacy$data, by_id$data)
+})
+
+test_that("richGSEAplot() rejects an ambiguous or unknown term", {
+  skip_if_not_installed("fgsea")
+  expect_error(richGSEAplot("shared", consumer_annot(), selector_result()),
+               "matches several pathways: A1, A2")
+  expect_error(richGSEAplot("nope", consumer_annot(), consumer_result()),
+               "'nope' was not found")
+})

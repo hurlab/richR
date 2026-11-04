@@ -98,6 +98,27 @@
   split(as.character(frame$GeneID), as.character(frame$pathway))
 }
 
+#' Gene-set memberships for the pathways of a GSEA result
+#'
+#' Keyed by identifier; a result computed before gene sets were keyed by
+#' identifier stores the label in `pathway`, so a pathway absent from the
+#' identifier-keyed sets takes the label-keyed membership instead.
+#' @param object annotation data.frame or Annot object
+#' @param ids the `pathway` column of the GSEA result
+#' @return named list of gene vectors
+#' @keywords internal
+#' @noRd
+.gsea_result_memberships <- function(object, ids) {
+  sets <- .gsea_memberships(object)
+  missing <- setdiff(as.character(ids), names(sets))
+  if (length(missing)) {
+    frame <- .gsea_annotation_frame(object)
+    by_label <- split(as.character(frame$GeneID), as.character(frame$label))
+    sets <- c(sets, by_label[intersect(missing, names(by_label))])
+  }
+  sets
+}
+
 #' Identifier-to-label map
 #'
 #' Missing or blank labels are skipped (the identifier is used instead, see
@@ -560,14 +581,17 @@ richGSEAplot <- function(term, object, gseaRes, top = 10, default = TRUE) {
   }
 
   # Gene sets keyed by identifier (never by label); titles show the Term label.
-  annod <- .gsea_memberships(object)
+  # `term` resolves like every other GSEA selector: identifier, KEGG identifier
+  # with or without organism prefix, or a unique label.
+  annod <- .gsea_result_memberships(object, gseaRes_result$pathway)
   titles <- .gsea_result_terms(gseaRes_result)
+  term <- .gsea_resolve_selectors(term, gseaRes_result$pathway, titles, what = "term")
 
   if(length(term) > 1 & !is.null(gseaRes_result)) {
     if(isTRUE(default)) {
       plotGseaTable(annod[term], stats = x, gseaRes_result, gseaParam = 0.5)
     } else {
-      res <- lapply(gseaRes_result$pathway[1:top], function(y) {
+      res <- lapply(gseaRes_result$pathway[seq_len(top)], function(y) {
         plotEnrichment(annod[[y]], stats = x) +
           ggtitle(titles[match(y, gseaRes_result$pathway)])
       })

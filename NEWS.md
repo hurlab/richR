@@ -92,11 +92,16 @@
   GO ID), and a new `Term` column, directly after `leadingEdge`, holds the
   label. Code that compares `pathway` with pathway names must switch to
   `Term`, for example `subset(result(res), Term == "Cell cycle")`.
-- `richGSEAcurve(pathways = )`, `compareGSEA(pathway = )` and
-  `getGenes(<GSEAResult>, term = )` accept an identifier, a KEGG identifier
-  with or without its organism prefix (`"hsa04110"` or `"04110"`), or a
-  unique `Term` label. A label shared by several pathways, or a value that
-  matches nothing, is an error.
+- `richGSEAcurve(pathways = )`, `compareGSEA(pathway = )`,
+  `richGSEAplot(term = )` and `getGenes(<GSEAResult>, term = )` accept an
+  identifier, a KEGG identifier with or without its organism prefix
+  (`"hsa04110"` or `"04110"`), or a unique `Term` label. A label shared by
+  several pathways, or a value that matches nothing, is an error.
+  `richGSEAplot()` also still draws a `GSEAResult` saved from 0.1.x, whose
+  `pathway` column holds labels.
+- Plots of a `GSEAResult` show the `Term` label; where two pathways share a
+  label, the identifier is appended (`"label [ID]"`) so they are drawn as two
+  categories with their own values.
 - Reactome pathways that share a name are still tested as one gene set,
   because `buildAnnot(anntype = "Reactome")` returns no identifier column.
   This is fixed in a later milestone of 0.2.0.

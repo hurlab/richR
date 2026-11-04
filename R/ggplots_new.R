@@ -584,8 +584,8 @@ gggenedot_internal <- function(resultFis,
   if (is.null(fc)) {
     # No fold-change: colour by -log10(Pvalue/Padj), no size mapping
     neg_log <- if (isTRUE(usePadj) && "Padj" %in% names(resultFis)) -log10(resultFis$Padj) else -log10(resultFis$Pvalue)
-    pval_map <- stats::setNames(neg_log, resultFis$Term)
-    melted$neg_log_p <- pval_map[as.character(melted$Term)]
+    # keyed by result row, never by label: rows sharing a label keep their own value
+    melted$neg_log_p <- neg_log[melted$.row]
     color_label <- if (isTRUE(usePadj)) "-log10(Padj)" else "-log10(Pvalue)"
     p <- ggplot2::ggplot(melted, ggplot2::aes(x = Gene, y = Term, color = neg_log_p)) +
       ggplot2::geom_point(size = 4, alpha = 0.85) +
@@ -667,8 +667,8 @@ gggeneheat_internal <- function(resultFis,
 
   if (is.null(fc)) {
     neg_log <- if (isTRUE(usePadj) && "Padj" %in% names(resultFis)) -log10(resultFis$Padj) else -log10(resultFis$Pvalue)
-    pval_map <- stats::setNames(neg_log, resultFis$Term)
-    melted$neg_log_p <- ifelse(is.na(melted$present), NA_real_, pval_map[as.character(melted$Term)])
+    # keyed by result row, never by label: rows sharing a label keep their own value
+    melted$neg_log_p <- ifelse(is.na(melted$present), NA_real_, neg_log[melted$.row])
     fill_label <- if (isTRUE(usePadj)) "-log10(Padj)" else "-log10(Pvalue)"
     p <- ggplot2::ggplot(melted, ggplot2::aes(x = Gene, y = Term, fill = neg_log_p)) +
       ggplot2::geom_tile(color = border.color, linewidth = 0.5) +
@@ -786,7 +786,12 @@ gggenebar_internal <- function(resultFis,
 .standardise_gsea_cols <- function(df) {
   if ("pval"    %in% names(df) && !"Pvalue" %in% names(df)) names(df)[names(df) == "pval"]    <- "Pvalue"
   if ("padj"    %in% names(df) && !"Padj"   %in% names(df)) names(df)[names(df) == "padj"]    <- "Padj"
-  if ("pathway" %in% names(df) && !"Term"   %in% names(df)) names(df)[names(df) == "pathway"] <- "Term"
+  if ("pathway" %in% names(df) && !"Term"   %in% names(df)) {
+    names(df)[names(df) == "pathway"] <- "Term"
+  } else if ("pathway" %in% names(df)) {
+    # GSEA result: Term is the display label, unique per pathway identifier
+    df$Term <- .gsea_display_labels(df$pathway, df$pathway, .gsea_result_terms(df))
+  }
   if ("size"    %in% names(df) && !"Significant" %in% names(df)) names(df)[names(df) == "size"] <- "Significant"
   df
 }
@@ -798,7 +803,8 @@ gggenebar_internal <- function(resultFis,
   rows <- lapply(seq_len(nrow(resultFis)), function(i) {
     genes <- unlist(strsplit(as.character(resultFis$GeneID[i]), split = sep))
     genes <- utils::head(genes, max.genes)
-    data.frame(Term = resultFis$Term[i], Gene = genes, stringsAsFactors = FALSE)
+    data.frame(Term = resultFis$Term[i], Gene = genes, .row = rep(i, length(genes)),
+               stringsAsFactors = FALSE)
   })
   melted <- do.call(rbind, rows)
   if (is.null(fc)) {

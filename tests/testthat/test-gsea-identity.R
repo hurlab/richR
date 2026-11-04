@@ -400,3 +400,55 @@ test_that("compareGSEA() facets show Term while the data keep pathway", {
   # the two identifiers sharing the label "shared" stay two facets
   expect_identical(length(unique(key$Group[key$pathway %in% c("A1", "A2")])), 2L)
 })
+
+# ---- Post-review: distinct pathways sharing a label stay distinct in plots ----
+# selector_result(): A1 and A2 are two pathways labelled "shared" with different
+# p-values; every plot must draw them as two categories with their own values.
+
+collision_labels <- c("Cell cycle", "shared [A1]", "shared [A2]", "unique label")
+
+test_that("GSEA plot frames give pathways sharing a label distinct display labels", {
+  res <- selector_result()
+  frame <- richR:::.gsea_to_ora_frame(res)
+  expect_identical(frame$Annot, res@result$pathway)
+  expect_identical(frame$Term, collision_labels)
+  std <- richR:::.standardise_gsea_cols(res@result)
+  expect_identical(std$pathway, res@result$pathway)
+  expect_identical(std$Term, collision_labels)
+})
+
+test_that("GSEA plot methods draw one category per pathway when labels collide", {
+  res <- selector_result()
+  plot_terms <- function(p) sort(unique(as.character(p$data$Term)))
+  expect_identical(plot_terms(richLollipop(res)), sort(collision_labels))
+  expect_identical(plot_terms(richScatter(res)), sort(collision_labels))
+  expect_identical(plot_terms(richGeneBar(res)), sort(collision_labels))
+  expect_identical(plot_terms(richCircle(res)), sort(collision_labels))
+  expect_identical(plot_terms(richNES(res)), sort(collision_labels))
+  expect_identical(plot_terms(richECDF(res)), sort(collision_labels))
+  expect_identical(plot_terms(richVolcano(res)), sort(collision_labels))
+})
+
+test_that("gene plots key significance by pathway, not by the shared label", {
+  res <- selector_result()
+  expected <- stats::setNames(-log10(res@result$padj), collision_labels)
+  per_term <- function(d) {
+    d <- d[!is.na(d$neg_log_p), ]
+    vapply(names(expected), function(t) {
+      v <- unique(d$neg_log_p[as.character(d$Term) == t])
+      if (length(v) == 1L) v else NA_real_
+    }, numeric(1))
+  }
+  expect_equal(per_term(richGeneDot(res)$data), expected)
+  expect_equal(per_term(richGeneHeat(res)$data), expected)
+})
+
+test_that("gene plots map each gene row to its own term row's p-value", {
+  # two ORA rows sharing a Term label; each gene belongs to one row only
+  df <- data.frame(Annot = c("X", "Y"), Term = c("dup", "dup"),
+                   Annotated = c(5, 5), Significant = c(1, 1),
+                   Pvalue = c(0.001, 0.002), Padj = c(0.01, 0.02),
+                   GeneID = c("ga", "gb"), stringsAsFactors = FALSE)
+  dot <- richGeneDot(df, pvalue = 1, padj = 1)$data
+  expect_equal(dot$neg_log_p[match(c("ga", "gb"), dot$Gene)], -log10(c(0.01, 0.02)))
+})

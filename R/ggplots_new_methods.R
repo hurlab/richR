@@ -730,7 +730,11 @@ setMethod("richGeneBar", signature(object = "GSEAResult"), function(object, top 
   # The identifier (pathway) becomes Annot; Term is the label, or the
   # identifier for a legacy result without Term.
   id_col <- if ("pathway" %in% names(df)) "pathway" else "Term"
-  if ("pathway" %in% names(df) && !"Term" %in% names(df)) df$Term <- df$pathway
+  # Term is the display label: the label, or the identifier for a legacy result
+  # without Term, with the identifier appended where pathways share a label.
+  if ("pathway" %in% names(df)) {
+    df$Term <- .gsea_display_labels(df$pathway, df$pathway, .gsea_result_terms(df))
+  }
   if ("size"    %in% names(df) && !"Significant" %in% names(df)) names(df)[names(df) == "size"] <- "Significant"
   if (!"Annotated" %in% names(df) && "Significant" %in% names(df)) df$Annotated <- df$Significant
   if (!"RichFactor" %in% names(df) && "Significant" %in% names(df)) df$RichFactor <- 1

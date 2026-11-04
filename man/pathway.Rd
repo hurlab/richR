@@ -3,17 +3,27 @@
 \docType{data}
 \name{pathway}
 \alias{pathway}
-\title{KEGG pathway hierarchy}
+\title{KEGG pathway list}
 \format{
-A data.frame with columns for pathway identifiers and hierarchy levels
+A data.frame with 562 rows and one column. The row names are KEGG
+  pathway identifiers (for example \code{"01100"}); the column
+  \code{annotation} holds the pathway name.
 }
 \source{
-KEGG database
+KEGG database.
 }
 \usage{
-pathway
+data(pathway)
 }
 \description{
-A data.frame containing KEGG pathway hierarchy with Level1 and Level2 categories.
+KEGG pathway identifiers and names. richR does not load this object. It has
+562 rows, five fewer than \code{kegg.db}, and its origin is not documented.
+}
+\details{
+The date the bundled snapshot was retrieved from KEGG is unknown.
+  The script \file{data-raw/pathway.R} in the source repository rebuilds the
+  object and stamps the retrieval date on the line below.
+
+  Retrieval date (pathway): unknown (bundled snapshot predates data-raw/).
 }
 \keyword{datasets}

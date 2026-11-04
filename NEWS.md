@@ -16,7 +16,18 @@
   (`reverseList_bk()`, `.clean.char()`, `.calGSEA()` and the
   `data.frame` to `richResult` coercion) moved to `R/utils.R`, `R/richGSEA.R`
   and `R/accessors.R`.
-- `DESCRIPTION` now lists an explicit `Collate` field.
+- `DESCRIPTION` now lists an explicit `Collate` field, in a logical order with the
+  class and generic definitions first.
+- Packaging moves toward Bioconductor conventions: version 0.2.0, `Depends: R (>= 4.6)`,
+  non-empty `biocViews`, `URL` and `BugReports`, `Config/testthat/edition: 3`, and no
+  `LazyData` field (bundled data are loaded with `utils::data()` and are unchanged).
+- Added `data-raw/` scripts (`kegg.R`, `module.R`, `path.R`, `pathway.R`) that rebuild
+  the bundled KEGG data and stamp the retrieval date. They are not run in this
+  release; the files in `data/` are unchanged, and the dates of the bundled snapshots
+  remain unknown.
+- Corrected the documentation of the bundled data: `godata` is a named list of GO
+  terms mapped to themselves and their offspring, not a data frame of gene
+  annotations.
 
 ## Version 0.1.5 (2026-10-20)
 

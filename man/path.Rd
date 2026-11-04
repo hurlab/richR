@@ -3,17 +3,30 @@
 \docType{data}
 \name{path}
 \alias{path}
-\title{KEGG pathway data}
+\title{KEGG pathway hierarchy}
 \format{
-A data.frame with KEGG pathway identifiers and descriptions
+A data.frame with 580 rows and four character columns: \code{ko}
+  (KEGG pathway identifier, also the row names), \code{Level3} (pathway
+  name), \code{Level2} (sub-category) and \code{Level1} (category).
 }
 \source{
-KEGG database via KEGGREST
+KEGG pathway classification (BRITE hierarchy \code{br08901}). How the
+  bundled snapshot was retrieved is unknown; \file{data-raw/path.R} rebuilds
+  it from the KEGG REST API.
 }
 \usage{
-path
+data(path)
 }
 \description{
-A data.frame containing KEGG pathway information.
+The KEGG pathway hierarchy: each pathway with its three classification
+levels, used by \code{\link{richKEGG}}, \code{\link{richLevel}} and
+\code{\link{richGSEA}} to add and aggregate pathway levels.
+}
+\details{
+The date the bundled snapshot was retrieved from KEGG is unknown.
+  The script \file{data-raw/path.R} in the source repository rebuilds the
+  object and stamps the retrieval date on the line below.
+
+  Retrieval date (path): unknown (bundled snapshot predates data-raw/).
 }
 \keyword{datasets}

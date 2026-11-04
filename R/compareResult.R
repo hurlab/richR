@@ -211,13 +211,10 @@ richCompareDot<-function (x, pvalue = 0.05, low = "lightpink", high = "red",leve
 compareGSEA<-function(x,object,gene=NULL,pathway=NULL,
                       mycol=NULL,pvalue = 0.05, padj = NULL,label=FALSE,
                       gseaParam = 1, ticksSize = 0.2,ncol=2,scales="fixed"){
-  if (!is.null(padj)) {
-    Pvalue <- 1
-  }
-  else {
-    Padj <- 1
-  }
-  Pvalue=pvalue
+  # The cutoffs are compared outside any data mask, so they can never resolve
+  # to the same-named columns (padj, pval) of the GSEA result table.
+  pval_cutoff <- pvalue
+  padj_cutoff <- if (is.null(padj)) 1 else padj
   if (is.null(names(x))) {
     names(x) <- paste("Group", seq_along(x))
   }
@@ -226,8 +223,13 @@ compareGSEA<-function(x,object,gene=NULL,pathway=NULL,
                "#7A142C","#5D90BA","#431A3D","#91612D","#6E568C","#E0367A","#D8D155","#64495D",
                "#7CC767")
   }
-  tmp <- lapply(x, function(x) filter(x, padj < Padj, pval <
-                                        Pvalue))
+  tmp <- lapply(x, function(x) {
+    res <- x@result
+    keep <- !is.na(res$padj) & res$padj < padj_cutoff &
+      !is.na(res$pval) & res$pval < pval_cutoff
+    x@result <- res[keep, , drop = FALSE]
+    x
+  })
   sigpathway <- lapply(tmp, function(x) x$pathway)
   NES <- do.call(rbind, lapply(tmp, function(x) {
     nes <-x$NES

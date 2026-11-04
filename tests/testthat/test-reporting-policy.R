@@ -394,3 +394,24 @@ test_that("richVolcano() and its aliases validate cutoffs", {
   expect_s3_class(richR::richVolcano(frame, pvalue = 1, padj = 1), "ggplot")
   expect_s3_class(richR::richVolcano(gsea, padj = NULL), "ggplot")
 })
+
+# ---- Post-review: show() and summary() report the stored cutoffs -------------
+
+test_that("show() states the inclusive rule with the stored cutoffs", {
+  ora <- .char_richResult()
+  expect_output(show(ora), "Significant:  3 terms (pvalue <= 0.05)", fixed = TRUE)
+  ora@padjCutoff <- 0.1
+  expect_output(show(ora), "(pvalue <= 0.05, padj <= 0.1)", fixed = TRUE)
+  gsea <- policy_gsea()
+  expect_output(show(gsea), "Significant:  6 pathways (pvalue <= 1, padj <= 1)",
+                fixed = TRUE)
+})
+
+test_that("summary(<GSEAResult>) counts the rows passing the stored cutoffs", {
+  # stored pvalue = padj = 1: EQ, RAW, ADJ and ONE pass; the NA rows do not
+  expect_output(summary(policy_gsea()), "Total significant biological term is: 4",
+                fixed = TRUE)
+  # stored pvalue = 0.05 and no adjusted cutoff: p1 and p2 pass
+  expect_output(summary(.char_gsea_result()), "Total significant biological term is: 2",
+                fixed = TRUE)
+})

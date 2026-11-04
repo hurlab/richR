@@ -47,6 +47,11 @@
   pathways itself; its explicit `pathways` and `pathway_pattern` selections
   are not significance-filtered, by design, and choose among the rows the
   `GSEAResult` holds.
+- Printing a `richResult` or `GSEAResult` shows the stored cutoffs with the
+  inclusive rule, for example `(pvalue <= 0.05, padj <= 0.05)`; in 0.1.x a
+  `richResult` printed `(pvalue < 0.05 )` and never the adjusted cutoff.
+  `summary(<GSEAResult>)` counts the rows passing the stored cutoffs instead
+  of a fixed `padj < 0.05`.
 - `richDAVID()`: the scale of DAVID's `FDR` column (used for `Padj` with
   `padj.method = "FDR"`) has not been verified, so it may be a percentage
   rather than a fraction; check the range of `Padj` before relying on a

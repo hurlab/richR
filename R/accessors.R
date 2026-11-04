@@ -2,6 +2,18 @@
 ##  show methods
 ## ----------------------------------------------------------------
 
+#' Stored cutoffs as printed by show(): the inclusive significance rule
+#' @param pvalue,padj the pvalueCutoff and padjCutoff slots
+#' @return " (pvalue <= x, padj <= y)", the part present, or ""
+#' @keywords internal
+#' @noRd
+.cutoff_text <- function(pvalue, padj) {
+  parts <- character()
+  if (length(pvalue) == 1L && !is.na(pvalue)) parts <- c(parts, paste0("pvalue <= ", format(pvalue)))
+  if (length(padj) == 1L && !is.na(padj)) parts <- c(parts, paste0("padj <= ", format(padj)))
+  if (length(parts)) paste0(" (", paste(parts, collapse = ", "), ")") else ""
+}
+
 #' Show methods for richR S4 classes
 #'
 #' Display a concise summary when an object is printed at the console.
@@ -17,10 +29,7 @@ setMethod("show", signature(object = "richResult"), function(object) {
   cat("  Ontology:    ", if (length(object@ontology) && nchar(object@ontology)) object@ontology else "(not set)", "\n")
   cat("  Gene count:  ", object@genenumber, "input genes\n")
   cat("  Significant: ", n_sig, "terms")
-  if (length(object@pvalueCutoff) && object@pvalueCutoff > 0) {
-    cat(" (pvalue <", object@pvalueCutoff, ")")
-  }
-  cat("\n")
+  cat(.cutoff_text(object@pvalueCutoff, object@padjCutoff), "\n", sep = "")
   if (n_sig > 0) {
     top_n <- min(5, n_sig)
     top <- object@result[1:top_n, c("Term", "Pvalue", "Padj", "Significant", "Annotated"), drop = FALSE]
@@ -40,7 +49,8 @@ setMethod("show", signature(object = "GSEAResult"), function(object) {
   cat("  Organism:    ", if (length(object@organism) && nchar(object@organism)) object@organism else "(not set)", "\n")
   cat("  Ontology:    ", if (length(object@ontology) && nchar(object@ontology)) object@ontology else "(not set)", "\n")
   cat("  Gene count:  ", object@genenumber, "ranked genes\n")
-  cat("  Significant: ", n_sig, "pathways\n")
+  cat("  Significant: ", n_sig, "pathways")
+  cat(.cutoff_text(object@pvalueCutoff, object@padjCutoff), "\n", sep = "")
   if (n_sig > 0) {
     top_n <- min(5, n_sig)
     cols <- intersect(c("pathway", "Term", "pval", "padj", "NES", "size"), colnames(object@result))
@@ -327,7 +337,13 @@ setMethod("summary", signature = "richResult", definition = function(object, ...
 #' @export
 #' @aliases summary,GSEAResult-method
 setMethod("summary", signature = "GSEAResult", definition = function(object, ...) {
-  n_sig <- sum(object@result$padj < 0.05, na.rm = TRUE)
+  # Count with the significance predicate and the cutoffs stored at analysis
+  # time (no adjusted cutoff when none was stored).
+  pvalue <- object@pvalueCutoff
+  padj <- object@padjCutoff
+  pvalue <- if (length(pvalue) == 1L && !is.na(pvalue)) pvalue else 1
+  padj <- if (length(padj) == 1L && !is.na(padj)) padj else NULL
+  n_sig <- sum(.sig_keep(object@result, pvalue, padj, p_col = "pval", padj_col = "padj"))
   cat("Total significant biological term is:", n_sig, "\n")
 })
 

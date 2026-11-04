@@ -75,7 +75,22 @@ gsea_pair <- function() {
   list(annot = annot, results = list(A = run("gsea_ranked_a.csv"), B = run("gsea_ranked_b.csv")))
 }
 
+test_that("compareGSEA() with padj = NULL keeps the shape of the enrichment-curve data", {
+  fx <- gsea_pair()
+  plot_obj <- compareGSEA(fx$results, fx$annot)
+  expect_s3_class(plot_obj, "ggplot")
+  curve <- .char_nonempty(plot_obj$data)
+  expect_identical(
+    vapply(curve, function(col) class(col)[1L], character(1)),
+    c(x = "numeric", y = "numeric", Group = "character", group = "character")
+  )
+  expect_setequal(curve$Group, c("top pathway", "down pathway", "up pathway"))
+  expect_setequal(curve$group, c("A", "B"))
+  expect_identical(length(plot_obj$layers), 6L)
+})
+
 test_that("compareGSEA() with padj = NULL pins the enrichment-curve data behind the plot", {
+  .char_skip_unless_recorded_fgsea()
   fx <- gsea_pair()
   plot_obj <- compareGSEA(fx$results, fx$annot)
   expect_s3_class(plot_obj, "ggplot")

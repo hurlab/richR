@@ -38,6 +38,26 @@
   stats::setNames(lapply(nm, function(s) methods::slot(x, s)), nm)
 }
 
+# The exact-numeric GSEA snapshots (characterization-gsea.md and the compareGSEA
+# curve in characterization-compare.md) were recorded with this fgsea version,
+# which each snapshot also carries under the key `fgsea_version`. fgsea's
+# permutation and curve code may change between releases, so those snapshots
+# run only on the recorded version and are skipped, with the message below,
+# on any other; version-independent invariants run everywhere fgsea is installed.
+.char_fgsea_recorded <- "1.38.0"
+
+.char_skip_unless_recorded_fgsea <- function() {
+  testthat::skip_if_not_installed("fgsea")
+  have <- as.character(utils::packageVersion("fgsea"))
+  testthat::skip_if_not(
+    identical(have, .char_fgsea_recorded),
+    sprintf(
+      "exact-numeric GSEA snapshots were recorded with fgsea %s; installed fgsea is %s",
+      .char_fgsea_recorded, have
+    )
+  )
+}
+
 # ---- hand-built objects (no analysis involved) -------------------------------
 
 .char_richResult <- function() {

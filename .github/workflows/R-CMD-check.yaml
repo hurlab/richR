@@ -14,13 +14,15 @@ jobs:
       fail-fast: false
       matrix:
         config:
-          - {os: ubuntu-latest, r: 'release'}
-          - {os: macOS-latest,  r: 'release'}
-          - {os: windows-latest, r: 'release'}
+          - {os: ubuntu-latest, r: '4.6'}
+          - {os: macOS-latest,  r: '4.6'}
+          - {os: windows-latest, r: '4.6'}
 
     env:
       GITHUB_PAT: ${{ secrets.GITHUB_TOKEN }}
       R_KEEP_PKG_SOURCE: yes
+      R_BIOC_VERSION: "3.23"
+      NOT_CRAN: true
 
     steps:
       - uses: actions/checkout@v4
@@ -32,9 +34,16 @@ jobs:
 
       - uses: r-lib/actions/setup-r-dependencies@v2
         with:
-          extra-packages: any::rcmdcheck
+          extra-packages: any::rcmdcheck, any::BiocCheck
           needs: check
 
       - uses: r-lib/actions/check-r-package@v2
         with:
           upload-snapshots: true
+
+      # Report-only in M1: BiocCheck findings appear in the job log but never
+      # fail the job (decision D2); making it blocking is deferred to M6.
+      - name: BiocCheck (report only)
+        continue-on-error: true
+        shell: Rscript {0}
+        run: BiocCheck::BiocCheck(".")

@@ -147,6 +147,7 @@ test_that("package-backed constructors retain observed provider provenance", {
   expect_equal(msig_info$provenance$annotation$provider_version,
                as.character(utils::packageVersion("msigdbr")))
 
+  skip_if_not_installed("org.Hs.eg.db")
   expect_warning(own <- testthat::with_mocked_bindings(
     keys = function(x, keytype) "A",
     getann = function(...) data.frame(annotation = c("term", "other"),

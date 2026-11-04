@@ -28,6 +28,10 @@
 - Corrected the documentation of the bundled data: `godata` is a named list of GO
   terms mapped to themselves and their offspring, not a data frame of gene
   annotations.
+- Continuous integration runs `R CMD check` on R 4.6 with Bioconductor 3.23 on
+  Linux, macOS and Windows, and adds a BiocCheck step that reports findings without
+  failing the job. The test that builds annotations from `org.Hs.eg.db` is skipped
+  when that package is not installed.
 
 ## Version 0.1.5 (2026-10-20)
 

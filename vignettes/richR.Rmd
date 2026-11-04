@@ -103,12 +103,6 @@ names(genelist) <- name
 res_gsea <- richGSEA(genelist, object = hsa_ko, padj = NULL)
 ```
 
-### DAVID (online)
-
-```r
-res_david <- richDAVID(gene, keytype = "ENTREZID", species = "human")
-```
-
 ## 3. Visualization
 
 ### Bar and dot plots

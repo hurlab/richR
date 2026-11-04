@@ -331,12 +331,7 @@ setMethod("richNetwork", signature(object = "GSEAResult"),definition = function(
                                                                               visNet=FALSE,smooth=TRUE,nodeselect=FALSE,edit=FALSE,savehtml=FALSE,filename="network",
                                                                               width=7,height=7,segment.size=0.2,node.alpha=0.7,...) {
   sep=object@sep
-  if(is.list(object@result$leadingEdge)){
-    object@result$leadingEdge<-unlist(lapply(object@result$leadingEdge, function(x)paste(x,collapse = sep, sep="")))
-  }
-  object@result$Annot<-object@result$pathway
-  object@result<-object@result[,c(9,1:3,7,8)]
-  colnames(object@result)<-c("Annot","Term","Pvalue","Padj","Significant","GeneID")
+  object@result <- .gsea_network_frame(object@result, sep = sep)
   ggnetwork_internal(object@result,gene=object@gene,top=top,pvalue=pvalue,padj=padj,usePadj=usePadj,weightcut=weightcut,useTerm=useTerm,
                      writeCyt=writeCyt,cytoscapeFile=cytoscapeFile,cytoscapeFormat=cytoscapeFormat,
                      label.color=label.color,label.size=label.size,node.shape=node.shape,

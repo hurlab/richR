@@ -26,7 +26,11 @@ compareGSEA(
 
 \item{gene}{list of a vector include all log2FC with gene name (optional)}
 
-\item{pathway}{pathways you want to display (optional)}
+\item{pathway}{pathways you want to display (optional): pathway identifiers,
+KEGG identifiers with or without organism prefix, or unique \code{Term}
+labels, resolved over all groups before significance filtering; a label
+shared by several pathways, or a value matching nothing, is an error, and a
+pathway removed by the cutoffs in every group is warned about}
 
 \item{mycol}{a vector indicate the colors used for the figure}
 

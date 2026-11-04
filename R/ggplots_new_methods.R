@@ -725,7 +725,10 @@ setMethod("richGeneBar", signature(object = "GSEAResult"), function(object, top 
   sep <- if (length(object@sep) && nchar(object@sep)) object@sep else ","
   if ("pval"    %in% names(df) && !"Pvalue" %in% names(df)) names(df)[names(df) == "pval"]    <- "Pvalue"
   if ("padj"    %in% names(df) && !"Padj"   %in% names(df)) names(df)[names(df) == "padj"]    <- "Padj"
-  if ("pathway" %in% names(df) && !"Term"   %in% names(df)) names(df)[names(df) == "pathway"] <- "Term"
+  # The identifier (pathway) becomes Annot; Term is the label, or the
+  # identifier for a legacy result without Term.
+  id_col <- if ("pathway" %in% names(df)) "pathway" else "Term"
+  if ("pathway" %in% names(df) && !"Term" %in% names(df)) df$Term <- df$pathway
   if ("size"    %in% names(df) && !"Significant" %in% names(df)) names(df)[names(df) == "size"] <- "Significant"
   if (!"Annotated" %in% names(df) && "Significant" %in% names(df)) df$Annotated <- df$Significant
   if (!"RichFactor" %in% names(df) && "Significant" %in% names(df)) df$RichFactor <- 1
@@ -736,6 +739,6 @@ setMethod("richGeneBar", signature(object = "GSEAResult"), function(object, top 
       else ""
     }, character(1))
   }
-  if (!"Annot" %in% names(df) && "Term" %in% names(df)) df$Annot <- df$Term
+  if (!"Annot" %in% names(df) && id_col %in% names(df)) df$Annot <- df[[id_col]]
   df
 }

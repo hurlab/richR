@@ -184,7 +184,11 @@ richCompareDot<-function (x, pvalue = 0.05, low = "lightpink", high = "red",leve
 #' @param x list of GSEAResult
 #' @param object Annot object
 #' @param gene list of a vector include all log2FC with gene name (optional)
-#' @param pathway pathways you want to display (optional)
+#' @param pathway pathways you want to display (optional): pathway identifiers,
+#'   KEGG identifiers with or without organism prefix, or unique \code{Term}
+#'   labels, resolved over all groups before significance filtering; a label
+#'   shared by several pathways, or a value matching nothing, is an error, and a
+#'   pathway removed by the cutoffs in every group is warned about
 #' @param mycol a vector indicate the colors used for the figure
 #' @param pvalue cutoff value of pvalue (if padj set as NULL)
 #' @param padj cutoff value of p adjust value
@@ -223,6 +227,13 @@ compareGSEA<-function(x,object,gene=NULL,pathway=NULL,
                "#7A142C","#5D90BA","#431A3D","#91612D","#6E568C","#E0367A","#D8D155","#64495D",
                "#7CC767")
   }
+  # Identifiers and labels of every group before significance filtering: the
+  # domain in which `pathway` selectors resolve.
+  id_pool <- unlist(lapply(x, function(g) as.character(g@result$pathway)), use.names = FALSE)
+  term_pool <- unlist(lapply(x, function(g) .gsea_result_terms(g@result)), use.names = FALSE)
+  if (!is.null(pathway)) {
+    pathway <- .gsea_resolve_selectors(pathway, id_pool, term_pool, what = "pathway")
+  }
   tmp <- lapply(x, function(x) {
     res <- x@result
     keep <- !is.na(res$padj) & res$padj < padj_cutoff &
@@ -231,6 +242,13 @@ compareGSEA<-function(x,object,gene=NULL,pathway=NULL,
     x
   })
   sigpathway <- lapply(tmp, function(x) x$pathway)
+  if (!is.null(pathway)) {
+    filtered_out <- setdiff(pathway, unlist(sigpathway, use.names = FALSE))
+    if (length(filtered_out)) {
+      warning("compareGSEA: pathway(s) removed by the significance cutoffs in every group: ",
+              paste(filtered_out, collapse = ", "), call. = FALSE)
+    }
+  }
   # Value tables keyed by group and pathway identifier: one row per retained
   # pathway of each group, never aligned by position across groups.
   keyed_values <- function(column, value_name) {
@@ -290,6 +308,20 @@ compareGSEA<-function(x,object,gene=NULL,pathway=NULL,
     path<-subset(path,Group%in%pathway)
     NES<-subset(NES,Group%in%pathway)
   }
+  # Facets (Group) show the Term label, unique per identifier; the identifier
+  # stays in a `pathway` column.
+  display <- stats::setNames(
+    .gsea_display_labels(unique(toPlot$Group), id_pool, term_pool),
+    unique(toPlot$Group)
+  )
+  relabel <- function(df) {
+    df$pathway <- df$Group
+    df$Group <- unname(display[as.character(df$Group)])
+    df
+  }
+  toPlot <- relabel(toPlot)
+  path <- relabel(path)
+  NES <- relabel(NES)
   tops<-max(toPlot$y)
   bottoms<-min(toPlot$y)
   ####

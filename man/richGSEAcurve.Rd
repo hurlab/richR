@@ -74,9 +74,12 @@ plotGSEA(
 
 \item{show_direction}{logical, whether to use directional coloring based on NES}
 
-\item{pathways}{specific pathway names to display (if NULL, use top/pvalue/padj filtering)}
+\item{pathways}{pathways to display (if NULL, use top/pvalue/padj filtering):
+pathway identifiers, KEGG identifiers with or without organism prefix, or
+unique \code{Term} labels; a label shared by several pathways, or a value
+matching nothing, is an error}
 
-\item{pathway_pattern}{regex pattern for pathway matching}
+\item{pathway_pattern}{regex pattern matched against pathway identifiers and \code{Term} labels}
 
 \item{category}{pathway category filter}
 

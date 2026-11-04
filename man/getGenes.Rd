@@ -10,7 +10,10 @@ getGenes(x, term = NULL, sep = ",")
 \item{x}{A richResult or GSEAResult object}
 
 \item{term}{Optional term ID (Annot column) or term name to extract genes for.
-If NULL, returns all input genes from the analysis.}
+If NULL, returns all input genes from the analysis. For a GSEAResult the
+term resolves by pathway identifier, KEGG identifier with or without
+organism prefix, then unique \code{Term} label (the leading-edge genes are
+returned); a label shared by several pathways is an error.}
 
 \item{sep}{Separator used in GeneID column (default: ",")}
 }

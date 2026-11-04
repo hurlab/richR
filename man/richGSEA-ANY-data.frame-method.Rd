@@ -65,6 +65,20 @@
 \description{
 GSEA Enrichment analysis function
 }
+\details{
+Gene sets are keyed by identifier, so distinct identifiers that
+  share a label are tested as distinct gene sets. The identifier column is
+  the first of \code{GOALL}, \code{PATH}, \code{Module} or \code{Term}
+  present in \code{object}; an annotation carrying none of these names uses
+  its second column. The label is the column named \code{Annot}.
+  \code{result$pathway} holds the identifier and \code{result$Term}
+  (directly after \code{leadingEdge}) the label: the identifier itself when
+  no label exists, and the first non-missing label in annotation row order
+  when an identifier carries several labels (with a warning naming those
+  identifiers). With \code{KEGG = TRUE}, KEGG identifiers (five digits,
+  optionally organism-prefixed) are joined to the KEGG levels by identifier,
+  other values by the \code{Level3} name.
+}
 \examples{
 \dontrun{
 hsako<-buildAnnot(species="human",keytype="SYMBOL",anntype = "KEGG")

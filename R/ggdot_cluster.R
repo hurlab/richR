@@ -74,7 +74,10 @@ richClusterDot <- function(data, method = c("auto", "enrich", "gsea"),color_low 
 
   method <- match.arg(method)
   if (method == "auto") {
-    if ("Term" %in% colnames(data)) {
+    # GSEA results carry NES and pathway (and a Term label), so test them first.
+    if (all(c("NES", "pathway") %in% colnames(data))) {
+      method <- "gsea"
+    } else if ("Term" %in% colnames(data)) {
       method <- "enrich"
     } else if ("pathway" %in% colnames(data)) {
       method <- "gsea"

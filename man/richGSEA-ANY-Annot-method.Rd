@@ -65,6 +65,10 @@
 \description{
 GSEA Enrichment analysis function
 }
+\details{
+Gene sets are keyed by identifier and labelled afterwards; see the
+  \code{data.frame} method for the identifier and label rules.
+}
 \examples{
 \dontrun{
 hsako<-buildAnnot(species="human",keytype="SYMBOL",anntype = "KEGG")

@@ -238,13 +238,7 @@ setMethod("richNetplot", signature(object = "GSEAResult"),definition = function(
                                                                               layout = "fruchtermanreingold",savefig=FALSE,filename="network",
                                                                               width=7,height=7,node.alpha=0.7,repel=TRUE,segment.size=0.2,sep=",") {
   sep <- object@sep
-  object<-object@result
-  if(is.list(object$leadingEdge)){
-    object$leadingEdge<-unlist(lapply(object$leadingEdge, function(x)paste(x,collapse = sep,sep="")))
-  }
-  object$Annot<-object$pathway
-  object<-object[,c(9,1:3,8)]
-  colnames(object)<-c("Annot","Term","Pvalue","Padj","GeneID")
+  object <- .gsea_network_frame(object@result, sep = sep)
   ggrich_internal(object,top=top,pvalue=pvalue,padj=padj,
                   usePadj=usePadj,useTerm=useTerm,low=low,high=high,
                   writeCyt=writeCyt, cytoscapeFile=cytoscapeFile,

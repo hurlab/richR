@@ -69,6 +69,203 @@
   invisible(TRUE)
 }
 
+# ---- GSEA gene-set identity ---------------------------------------------------
+# Gene sets are keyed by identifier, never by label: distinct identifiers that
+# share a label stay distinct gene sets. The identifier column is located by the
+# builder names below (first present wins); a frame carrying none of them uses
+# column 2 (the positional rule of .normalize_annotation). The label is the
+# column named `Annot`. Note the naming trap: in an annotation a column named
+# `Term` holds identifiers (MSigDB layout); in a GSEA result `Term` holds labels.
+.gsea_id_names <- c("GOALL", "PATH", "Module", "Term")
+
+#' Annotation membership frame for GSEA (gene, identifier, label)
+#' @param object annotation data.frame or Annot object
+#' @return data.frame with columns GeneID, pathway, label (label NA when absent)
+#' @keywords internal
+#' @noRd
+.gsea_annotation_frame <- function(object) {
+  annot <- if (methods::is(object, "Annot")) object@annot else object
+  if (!is.data.frame(annot) || ncol(annot) < 2L) {
+    return(annot)
+  }
+  id_col <- intersect(.gsea_id_names, colnames(annot))
+  id_col <- if (length(id_col)) id_col[1L] else colnames(annot)[2L]
+  label <- if ("Annot" %in% colnames(annot)) annot[["Annot"]] else NA_character_
+  data.frame(GeneID = annot[[1L]], pathway = annot[[id_col]],
+             label = rep_len(as.character(label), nrow(annot)),
+             stringsAsFactors = FALSE)
+}
+
+#' Gene-set memberships keyed by identifier
+#' @param object annotation data.frame or Annot object
+#' @return named list of gene vectors, one per identifier
+#' @keywords internal
+#' @noRd
+.gsea_memberships <- function(object) {
+  frame <- .gsea_annotation_frame(object)
+  split(as.character(frame$GeneID), as.character(frame$pathway))
+}
+
+#' Identifier-to-label map
+#'
+#' Missing or blank labels are skipped (the identifier is used instead, see
+#' .gsea_terms). An identifier carrying several labels keeps the first
+#' non-missing label in annotation row order, with one warning naming the
+#' affected identifiers.
+#' @param frame output of .gsea_annotation_frame
+#' @param func_name name used in the warning
+#' @return named character vector (names = identifiers)
+#' @keywords internal
+#' @noRd
+.gsea_label_map <- function(frame, func_name = "richGSEA") {
+  ids <- as.character(frame$pathway)
+  labels <- as.character(frame$label)
+  keep <- !is.na(ids) & nzchar(trimws(ids)) & !is.na(labels) & nzchar(trimws(labels))
+  ids <- ids[keep]
+  labels <- labels[keep]
+  first <- !duplicated(ids)
+  map <- stats::setNames(labels[first], ids[first])
+  conflicting <- unique(ids[labels != map[ids]])
+  if (length(conflicting)) {
+    warning(func_name, ": identifier(s) with conflicting labels; using the first label ",
+            "in annotation row order: ", paste(conflicting, collapse = ", "),
+            call. = FALSE)
+  }
+  map
+}
+
+#' Labels for identifiers (the identifier itself where no label exists)
+#' @keywords internal
+#' @noRd
+.gsea_terms <- function(ids, map) {
+  ids <- as.character(ids)
+  terms <- unname(map[ids])
+  missing <- is.na(terms)
+  terms[missing] <- ids[missing]
+  terms
+}
+
+#' Labels of a GSEA result table: the `Term` column, or `pathway` for a legacy
+#' result without `Term`
+#' @keywords internal
+#' @noRd
+.gsea_result_terms <- function(result) {
+  ids <- as.character(result$pathway)
+  if (!"Term" %in% colnames(result)) {
+    return(ids)
+  }
+  terms <- as.character(result$Term)
+  missing <- is.na(terms) | !nzchar(trimws(terms))
+  terms[missing] <- ids[missing]
+  terms
+}
+
+#' Display labels that stay unique per identifier
+#'
+#' A label shared by several of the given identifiers gets the identifier
+#' appended, so facets, legends and network nodes never merge distinct gene sets.
+#' @param ids identifiers to label
+#' @param id_pool,term_pool identifiers and their labels
+#' @keywords internal
+#' @noRd
+.gsea_display_labels <- function(ids, id_pool, term_pool) {
+  ids <- as.character(ids)
+  terms <- as.character(term_pool)[match(ids, as.character(id_pool))]
+  terms[is.na(terms)] <- ids[is.na(terms)]
+  u_ids <- unique(ids)
+  u_terms <- terms[match(u_ids, ids)]
+  shared <- u_terms %in% u_terms[duplicated(u_terms)]
+  u_terms[shared] <- paste0(u_terms[shared], " [", u_ids[shared], "]")
+  u_terms[match(ids, u_ids)]
+}
+
+#' Canonical KEGG pathway identifier (5 digits), NA for a non-KEGG identifier
+#' @keywords internal
+#' @noRd
+.kegg_canonical_id <- function(x) {
+  x <- as.character(x)
+  is_kegg <- !is.na(x) & grepl("^([a-z]{2,4})?[0-9]{5}$", x)
+  out <- rep(NA_character_, length(x))
+  out[is_kegg] <- sub("^[a-z]{2,4}", "", x[is_kegg])
+  out
+}
+
+#' Resolve pathway selectors to identifiers
+#'
+#' Each selector resolves, in order, by exact identifier, by KEGG identifier
+#' with the organism prefix stripped, then by a unique label. A label carried by
+#' several identifiers, or a selector matching nothing, is an error.
+#' @param selectors character vector of selectors
+#' @param ids candidate identifiers
+#' @param terms labels of `ids`
+#' @param what selector name used in messages
+#' @return character vector of resolved identifiers (unique, selector order)
+#' @keywords internal
+#' @noRd
+.gsea_resolve_selectors <- function(selectors, ids, terms, what = "pathway") {
+  ids <- as.character(ids)
+  terms <- as.character(terms)
+  canon_ids <- .kegg_canonical_id(ids)
+  resolved <- character()
+  for (selector in as.character(selectors)) {
+    hit <- unique(ids[ids == selector])
+    if (!length(hit)) {
+      canon <- .kegg_canonical_id(selector)
+      if (!is.na(canon)) hit <- unique(ids[!is.na(canon_ids) & canon_ids == canon])
+    }
+    if (!length(hit)) {
+      hit <- unique(ids[!is.na(terms) & terms == selector])
+    }
+    if (length(hit) > 1L) {
+      stop(what, " '", selector, "' matches several pathways: ",
+           paste(hit, collapse = ", "), ". Use a pathway identifier.", call. = FALSE)
+    }
+    if (!length(hit)) {
+      stop(what, " '", selector, "' was not found in the GSEA results.", call. = FALSE)
+    }
+    resolved <- c(resolved, hit)
+  }
+  unique(resolved)
+}
+
+#' KEGG level columns for GSEA pathways
+#'
+#' KEGG identifiers (5 digits, optionally organism-prefixed) join the bundled
+#' `path` table on `ko`; any other value joins on the `Level3` name.
+#' @keywords internal
+#' @noRd
+.gsea_kegg_levels <- function(pathway, path) {
+  canon <- .kegg_canonical_id(pathway)
+  idx <- ifelse(is.na(canon), match(as.character(pathway), path$Level3),
+                match(canon, path$ko))
+  levels <- path[idx, , drop = FALSE]
+  rownames(levels) <- NULL
+  levels
+}
+
+#' ORA-shaped network frame from a GSEA result, built by column name
+#' @param result GSEA result table
+#' @param sep gene separator for a list-column leadingEdge
+#' @return data.frame with Annot, Term, Pvalue, Padj, Significant, GeneID
+#' @keywords internal
+#' @noRd
+.gsea_network_frame <- function(result, sep = ",") {
+  le <- result$leadingEdge
+  if (is.list(le)) {
+    le <- vapply(le, function(x) paste(x, collapse = sep), character(1))
+  }
+  ids <- as.character(result$pathway)
+  data.frame(
+    Annot = ids,
+    Term = .gsea_display_labels(ids, ids, .gsea_result_terms(result)),
+    Pvalue = result$pval,
+    Padj = result$padj,
+    Significant = result$size,
+    GeneID = as.character(le),
+    stringsAsFactors = FALSE
+  )
+}
+
 #' Enrichment analysis for any type of annotation data
 #' @param x a vector include all log2FC with gene name
 #' @param object annotation file for all genes
@@ -122,10 +319,10 @@ richGSEA_internal<-function(x,object,keytype="",pvalue=0.05,padj=NULL,KEGG=FALSE
   metadata_padj <- padj
   original_input_ids <- names(x)
   x<-sort(x)
-  if("Annot"%in%colnames(object)){
-    object[,2]<-object$Annot
-  }
-  normalization <- .normalize_annotation(object, func_name = "richGSEA")
+  # Memberships come from gene-identifier pairs; labels are attached afterwards.
+  identity_frame <- .gsea_annotation_frame(object)
+  normalization <- .normalize_annotation(identity_frame, func_name = "richGSEA")
+  label_map <- .gsea_label_map(identity_frame, func_name = "richGSEA")
   object <- normalization$data[, 1:2, drop = FALSE]
   normalization$counts$eligible_rows <- as.integer(nrow(object))
   normalization$counts$effective_rows <- normalization$counts$eligible_rows
@@ -145,6 +342,15 @@ richGSEA_internal<-function(x,object,keytype="",pvalue=0.05,padj=NULL,KEGG=FALSE
   if(isTRUE(table)){
     res$leadingEdge<-unlist(lapply(res$leadingEdge, function(x)paste(gsub(" ","",x),collapse = sep,sep="")))
   }
+  # Term (the label) goes directly after leadingEdge, so fgsea's columns keep
+  # their positions and KEGG level columns follow it.
+  res$Term <- .gsea_terms(res$pathway, label_map)
+  le_pos <- match("leadingEdge", colnames(res))
+  if (!is.na(le_pos)) {
+    cols <- colnames(res)
+    res <- res[, c(cols[seq_len(le_pos)], "Term",
+                   setdiff(cols[-seq_len(le_pos)], "Term")), drop = FALSE]
+  }
   if(is.null(padj)){
     res<-res[!is.na(res$pval) & res$pval<pvalue, , drop = FALSE]
     padj=numeric()
@@ -157,8 +363,7 @@ richGSEA_internal<-function(x,object,keytype="",pvalue=0.05,padj=NULL,KEGG=FALSE
     path_env <- new.env(parent = emptyenv())
     utils::data("path", package = "richR", envir = path_env)
     path <- path_env$path
-    rownames(path)<-path$Level3
-    res<-cbind(res,path[res$pathway,])
+    res<-cbind(res,.gsea_kegg_levels(res$pathway, path))
   }
   if(is.null(organism)){
     organism=character()
@@ -247,6 +452,18 @@ richGSEA_internal<-function(x,object,keytype="",pvalue=0.05,padj=NULL,KEGG=FALSE
 #' @param nproc optional fgsea worker count
 #' @param BPPARAM optional BiocParallel backend
 #' @param seed optional seed scoped to this GSEA call
+#' @details Gene sets are keyed by identifier, so distinct identifiers that
+#'   share a label are tested as distinct gene sets. The identifier column is
+#'   the first of \code{GOALL}, \code{PATH}, \code{Module} or \code{Term}
+#'   present in \code{object}; an annotation carrying none of these names uses
+#'   its second column. The label is the column named \code{Annot}.
+#'   \code{result$pathway} holds the identifier and \code{result$Term}
+#'   (directly after \code{leadingEdge}) the label: the identifier itself when
+#'   no label exists, and the first non-missing label in annotation row order
+#'   when an identifier carries several labels (with a warning naming those
+#'   identifiers). With \code{KEGG = TRUE}, KEGG identifiers (five digits,
+#'   optionally organism-prefixed) are joined to the KEGG levels by identifier,
+#'   other values by the \code{Level3} name.
 #' @export
 #' @examples
 #' \dontrun{
@@ -294,6 +511,8 @@ setMethod("richGSEA", signature(object = "data.frame"),definition = function(x,o
 #' @param nproc optional fgsea worker count
 #' @param BPPARAM optional BiocParallel backend
 #' @param seed optional seed scoped to this GSEA call
+#' @details Gene sets are keyed by identifier and labelled afterwards; see the
+#'   \code{data.frame} method for the identifier and label rules.
 setMethod("richGSEA", signature(object = "Annot"),definition = function(x,object,keytype="",pvalue=0.05,padj=NULL,KEGG=FALSE,minSize=15,ontology="",
                                                                         maxSize=500,padj.method="BH",organism=NULL,table=TRUE,sep=",",
                                                                         eps=NULL,scoreType=NULL,nproc=NULL,BPPARAM=NULL,seed=NULL) {
@@ -336,7 +555,6 @@ richGSEAplot <- function(term, object, gseaRes, top = 10, default = TRUE) {
   x <- gseaRes@input
   x <- sort(x)
 
-  annot <- object@annot
   gseaRes_result <- gseaRes@result
 
   if(nrow(gseaRes_result) == 0) {
@@ -347,18 +565,17 @@ richGSEAplot <- function(term, object, gseaRes, top = 10, default = TRUE) {
     top <- nrow(gseaRes_result)
   }
 
-  if(!is.null(annot$Annot)) {
-    annot[,2] <- annot$Annot
-  }
-
-  annod <- sf(annot)
+  # Gene sets keyed by identifier (never by label); titles show the Term label.
+  annod <- .gsea_memberships(object)
+  titles <- .gsea_result_terms(gseaRes_result)
 
   if(length(term) > 1 & !is.null(gseaRes_result)) {
     if(isTRUE(default)) {
       plotGseaTable(annod[term], stats = x, gseaRes_result, gseaParam = 0.5)
     } else {
       res <- lapply(gseaRes_result$pathway[1:top], function(y) {
-        plotEnrichment(annod[[y]], stats = x) + ggtitle(y)
+        plotEnrichment(annod[[y]], stats = x) +
+          ggtitle(titles[match(y, gseaRes_result$pathway)])
       })
       if (!requireNamespace("cowplot", quietly = TRUE))
         stop("Package 'cowplot' is required for grid GSEA plots. Install it with install.packages('cowplot').")
@@ -377,8 +594,11 @@ richGSEAplot <- function(term, object, gseaRes, top = 10, default = TRUE) {
 #' @param up_color color for up-regulated pathways (positive NES)
 #' @param down_color color for down-regulated pathways (negative NES)
 #' @param show_direction logical, whether to use directional coloring based on NES
-#' @param pathways specific pathway names to display (if NULL, use top/pvalue/padj filtering)
-#' @param pathway_pattern regex pattern for pathway matching
+#' @param pathways pathways to display (if NULL, use top/pvalue/padj filtering):
+#'   pathway identifiers, KEGG identifiers with or without organism prefix, or
+#'   unique \code{Term} labels; a label shared by several pathways, or a value
+#'   matching nothing, is an error
+#' @param pathway_pattern regex pattern matched against pathway identifiers and \code{Term} labels
 #' @param category pathway category filter
 #' @param min_genes minimum gene set size filter
 #' @param max_genes maximum gene set size filter
@@ -445,19 +665,20 @@ richGSEAcurve <- function(object, gseaRes, mycol = NULL,
     stop("pathways must be a character vector")
   }
 
-  # Select pathways to display
+  result_terms <- .gsea_result_terms(gseaRes_result)
+
+  # Select pathways to display (identifiers)
   if(!is.null(pathways)) {
-    # Use user-specified pathways
-    sigpathway <- pathways[pathways %in% gseaRes_result$pathway]
-    if(length(sigpathway) == 0) {
-      stop("None of the specified pathways found in GSEA results")
-    }
+    # Resolve user selectors: identifier, prefix-stripped KEGG identifier, unique label
+    sigpathway <- .gsea_resolve_selectors(pathways, gseaRes_result$pathway,
+                                          result_terms, what = "pathways")
     # Get corresponding NES values
     pathway_indices <- match(sigpathway, gseaRes_result$pathway)
     sig_nes <- gseaRes_result$NES[pathway_indices]
   } else if(!is.null(pathway_pattern)) {
-    # Use pattern-based selection
-    pattern_indices <- grepl(pathway_pattern, gseaRes_result$pathway, ignore.case = TRUE)
+    # Use pattern-based selection on identifiers and labels
+    pattern_indices <- grepl(pathway_pattern, gseaRes_result$pathway, ignore.case = TRUE) |
+      grepl(pathway_pattern, result_terms, ignore.case = TRUE)
     sigpathway <- gseaRes_result$pathway[pattern_indices]
     sig_nes <- gseaRes_result$NES[pattern_indices]
     if(length(sigpathway) == 0) {
@@ -502,6 +723,11 @@ richGSEAcurve <- function(object, gseaRes, mycol = NULL,
   if(length(sigpathway) == 0) {
     stop("No pathways remaining after filtering")
   }
+
+  # From here on `sig_ids` holds the identifiers and `sigpathway` the display
+  # labels (Term, unique per identifier) used for facets, colours and legends.
+  sig_ids <- sigpathway
+  sigpathway <- .gsea_display_labels(sig_ids, gseaRes_result$pathway, result_terms)
 
   # Set up colors based on direction preference
   if(show_direction) {
@@ -551,8 +777,13 @@ richGSEAcurve <- function(object, gseaRes, mycol = NULL,
 
   # Calculate GSEA curves
   fc <- x
-  res <- lapply(sigpathway, function(pathway) {
-    .calGSEA(object, pathway, fc, gseaParam = gseaParam, ticksSize = ticksSize)
+  res <- lapply(seq_along(sig_ids), function(i) {
+    curve <- .calGSEA(object, sig_ids[i], fc, gseaParam = gseaParam, ticksSize = ticksSize)
+    curve$toPlot$pathway <- sig_ids[i]
+    curve$toPlot$Group <- sigpathway[i]
+    curve$pathway$pathway <- sig_ids[i]
+    curve$pathway$Group <- sigpathway[i]
+    curve
   })
 
   toPlot <- do.call(rbind, lapply(res, '[[', 'toPlot'))
@@ -596,7 +827,7 @@ richGSEAcurve <- function(object, gseaRes, mycol = NULL,
   if(legend_position != "none") {
     if(show_direction) {
       # Create pathway labels with NES values and group by direction
-      pathway_indices <- match(sigpathway, gseaRes_result$pathway)
+      pathway_indices <- match(sig_ids, gseaRes_result$pathway)
       nes_values <- round(gseaRes_result$NES[pathway_indices], 2)
 
       # Create labels with pathway names and NES values
@@ -700,7 +931,7 @@ richGSEAcurve <- function(object, gseaRes, mycol = NULL,
     return(list(
       plot = p,
       data = toPlot,
-      pathways = sigpathway,
+      pathways = stats::setNames(sig_ids, sigpathway),
       directions = if(show_direction) pathway_direction else NULL,
       nes_values = sig_nes,
       pathway_colors = pathway_colors,
@@ -753,6 +984,8 @@ getPathways <- function(gseaRes, padj_cutoff = 0.05, pval_cutoff = 0.05, min_siz
 #' @param gseaRes GSEAResult object
 #' @param keyword search term (can be regex pattern)
 #' @param ignore_case whether to ignore case when searching
+#' @return pathway identifiers whose identifier or \code{Term} label matches,
+#'   named by their \code{Term} label
 #' @export
 #' @examples
 #' \dontrun{
@@ -765,8 +998,12 @@ searchPathways <- function(gseaRes, keyword, ignore_case = TRUE) {
     stop("gseaRes must be a GSEAResult object")
   }
 
-  pathways <- gseaRes@result$pathway
-  matched <- pathways[grepl(keyword, pathways, ignore.case = ignore_case)]
+  pathways <- as.character(gseaRes@result$pathway)
+  terms <- .gsea_result_terms(gseaRes@result)
+  hit <- grepl(keyword, pathways, ignore.case = ignore_case) |
+    grepl(keyword, terms, ignore.case = ignore_case)
+  # identifiers, named by their Term label
+  matched <- stats::setNames(pathways[hit], terms[hit])
 
   if(length(matched) == 0) {
     message("No pathways found matching the keyword: ", keyword)
@@ -879,6 +1116,7 @@ getPathwayStats <- function(gseaRes, top = 10) {
   # Create summary
   summary_stats <- data.frame(
     pathway = top_pathways$pathway,
+    Term = .gsea_result_terms(top_pathways),
     NES = round(top_pathways$NES, 3),
     pvalue = formatC(top_pathways$pval, format = "e", digits = 2),
     padj = formatC(top_pathways$padj, format = "e", digits = 2),
@@ -999,8 +1237,13 @@ parGSEA<-function(x,object,log2FC="log2FoldChange",gene.col=NULL,
 
 ###
 .calGSEA<-function (obj,sigpathway, fc, gseaParam = 1, ticksSize = 0.2){
-  obj<-split(obj[,1],obj[,ncol(obj)])
-  pathway <- obj[[sigpathway]]
+  frame <- .gsea_annotation_frame(obj)
+  pathway <- split(as.character(frame$GeneID), as.character(frame$pathway))[[sigpathway]]
+  if (is.null(pathway)) {
+    # A result computed before gene sets were keyed by identifier stores the
+    # label in `pathway`; its gene set was the label-keyed membership.
+    pathway <- split(as.character(frame$GeneID), as.character(frame$label))[[sigpathway]]
+  }
   stats <- fc
   rnk <- rank(-stats)
   ord <- order(rnk)

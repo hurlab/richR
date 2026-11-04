@@ -43,7 +43,7 @@ setMethod("show", signature(object = "GSEAResult"), function(object) {
   cat("  Significant: ", n_sig, "pathways\n")
   if (n_sig > 0) {
     top_n <- min(5, n_sig)
-    cols <- intersect(c("pathway", "pval", "padj", "NES", "size"), colnames(object@result))
+    cols <- intersect(c("pathway", "Term", "pval", "padj", "NES", "size"), colnames(object@result))
     top <- object@result[1:top_n, cols, drop = FALSE]
     if ("pval" %in% cols) top$pval <- formatC(top$pval, format = "e", digits = 2)
     if ("padj" %in% cols) top$padj <- formatC(top$padj, format = "e", digits = 2)
@@ -80,7 +80,10 @@ setMethod("show", signature(object = "Annot"), function(object) {
 #'
 #' @param x A richResult or GSEAResult object
 #' @param term Optional term ID (Annot column) or term name to extract genes for.
-#'   If NULL, returns all input genes from the analysis.
+#'   If NULL, returns all input genes from the analysis. For a GSEAResult the
+#'   term resolves by pathway identifier, KEGG identifier with or without
+#'   organism prefix, then unique \code{Term} label (the leading-edge genes are
+#'   returned); a label shared by several pathways is an error.
 #' @param sep Separator used in GeneID column (default: ",")
 #' @return Character vector of gene IDs
 #'
@@ -110,10 +113,10 @@ getGenes <- function(x, term = NULL, sep = ",") {
       return(unique(trimws(strsplit(gene_str, sep)[[1]])))
     }
     if (inherits(x, "GSEAResult")) {
-      idx <- which(res_df$pathway == term)
-      if (length(idx) == 0) {
-        stop("Pathway '", term, "' not found in GSEA results.", call. = FALSE)
-      }
+      # Resolve by identifier, prefix-stripped KEGG identifier, then unique label.
+      id <- .gsea_resolve_selectors(term[1], res_df$pathway,
+                                    .gsea_result_terms(res_df), what = "term")
+      idx <- match(id, res_df$pathway)
       le <- res_df$leadingEdge[idx[1]]
       if (is.list(le)) return(unique(le[[1]]))
       return(unique(strsplit(as.character(le), sep)[[1]]))

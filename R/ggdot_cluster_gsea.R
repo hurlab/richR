@@ -94,9 +94,15 @@
 
   x_pathway <- 1 + n_groups + x_pathway_offset
 
+  # Labels show the Term label when present (legacy results: the pathway).
+  label_text <- if ("Term" %in% colnames(data)) {
+    as.character(data$Term[match(pathways$pathway, data$pathway)])
+  } else {
+    as.character(pathways$pathway)
+  }
   pathway_labels <- pathways %>%
     mutate(x_pathway = x_pathway) %>%
-    mutate(x = x_pathway, label = pathway)
+    mutate(x = x_pathway, label = label_text)
 
   # Prepare data for curves and segments
   lines_data <- data %>%

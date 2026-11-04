@@ -8,7 +8,7 @@ gglollipop_internal(
   resultFis,
   top = 20,
   pvalue = 0.05,
-  padj = NULL,
+  padj = 0.05,
   usePadj = TRUE,
   low = "lightpink",
   high = "red",

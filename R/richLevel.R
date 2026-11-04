@@ -31,7 +31,7 @@
 #' @param padj.method pvalue adjust method(default:"BH")
 #' @param sep character string used to separate the genes when concatenating
 #' @author Kai Guo
-richLevel_internal<-function(x,kodata,level="Level2",pvalue =0.05, padj=NULL,
+richLevel_internal<-function(x,kodata,level="Level2",pvalue =0.05, padj=0.05,
                              organism=NULL,keytype="SYMBOL",ontology="",minSize=2,maxSize=500,
                              minGSSize = 10, maxGSSize = 500,
                              keepRich=TRUE, filename=NULL,padj.method="BH",sep=",",padj.family=c("overlap","all")){
@@ -86,7 +86,7 @@ richLevel_internal<-function(x,kodata,level="Level2",pvalue =0.05, padj=NULL,
 #' }
 #' @export
 #' @author Kai Guo
-setMethod("richLevel", signature(kodata = "data.frame"),definition = function(x,kodata,level="Level2",pvalue =0.05, padj=NULL,
+setMethod("richLevel", signature(kodata = "data.frame"),definition = function(x,kodata,level="Level2",pvalue =0.05, padj=0.05,
                                                                               organism=NULL,keytype="SYMBOL",ontology="KEGG",minSize=2,maxSize=500,
                                                                               minGSSize = 10, maxGSSize = 500,
                                                                               keepRich=TRUE, filename=NULL,padj.method="BH",sep=",",padj.family=c("overlap","all")) {
@@ -135,7 +135,7 @@ setMethod("richLevel", signature(kodata = "data.frame"),definition = function(x,
 #' }
 #' @export
 #' @author Kai Guo
-setMethod("richLevel", signature(kodata = "Annot"),definition = function(x,kodata,level="Level2",pvalue =0.05, padj=NULL,
+setMethod("richLevel", signature(kodata = "Annot"),definition = function(x,kodata,level="Level2",pvalue =0.05, padj=0.05,
                                                                          organism=NULL,keytype="SYMBOL",ontology="",minSize=2,maxSize=500,
                                                                          minGSSize = 10, maxGSSize = 500,
                                                                          keepRich=TRUE, filename=NULL,padj.method="BH",sep=",",padj.family=c("overlap","all")) {

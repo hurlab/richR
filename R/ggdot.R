@@ -36,7 +36,7 @@ ggdot_internal<-function(object,top=50,pvalue=0.05,order=FALSE,
                          low="lightpink",high="red",alpha=0.7,
                          font.x="bold",font.y="bold",fontsize.x=10,fontsize.y=10,
                          short=FALSE,
-                         padj=NULL,usePadj=TRUE,orderp=FALSE,filename=NULL,width=10,height=8){
+                         padj=0.05,usePadj=TRUE,orderp=FALSE,filename=NULL,width=10,height=8){
   object <- .sig_filter(object, pvalue, padj)
   if(nrow(object)>=top){
     dd<-object[1:top,]
@@ -107,7 +107,7 @@ setMethod("richDot", signature(object = "richResult"),definition = function(obje
                                                                           low="lightpink",high="red",alpha=0.7,
                                                                           font.x="bold",font.y="bold",fontsize.x=10,fontsize.y=10,
                                                                           short=FALSE,
-                                                                          padj=NULL,usePadj=TRUE,orderp=FALSE,filename=NULL,width=10,height=8) {
+                                                                          padj=0.05,usePadj=TRUE,orderp=FALSE,filename=NULL,width=10,height=8) {
             ggdot_internal(object@result,top=top,pvalue=pvalue,order=order,
                            low=low,high=high,alpha=alpha,
                            font.x=font.x,font.y=font.y,fontsize.x=fontsize.x,fontsize.y=fontsize.y,
@@ -146,7 +146,7 @@ setMethod("richDot", signature(object = "data.frame"),definition = function(obje
                                                                           low="lightpink",high="red",alpha=0.7,
                                                                           font.x="bold",font.y="bold",fontsize.x=10,fontsize.y=10,
                                                                           short=FALSE,
-                                                                          padj=NULL,usePadj=TRUE,orderp=FALSE,filename=NULL,width=10,height=8) {
+                                                                          padj=0.05,usePadj=TRUE,orderp=FALSE,filename=NULL,width=10,height=8) {
             ggdot_internal(object,top=top,pvalue=pvalue,order=order,
                            low=low,high=high,alpha=alpha,
                            font.x=font.x,font.y=font.y,fontsize.x=fontsize.x,fontsize.y=fontsize.y,

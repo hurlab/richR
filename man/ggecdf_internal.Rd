@@ -8,7 +8,7 @@ ggecdf_internal(
   resultFis,
   top = 30,
   pvalue = 0.05,
-  padj = NULL,
+  padj = 0.05,
   line.color = "#1b7837",
   line.size = 1.2,
   point.size = 3,

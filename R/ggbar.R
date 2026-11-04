@@ -36,7 +36,7 @@ richBar_internal<-function(resultFis,top=50,pvalue=0.05,order=FALSE,horiz=TRUE,
                          low="lightpink",high="red",
                          font.x="bold",font.y="bold",fontsize.x=10,fontsize.y=10,
                          short=FALSE,
-                         fontsize.text=3,angle=75,padj=NULL,usePadj=TRUE,orderp=FALSE,
+                         fontsize.text=3,angle=75,padj=0.05,usePadj=TRUE,orderp=FALSE,
                          filename=NULL,width=10,height=8){
   resultFis <- .sig_filter(resultFis, pvalue, padj)
   if(nrow(resultFis)>=top){
@@ -100,7 +100,7 @@ richBar_internal<-function(resultFis,top=50,pvalue=0.05,order=FALSE,horiz=TRUE,
 ##' }
 ##' @export
 ##' @author Kai Guo
-setMethod("richBar", signature(object = "richResult"),definition = function(object,top=50,pvalue=0.05,padj=NULL,order=FALSE,
+setMethod("richBar", signature(object = "richResult"),definition = function(object,top=50,pvalue=0.05,padj=0.05,order=FALSE,
                    usePadj=TRUE,fontsize.x=10,fontsize.y=10,short=FALSE,fontsize.text=3,angle=75,orderp=FALSE,filename=NULL,
                    width=10,height=8,horiz=TRUE,...) {
             richBar_internal(object@result,top=top,pvalue=pvalue,padj=padj,order=order,
@@ -118,7 +118,7 @@ setMethod("richBar", signature(object = "richResult"),definition = function(obje
 ##' }
 ##' @export
 ##' @author Kai Guo
-setMethod("richBar", signature(object = "data.frame"),definition = function(object,top=50,pvalue=0.05,padj=NULL,order=FALSE,
+setMethod("richBar", signature(object = "data.frame"),definition = function(object,top=50,pvalue=0.05,padj=0.05,order=FALSE,
                                                                           usePadj=TRUE,fontsize.x=10,fontsize.y=10,short=FALSE,fontsize.text=3,angle=75,orderp=FALSE,filename=NULL,
                                                                           width=10,height=8,horiz=TRUE,...) {
   richBar_internal(object,top=top,pvalue=pvalue,padj=padj,order=order,

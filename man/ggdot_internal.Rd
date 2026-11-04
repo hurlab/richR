@@ -17,7 +17,7 @@ ggdot_internal(
   fontsize.x = 10,
   fontsize.y = 10,
   short = FALSE,
-  padj = NULL,
+  padj = 0.05,
   usePadj = TRUE,
   orderp = FALSE,
   filename = NULL,

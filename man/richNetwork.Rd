@@ -9,7 +9,7 @@ ggnetwork_internal(
   gene = gene,
   top = 50,
   pvalue = 0.05,
-  padj = NULL,
+  padj = 0.05,
   usePadj = TRUE,
   low = "orange",
   high = "red",

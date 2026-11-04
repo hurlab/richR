@@ -8,7 +8,7 @@ ggNES_internal(
   resultFis,
   top = 20,
   pvalue = 0.05,
-  padj = NULL,
+  padj = 0.05,
   up.color = "#b2182b",
   down.color = "#2166ac",
   short = FALSE,

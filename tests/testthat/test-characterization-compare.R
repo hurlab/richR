@@ -9,7 +9,7 @@ compare_annot <- function() .char_read("ora_annot.csv", character = TRUE)
 
 compare_ora <- function(genes) {
   suppressMessages(enrich(
-    genes, compare_annot(), pvalue = 0.5, minSize = 2, minGSSize = 3,
+    genes, compare_annot(), pvalue = 0.5, padj = NULL, minSize = 2, minGSSize = 3,
     keepRich = TRUE
   ))
 }
@@ -18,10 +18,10 @@ test_that("richLevel() pins Level2 and Level3 enrichment on bundled KEGG levels"
   kegg <- .char_read("kegg_annot.csv", character = TRUE)
   ko <- data.frame(GeneID = kegg$GeneID, PATH = kegg$Term, stringsAsFactors = FALSE)
   level2 <- suppressMessages(richLevel(
-    compare_query_a(), ko, level = "Level2", pvalue = 0.5, minSize = 2, minGSSize = 3
+    compare_query_a(), ko, level = "Level2", pvalue = 0.5, padj = NULL, minSize = 2, minGSSize = 3
   ))
   level3 <- suppressMessages(richLevel(
-    compare_query_a(), ko, level = "Level3", pvalue = 0.5, minSize = 2, minGSSize = 3
+    compare_query_a(), ko, level = "Level3", pvalue = 0.5, padj = NULL, minSize = 2, minGSSize = 3
   ))
   expect_s4_class(level2, "richResult")
   expect_s4_class(level3, "richResult")
@@ -40,13 +40,13 @@ test_that("compareResult() pins group stacking, cutoffs, include.all and extra i
   .char_nonempty(first@result)
   .char_nonempty(second@result)
 
-  by_pvalue <- compareResult(list(first = first, second = second), pvalue = 0.5)
-  by_padj <- compareResult(list(first = first, second = second), padj = 0.2)
+  by_pvalue <- compareResult(list(first = first, second = second), pvalue = 0.5, padj = NULL)
+  by_padj <- compareResult(list(first = first, second = second), pvalue = 1, padj = 0.2)
   include_all <- compareResult(
-    list(first = first, second = second, none = NULL), pvalue = 0.5, include.all = TRUE
+    list(first = first, second = second, none = NULL), pvalue = 0.5, padj = NULL, include.all = TRUE
   )
   from_frames <- compareResult(
-    list(first = first@result, second = second@result), pvalue = 0.5
+    list(first = first@result, second = second@result), pvalue = 0.5, padj = NULL
   )
   expect_identical(levels(include_all$group), c("first", "second", "none"))
   expect_snapshot_value(
@@ -68,7 +68,7 @@ gsea_pair <- function() {
     out <- NULL
     utils::capture.output(
       out <- richGSEA(stats::setNames(df$score, df$GeneID), annot, minSize = 3,
-                      maxSize = 20, pvalue = 1, seed = 42, nproc = 1)
+                      maxSize = 20, pvalue = 1, padj = 1, seed = 42, nproc = 1)
     )
     out
   }
@@ -77,7 +77,7 @@ gsea_pair <- function() {
 
 test_that("compareGSEA() with padj = NULL keeps the shape of the enrichment-curve data", {
   fx <- gsea_pair()
-  plot_obj <- compareGSEA(fx$results, fx$annot)
+  plot_obj <- compareGSEA(fx$results, fx$annot, padj = NULL)
   expect_s3_class(plot_obj, "ggplot")
   curve <- .char_nonempty(plot_obj$data)
   # SPEC-RICHR-002 D3: facets (Group) show the Term label; the identifier is
@@ -96,7 +96,7 @@ test_that("compareGSEA() with padj = NULL keeps the shape of the enrichment-curv
 test_that("compareGSEA() with padj = NULL pins the enrichment-curve data behind the plot", {
   .char_skip_unless_recorded_fgsea()
   fx <- gsea_pair()
-  plot_obj <- compareGSEA(fx$results, fx$annot)
+  plot_obj <- compareGSEA(fx$results, fx$annot, padj = NULL)
   expect_s3_class(plot_obj, "ggplot")
   .char_nonempty(plot_obj$data)
   expect_snapshot_value(
@@ -116,7 +116,7 @@ test_that("compareGSEA() with a non-NULL padj applies both cutoffs to the fixtur
   # data equal the padj = NULL curve.
   fx <- gsea_pair()
   with_padj <- compareGSEA(fx$results, fx$annot, padj = 0.05)
-  without_padj <- compareGSEA(fx$results, fx$annot)
+  without_padj <- compareGSEA(fx$results, fx$annot, padj = NULL)
   expect_s3_class(with_padj, "ggplot")
   curve <- .char_nonempty(with_padj$data)
   expect_identical(curve, without_padj$data)

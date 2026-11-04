@@ -9,7 +9,7 @@
   object,
   keytype = "",
   pvalue = 0.05,
-  padj = NULL,
+  padj = 0.05,
   KEGG = FALSE,
   minSize = 15,
   ontology = "",

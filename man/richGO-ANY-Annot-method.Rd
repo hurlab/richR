@@ -9,7 +9,7 @@
   godata,
   ontology = "BP",
   pvalue = 0.05,
-  padj = NULL,
+  padj = 0.05,
   minSize = 2,
   maxSize = 500,
   minGSSize = 10,

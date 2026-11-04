@@ -256,7 +256,7 @@ test_that("data-frame detail retains caller columns while metadata tracks row na
                       Term = c("T", "T", "U", "U"))
   query <- data.frame(logFC = c(2, 3), row.names = c("A", "B"))
   result <- suppressMessages(richR::enrich(
-    query, annot, pvalue = 1, minSize = 1, minGSSize = 1, keepRich = FALSE
+    query, annot, pvalue = 1, padj = 1, minSize = 1, minGSSize = 1, keepRich = FALSE
   ))
   expect_true("logFC" %in% names(result@detail))
   expect_equal(result@detail$logFC, c(2, 3))

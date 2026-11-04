@@ -11,7 +11,7 @@ compareGSEA(
   pathway = NULL,
   mycol = NULL,
   pvalue = 0.05,
-  padj = NULL,
+  padj = 0.05,
   label = FALSE,
   gseaParam = 1,
   ticksSize = 0.2,

@@ -42,7 +42,7 @@
 ##' @export
 ##' @author Kai Guo
 #' @param universe optional character vector intersected with annotated genes to define the ORA background
-setGeneric("richGO", function(x,godata,ontology="BP",pvalue=0.05,padj=NULL,organism=NULL,keytype=NULL,minSize=2,maxSize=500,
+setGeneric("richGO", function(x,godata,ontology="BP",pvalue=0.05,padj=0.05,organism=NULL,keytype=NULL,minSize=2,maxSize=500,
                               minGSSize = 10, maxGSSize = 500,
                               keepRich=TRUE,filename=NULL,padj.method="BH",sep=",",universe=NULL,padj.family=c("overlap","all"),...)
   standardGeneric("richGO"))
@@ -89,7 +89,7 @@ setGeneric("richGO", function(x,godata,ontology="BP",pvalue=0.05,padj=NULL,organ
 ##' @export
 ##' @author Kai Guo
 #' @param universe optional character vector intersected with annotated genes to define the ORA background
-setGeneric("richKEGG", function(x,kodata,pvalue=0.05,padj=NULL,organism=NULL,ontology="KEGG",
+setGeneric("richKEGG", function(x,kodata,pvalue=0.05,padj=0.05,organism=NULL,ontology="KEGG",
                                 keytype=NULL,minSize=2,maxSize=500,minGSSize = 10, maxGSSize = 500,
                                 keepRich=TRUE,filename=NULL,padj.method="BH",builtin=TRUE,sep=",",universe=NULL,padj.family=c("overlap","all"),...)
   standardGeneric("richKEGG"))
@@ -132,7 +132,7 @@ setGeneric("richKEGG", function(x,kodata,pvalue=0.05,padj=NULL,organism=NULL,ont
 #' }
 ##' @export
 ##' @author Kai Guo
-setGeneric("richGSEA", function(x,object,keytype="",pvalue=0.05,padj=NULL,KEGG=FALSE,minSize=15,ontology="",
+setGeneric("richGSEA", function(x,object,keytype="",pvalue=0.05,padj=0.05,KEGG=FALSE,minSize=15,ontology="",
                                 maxSize=500,padj.method="BH",organism=NULL,table=TRUE,sep=",",
                                 eps=NULL,scoreType=NULL,nproc=NULL,BPPARAM=NULL,seed=NULL,...)
   standardGeneric("richGSEA"))
@@ -182,7 +182,7 @@ setGeneric("richGSEA", function(x,object,keytype="",pvalue=0.05,padj=NULL,KEGG=F
 ##' @export
 ##' @author Kai Guo
 #' @param universe optional character vector intersected with annotated genes to define the ORA background
-setGeneric("enrich", function(x,object,ontology="",pvalue=0.05,padj=NULL,organism=NULL,
+setGeneric("enrich", function(x,object,ontology="",pvalue=0.05,padj=0.05,organism=NULL,
                               keytype="",filename=NULL,minSize=2,maxSize=500,
                               minGSSize = 10, maxGSSize = 500,
                               keepRich=TRUE,padj.method="BH",sep=",",universe=NULL,padj.family=c("overlap","all"),...)
@@ -233,7 +233,7 @@ setGeneric("enrich", function(x,object,ontology="",pvalue=0.05,padj=NULL,organis
 #' }
 #' @export
 #' @author Kai Guo
-setGeneric("richLevel", function(x,kodata,level="Level2",pvalue =0.05, padj=NULL,
+setGeneric("richLevel", function(x,kodata,level="Level2",pvalue =0.05, padj=0.05,
                                  organism=NULL,keytype="SYMBOL",ontology="",minSize=2,maxSize=500,
                                  minGSSize = 10, maxGSSize = 500,
                                  keepRich=TRUE, filename=NULL,padj.method="BH",sep=",",padj.family=c("overlap","all"),...)
@@ -277,7 +277,7 @@ setGeneric("richDot", function(object,top=50,pvalue=0.05,order=FALSE,
                              low="lightpink",high="red",alpha=0.7,
                              font.x="bold",font.y="bold",fontsize.x=10,fontsize.y=10,
                              short=FALSE,
-                             padj=NULL,usePadj=TRUE,orderp=FALSE,filename=NULL,width=10,height=8,...)
+                             padj=0.05,usePadj=TRUE,orderp=FALSE,filename=NULL,width=10,height=8,...)
     standardGeneric("richDot"))
 
 ##' richBar
@@ -312,7 +312,7 @@ setGeneric("richDot", function(object,top=50,pvalue=0.05,order=FALSE,
 #' }
 ##' @export
 ##' @author Kai Guo
-setGeneric("richBar", function(object,top=50,pvalue=0.05,padj=NULL,order=FALSE,
+setGeneric("richBar", function(object,top=50,pvalue=0.05,padj=0.05,order=FALSE,
                              usePadj=TRUE,fontsize.x=10,fontsize.y=10,short=FALSE,fontsize.text=3,angle=0,orderp=FALSE,
                              filename=NULL,
                              width=10,height=8,horiz=TRUE,...)
@@ -354,7 +354,7 @@ setGeneric("richBar", function(object,top=50,pvalue=0.05,padj=NULL,order=FALSE,
 #' }
 ##' @export
 ##' @author Kai Guo
-setGeneric("richNetplot",function(object,top=50, pvalue=0.05, padj=NULL,
+setGeneric("richNetplot",function(object,top=50, pvalue=0.05, padj=0.05,
                                 usePadj =TRUE, useTerm=TRUE,low="orange",high="red",
                                 writeCyt=FALSE, cytoscapeFile=NULL,
                                 label.color = "black", label.size = 2, node.shape=NULL,
@@ -407,7 +407,7 @@ setGeneric("richNetplot",function(object,top=50, pvalue=0.05, padj=NULL,
 #'   richNetwork(res)
 #' }
 ##' @export
-setGeneric("richNetwork", function(object,gene,top = 50, pvalue = 0.05, padj = NULL,usePadj=TRUE,low = "orange",high = "red",
+setGeneric("richNetwork", function(object,gene,top = 50, pvalue = 0.05, padj = 0.05,usePadj=TRUE,low = "orange",high = "red",
                                  weightcut = 0.2, useTerm = TRUE, writeCyt = FALSE,cytoscapeFile = NULL,cytoscapeFormat="graphml",
                                  label.color = "black", label.size = 2,node.shape=NULL, layout = "fruchtermanreingold",savefig=FALSE,
                                  visNet=FALSE,smooth=TRUE,nodeselect=FALSE,edit=FALSE,savehtml=FALSE,filename=NULL,

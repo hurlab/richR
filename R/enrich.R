@@ -29,7 +29,7 @@
 #' @param universe optional character vector defining the ORA background
 #' @param annotation_provenance optional annotation provenance captured from an Annot object
 #' @author Kai Guo
-enrich_internal<-function(x,object,ontology= "",pvalue=0.05,padj=NULL,organism=NULL,minSize=1,maxSize=500,
+enrich_internal<-function(x,object,ontology= "",pvalue=0.05,padj=0.05,organism=NULL,minSize=1,maxSize=500,
                           minGSSize = 10, maxGSSize = 500,
                           keepRich=TRUE,keytype="",filename=NULL,padj.method="BH",sep = ",",universe=NULL,
                           annotation_provenance=NULL,padj.family=c("overlap","all")){
@@ -85,7 +85,7 @@ enrich_internal<-function(x,object,ontology= "",pvalue=0.05,padj=NULL,organism=N
 #' @export
 #' @author Kai Guo
 #' @param universe optional character vector intersected with annotated genes to define the ORA background
-setMethod("enrich", signature(object = "data.frame"),definition = function(x,object,ontology="",pvalue=0.05,padj=NULL,organism=NULL,
+setMethod("enrich", signature(object = "data.frame"),definition = function(x,object,ontology="",pvalue=0.05,padj=0.05,organism=NULL,
                                                                              keytype="",filename=NULL,minSize=2,maxSize=500,
                                                                            minGSSize = 10, maxGSSize = 500,
                                                                              keepRich=TRUE,padj.method="BH",sep=",",universe=NULL,padj.family=c("overlap","all")) {
@@ -125,7 +125,7 @@ setMethod("enrich", signature(object = "data.frame"),definition = function(x,obj
 #' @export
 #' @author Kai Guo
 #' @param universe optional character vector intersected with annotated genes to define the ORA background
-setMethod("enrich", signature(object = "Annot"),definition = function(x,object,pvalue=0.05,padj=NULL,organism=NULL,
+setMethod("enrich", signature(object = "Annot"),definition = function(x,object,pvalue=0.05,padj=0.05,organism=NULL,
                                                                         keytype="",filename=NULL,minSize=2,maxSize=500,
                                                                       minGSSize = 10, maxGSSize = 500,
                                                                         keepRich=TRUE,padj.method="BH",sep=",",universe=NULL,builtin=TRUE,padj.family=c("overlap","all")) {
@@ -182,7 +182,7 @@ setMethod("enrich", signature(object = "Annot"),definition = function(x,object,p
 #' @export
 #' @author Kai Guo
 richDAVID <- function(gene,keytype="ENTREZ_GENE_ID",species="human",anntype="GOTERM_BP_FAT",
-                      universe,pvalue=0.05,padj=NULL,minSize=2,maxSize=500,
+                      universe,pvalue=0.05,padj=0.05,minSize=2,maxSize=500,
                       keepRich=TRUE, filename=NULL,padj.method="BH",sep=",",
                       david.user="richR@und.edu"){
   .check_cutoff(pvalue, "pvalue")

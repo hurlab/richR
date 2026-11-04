@@ -346,7 +346,7 @@
 #' @return richResult S4 object
 #' @keywords internal
 .run_ora <- function(x, annot, term_names = NULL, extra_cols = NULL,
-                     pvalue = 0.05, padj = NULL, padj.method = "BH",
+                     pvalue = 0.05, padj = 0.05, padj.method = "BH",
                      minSize = 2, maxSize = 500, minGSSize = 10, maxGSSize = 500,
                      keepRich = TRUE, organism = NULL, ontology = "",
                      keytype = "", filename = NULL, sep = ",", universe = NULL,

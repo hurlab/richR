@@ -10,7 +10,7 @@ test_that("batchEnrich combines exact returned rows and reports every group outc
   annot <- batch_test_annotation()
   groups <- list(success = c("A", "B"), empty = c("A", "C"), failed = character())
   expect_warning(result <- suppressMessages(richR::batchEnrich(
-    groups, annot, pvalue = 0.1, minSize = 1, minGSSize = 1,
+    groups, annot, pvalue = 0.1, padj = NULL, minSize = 1, minGSSize = 1,
     keepRich = FALSE, verbose = FALSE
   )), "failed for 'failed'")
 
@@ -69,7 +69,7 @@ test_that("batchEnrich returns valid all-empty reports and errors when all fail"
 test_that("batchEnrich reports a group-specific invalid-input failure", {
   expect_warning(result <- suppressMessages(richR::batchEnrich(
     list(valid = c("A", "B"), invalid = NA_character_),
-    batch_test_annotation(), pvalue = 0.1, minSize = 1, minGSSize = 1,
+    batch_test_annotation(), pvalue = 0.1, padj = NULL, minSize = 1, minGSSize = 1,
     keepRich = FALSE, verbose = FALSE
   )), "failed for 'invalid'")
   expect_identical(names(result$results), "valid")
@@ -81,7 +81,7 @@ test_that("batchEnrich combines exact p-value and adjusted-p results without a s
   annot <- batch_test_annotation()
   groups <- list(first = c("A", "B"), second = c("C", "D"))
   pvalue_batch <- suppressMessages(richR::batchEnrich(
-    groups, annot, pvalue = 0.1, minSize = 1, minGSSize = 1,
+    groups, annot, pvalue = 0.1, padj = NULL, minSize = 1, minGSSize = 1,
     keepRich = FALSE, verbose = FALSE
   ))
   expect_equal(vapply(pvalue_batch$results, function(x) nrow(x@result), integer(1)),

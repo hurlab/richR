@@ -4,7 +4,7 @@
 \alias{compareResult}
 \title{compare enrichment results across different samples}
 \usage{
-compareResult(x, pvalue = 0.05, padj = NULL, include.all = FALSE)
+compareResult(x, pvalue = 0.05, padj = 0.05, include.all = FALSE)
 }
 \arguments{
 \item{x}{Non-empty list of richResult objects, result data.frames, or NULL

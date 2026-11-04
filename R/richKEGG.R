@@ -32,7 +32,7 @@
 #' @param universe optional character vector defining the ORA background
 #' @param annotation_provenance optional annotation provenance captured from an Annot object
 #' @author Kai Guo
-richKEGG_internal<-function(x,kodata,pvalue=0.05,padj=NULL,ontology="KEGG",
+richKEGG_internal<-function(x,kodata,pvalue=0.05,padj=0.05,ontology="KEGG",
                             organism=NULL,keytype="SYMBOL",minSize=2,maxSize=500,
                             minGSSize = 10, maxGSSize = 500,
                             keepRich=TRUE, filename=NULL,padj.method="BH",builtin=TRUE,sep=",",universe=NULL,
@@ -99,7 +99,7 @@ richKEGG_internal<-function(x,kodata,pvalue=0.05,padj=NULL,ontology="KEGG",
 #' @export
 #' @author Kai Guo
 #' @param universe optional character vector intersected with annotated genes to define the ORA background
-setMethod("richKEGG", signature(kodata = "data.frame"),definition = function(x,kodata,pvalue=0.05,padj=NULL,organism=NULL,ontology="KEGG",
+setMethod("richKEGG", signature(kodata = "data.frame"),definition = function(x,kodata,pvalue=0.05,padj=0.05,organism=NULL,ontology="KEGG",
                                                                              keytype=NULL,minSize=2,maxSize=500,minGSSize = 10, maxGSSize = 500,
                                                                              keepRich=TRUE,filename=NULL,padj.method="BH",builtin=TRUE,sep=",",universe=NULL,padj.family=c("overlap","all")) {
   richKEGG_internal(x,kodata=kodata,pvalue=pvalue,padj=padj,
@@ -146,7 +146,7 @@ setMethod("richKEGG", signature(kodata = "data.frame"),definition = function(x,k
 #' @export
 #' @author Kai Guo
 #' @param universe optional character vector intersected with annotated genes to define the ORA background
-setMethod("richKEGG", signature(kodata = "Annot"),definition = function(x,kodata,pvalue=0.05,padj=NULL,organism=NULL,ontology="KEGG",
+setMethod("richKEGG", signature(kodata = "Annot"),definition = function(x,kodata,pvalue=0.05,padj=0.05,organism=NULL,ontology="KEGG",
                                                                         keytype=NULL,minSize=2,maxSize=500,minGSSize = 10, maxGSSize = 500,
                                                                         keepRich=TRUE,filename=NULL,padj.method="BH",builtin=TRUE,sep=",",universe=NULL,padj.family=c("overlap","all")) {
   provenance <- .annotation_provenance(kodata)

@@ -30,7 +30,7 @@
 #' @param universe optional character vector defining the ORA background
 #' @param annotation_provenance optional annotation provenance captured from an Annot object
 #' @author Kai Guo
-richGO_internal<-function(x,godata,ontology="BP",pvalue=0.05,padj=NULL,
+richGO_internal<-function(x,godata,ontology="BP",pvalue=0.05,padj=0.05,
                  organism=NULL,keytype="SYMBOL",minSize=2,maxSize=500,
                  minGSSize = 10, maxGSSize = 500,
                  keepRich=FALSE, filename=NULL,padj.method="BH",sep=",",universe=NULL,
@@ -113,7 +113,7 @@ richGO_internal<-function(x,godata,ontology="BP",pvalue=0.05,padj=NULL,
 #' @export
 #' @author Kai Guo
 #' @param universe optional character vector intersected with annotated genes to define the ORA background
-setMethod("richGO", signature(godata = "data.frame"),definition = function(x,godata,ontology="BP",pvalue=0.05,padj=NULL,
+setMethod("richGO", signature(godata = "data.frame"),definition = function(x,godata,ontology="BP",pvalue=0.05,padj=0.05,
                                                                            organism=NULL,keytype=NULL,minSize=2,maxSize=500,
                                                                            minGSSize = 10, maxGSSize = 500,
                                                                            keepRich=TRUE, filename=NULL,padj.method="BH",sep=",",universe=NULL,padj.family=c("overlap","all")) {
@@ -160,7 +160,7 @@ setMethod("richGO", signature(godata = "data.frame"),definition = function(x,god
 #' @export
 #' @author Kai Guo
 #' @param universe optional character vector intersected with annotated genes to define the ORA background
-setMethod("richGO", signature(godata = "Annot"),definition = function(x,godata,ontology="BP",pvalue=0.05,padj=NULL,minSize=2,maxSize=500,
+setMethod("richGO", signature(godata = "Annot"),definition = function(x,godata,ontology="BP",pvalue=0.05,padj=0.05,minSize=2,maxSize=500,
                                                                       minGSSize = 10, maxGSSize = 500,
                                                                       keepRich=TRUE,filename=NULL,padj.method="BH",sep=",",universe=NULL,padj.family=c("overlap","all")) {
   provenance <- .annotation_provenance(godata)

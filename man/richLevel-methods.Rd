@@ -9,7 +9,7 @@ richLevel(
   kodata,
   level = "Level2",
   pvalue = 0.05,
-  padj = NULL,
+  padj = 0.05,
   organism = NULL,
   keytype = "SYMBOL",
   ontology = "",

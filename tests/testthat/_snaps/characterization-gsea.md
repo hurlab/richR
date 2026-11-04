@@ -11,7 +11,7 @@
     "G01,G02,G03,G04,G05,G06,G08,G10", "G39,G33", ""), Term = c("top pathway", 
     "down pathway", "up pathway", "mixed pathway", "middle pathway"
     )), row.names = c(4L, 2L, 1L, 3L, 5L), class = "data.frame"), 
-        slots = list(pvalueCutoff = 1, pAdjustMethod = "BH", padjCutoff = numeric(0), 
+        slots = list(pvalueCutoff = 1, pAdjustMethod = "BH", padjCutoff = 1, 
             genenumber = 40L, organism = character(0), gene = c("G40", 
             "G39", "G38", "G37", "G36", "G35", "G34", "G33", "G32", 
             "G31", "G30", "G29", "G28", "G27", "G26", "G25", "G24", 
@@ -43,7 +43,7 @@
     "G38,G37,G36,G35,G34,G33,G32,G31", "G02", ""), Term = c("top pathway", 
     "up pathway", "down pathway", "mixed pathway", "middle pathway"
     )), row.names = c(4L, 1L, 2L, 3L, 5L), class = "data.frame"), 
-        slots = list(pvalueCutoff = 1, pAdjustMethod = "BH", padjCutoff = numeric(0), 
+        slots = list(pvalueCutoff = 1, pAdjustMethod = "BH", padjCutoff = 1, 
             genenumber = 40L, organism = character(0), gene = c("G40", 
             "G39", "G38", "G37", "G36", "G35", "G34", "G33", "G32", 
             "G31", "G30", "G29", "G28", "G27", "G26", "G25", "G24", 
@@ -73,7 +73,7 @@
     "G38,G37,G36,G35,G34,G33,G32,G31", "G01,G02,G03,G04,G05,G06,G08,G10"
     ), Term = c("top pathway", "down pathway", "up pathway")), row.names = c(4L, 
     2L, 1L), class = "data.frame"), slots = list(pvalueCutoff = 0.05, 
-        pAdjustMethod = "BH", padjCutoff = numeric(0), genenumber = 40L, 
+        pAdjustMethod = "BH", padjCutoff = 0.05, genenumber = 40L, 
         organism = character(0), gene = c("G40", "G39", "G38", "G37", 
         "G36", "G35", "G34", "G33", "G32", "G31", "G30", "G29", "G28", 
         "G27", "G26", "G25", "G24", "G23", "G22", "G21", "G20", "G19", 

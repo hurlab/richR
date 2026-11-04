@@ -29,7 +29,7 @@
 ##' @param repel use ggrepel text function or not
 ##' @param segment.size segment size for ggrepel text
 ##' @param sep character string used to separate the genes when concatenating
-ggrich_internal <- function(object,top=50, pvalue=0.05, padj=NULL,
+ggrich_internal <- function(object,top=50, pvalue=0.05, padj=0.05,
                             usePadj =TRUE, useTerm=TRUE,low="orange",high="red",
                             writeCyt=FALSE, cytoscapeFile="network-file-for-cytoscape.txt",
                             label.color = "black", label.size = 2, node.shape=NULL,
@@ -133,7 +133,7 @@ ggrich_internal <- function(object,top=50, pvalue=0.05, padj=NULL,
 ##' }
 ##' @export
 ##' @author Kai Guo
-setMethod("richNetplot", signature(object = "richResult"),definition = function(object,top=50, pvalue=0.05, padj=NULL,
+setMethod("richNetplot", signature(object = "richResult"),definition = function(object,top=50, pvalue=0.05, padj=0.05,
                                                                            usePadj =TRUE, useTerm=TRUE,low="orange",high="red",
                                                                            writeCyt=FALSE, cytoscapeFile="network-file-for-cytoscape.txt",
                                                                            label.color = "black", label.size = 2, node.shape=NULL,
@@ -180,7 +180,7 @@ setMethod("richNetplot", signature(object = "richResult"),definition = function(
 ##' }
 ##' @export
 ##' @author Kai Guo
-setMethod("richNetplot", signature(object = "data.frame"),definition = function(object,top=50, pvalue=0.05, padj=NULL,
+setMethod("richNetplot", signature(object = "data.frame"),definition = function(object,top=50, pvalue=0.05, padj=0.05,
                                                                            usePadj =TRUE, useTerm=TRUE,low="orange",high="red",
                                                                            writeCyt=FALSE, cytoscapeFile="network-file-for-cytoscape.txt",
                                                                            label.color = "black", label.size = 2, node.shape=NULL,
@@ -227,7 +227,7 @@ setMethod("richNetplot", signature(object = "data.frame"),definition = function(
 #' res<-richKEGG(gene,object = hsako)
 #' richNetplot(res)
 ##' }
-setMethod("richNetplot", signature(object = "GSEAResult"),definition = function(object,top=50, pvalue=0.05, padj=NULL,
+setMethod("richNetplot", signature(object = "GSEAResult"),definition = function(object,top=50, pvalue=0.05, padj=0.05,
                                                                               usePadj =TRUE, useTerm=TRUE,low="orange",high="red",
                                                                               writeCyt=FALSE, cytoscapeFile="network-file-for-cytoscape.txt",
                                                                               label.color = "black", label.size = 2, node.shape=NULL,

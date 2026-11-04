@@ -11,7 +11,7 @@ richDAVID(
   anntype = "GOTERM_BP_FAT",
   universe,
   pvalue = 0.05,
-  padj = NULL,
+  padj = 0.05,
   minSize = 2,
   maxSize = 500,
   keepRich = TRUE,

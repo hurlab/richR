@@ -8,7 +8,7 @@ ggvolcano_internal(
   resultFis,
   top = 50,
   pvalue = 0.05,
-  padj = NULL,
+  padj = 0.05,
   usePadj = TRUE,
   low = "#2166ac",
   mid = "white",

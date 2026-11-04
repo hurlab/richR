@@ -8,7 +8,7 @@ richKEGG(
   x,
   kodata,
   pvalue = 0.05,
-  padj = NULL,
+  padj = 0.05,
   organism = NULL,
   ontology = "KEGG",
   keytype = NULL,

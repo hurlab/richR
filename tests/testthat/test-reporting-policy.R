@@ -298,3 +298,47 @@ test_that("ORA, GSEA, compare and plot entry points share one cutoff rule", {
   expect_s3_class(richR::richDot(frame, pvalue = 1, padj = 1), "ggplot")
   expect_type(richR::getPathways(gsea, pval_cutoff = 1, padj_cutoff = 1), "character")
 })
+
+# Defaults (REQ-014): every exported function, S4 generic and S4 method that
+# takes pvalue and padj defaults to pvalue = 0.05 and padj = 0.05.
+policy_cutoff_defaults <- function(fun) {
+  fm <- formals(fun)
+  if (!"padj" %in% names(fm)) return(NULL)
+  list(pvalue = fm$pvalue, padj = fm$padj)
+}
+
+test_that("exported functions, generics and methods default to pvalue = padj = 0.05", {
+  ns <- asNamespace("richR")
+  checked <- 0L
+  for (nm in getNamespaceExports("richR")) {
+    fun <- get(nm, envir = ns)
+    if (!is.function(fun)) next
+    funs <- list(fun)
+    if (methods::isGeneric(nm, where = ns)) {
+      funs <- c(funs, lapply(methods::findMethods(nm, where = ns),
+                             methods::unRematchDefinition))
+    }
+    for (f in funs) {
+      d <- policy_cutoff_defaults(f)
+      if (is.null(d)) next
+      checked <- checked + 1L
+      expect_identical(d$padj, 0.05, info = nm)
+      expect_identical(d$pvalue, 0.05, info = nm)
+    }
+  }
+  expect_gt(checked, 50L)
+})
+
+test_that("ORA under the default cutoffs applies the adjusted cutoff; padj = NULL is raw-only", {
+  query <- .char_read("ora_query.csv")$GeneID
+  annot <- .char_read("ora_annot.csv", character = TRUE)
+  # The fixture's smallest Padj is 0.0690, so padj = 0.05 reports nothing.
+  default <- suppressMessages(richR::enrich(query, annot, pvalue = 0.5, minSize = 2,
+                                            minGSSize = 3, keepRich = TRUE))
+  expect_identical(nrow(default@result), 0L)
+  expect_identical(default@padjCutoff, 0.05)
+  raw_only <- suppressMessages(richR::enrich(query, annot, pvalue = 0.5, padj = NULL,
+                                             minSize = 2, minGSSize = 3, keepRich = TRUE))
+  expect_gt(nrow(raw_only@result), 0L)
+  expect_identical(raw_only@padjCutoff, numeric(0))
+})

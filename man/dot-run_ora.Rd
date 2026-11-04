@@ -10,7 +10,7 @@
   term_names = NULL,
   extra_cols = NULL,
   pvalue = 0.05,
-  padj = NULL,
+  padj = 0.05,
   padj.method = "BH",
   minSize = 2,
   maxSize = 500,

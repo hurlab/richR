@@ -40,7 +40,7 @@
 ##' @importFrom igraph V<-
 ##' @importFrom igraph write_graph
 ##' @author Kai Guo
-ggnetwork_internal<-function (object=object,gene=gene,top = 50, pvalue = 0.05, padj = NULL,usePadj=TRUE,low = "orange",high = "red",
+ggnetwork_internal<-function (object=object,gene=gene,top = 50, pvalue = 0.05, padj = 0.05,usePadj=TRUE,low = "orange",high = "red",
                               weightcut = 0.2, useTerm = TRUE, writeCyt = FALSE,cytoscapeFile = NULL,cytoscapeFormat="graphml",
                               label.color = "black", label.size = 2,node.shape=NULL, layout = "fruchtermanreingold",savefig=FALSE,
                               visNet=FALSE,smooth=TRUE,nodeselect=FALSE,edit=FALSE,savehtml=FALSE,filename=NULL,
@@ -228,7 +228,7 @@ ggnetwork_internal<-function (object=object,gene=gene,top = 50, pvalue = 0.05, p
 ##' @param ... additional arguments
 ##' @export
 ##' @author Kai Guo
-setMethod("richNetwork", signature(object = "richResult"),definition = function(object,top = 50, pvalue = 0.05, padj = NULL,usePadj=TRUE,low = "orange",high = "red",
+setMethod("richNetwork", signature(object = "richResult"),definition = function(object,top = 50, pvalue = 0.05, padj = 0.05,usePadj=TRUE,low = "orange",high = "red",
                                                                               weightcut = 0.2, useTerm = TRUE, writeCyt = FALSE,cytoscapeFile = NULL,cytoscapeFormat="graphml",
                                                                               label.color = "black", label.size = 2,node.shape=NULL, layout = "fruchtermanreingold",savefig=FALSE,
                                                                               visNet=FALSE,smooth=TRUE,nodeselect=FALSE,edit=FALSE,savehtml=FALSE,filename=NULL,
@@ -274,7 +274,7 @@ setMethod("richNetwork", signature(object = "richResult"),definition = function(
 ##' @param ... additional arguments
 ##' @export
 ##' @author Kai Guo
-setMethod("richNetwork", signature(object = "data.frame"),definition = function(object,gene=NULL,top = 50, pvalue = 0.05, padj = NULL,usePadj=TRUE,low = "orange",high = "red",
+setMethod("richNetwork", signature(object = "data.frame"),definition = function(object,gene=NULL,top = 50, pvalue = 0.05, padj = 0.05,usePadj=TRUE,low = "orange",high = "red",
                                                                               weightcut = 0.2, useTerm = TRUE, writeCyt = FALSE,cytoscapeFile = NULL,cytoscapeFormat="graphml",
                                                                               label.color = "black", label.size = 2,node.shape=NULL, layout = "fruchtermanreingold",savefig=FALSE,
                                                                               visNet=FALSE,smooth=TRUE,nodeselect=FALSE,edit=FALSE,savehtml=FALSE,filename=NULL,
@@ -320,7 +320,7 @@ setMethod("richNetwork", signature(object = "data.frame"),definition = function(
 ##' @param ... additional arguments
 ##' @export
 ##' @author Kai Guo
-setMethod("richNetwork", signature(object = "GSEAResult"),definition = function(object,gene,top = 50, pvalue = 0.05, padj = NULL,usePadj=TRUE,low = "orange",high = "red",
+setMethod("richNetwork", signature(object = "GSEAResult"),definition = function(object,gene,top = 50, pvalue = 0.05, padj = 0.05,usePadj=TRUE,low = "orange",high = "red",
                                                                               weightcut = 0.2, useTerm = TRUE, writeCyt = FALSE,cytoscapeFile = NULL,cytoscapeFormat="graphml",
                                                                               label.color = "black", label.size = 2,node.shape=NULL, layout = "fruchtermanreingold",savefig=FALSE,
                                                                               visNet=FALSE,smooth=TRUE,nodeselect=FALSE,edit=FALSE,savehtml=FALSE,filename="network",

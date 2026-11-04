@@ -41,7 +41,7 @@
 #' }
 ##' @export
 ##' @author Kai Guo
-richNetmap<-function(richRes,gene=NULL,top=50,top.display=NULL,pvalue = 0.05, padj = NULL,usePadj=TRUE,low = "orange",high = "red",
+richNetmap<-function(richRes,gene=NULL,top=50,top.display=NULL,pvalue = 0.05, padj = 0.05,usePadj=TRUE,low = "orange",high = "red",
                    weightcut = 0.2, useTerm = TRUE, writeCyt = FALSE,cytoscapeFile = "cytoscape.txt",cytoscapeFormat="graphml",
                    label.color = "black", label.size = 2,node.shape=NULL, layout = "fruchtermanreingold",savefig=FALSE,
                    visNet=FALSE,smooth=TRUE,nodeselect=FALSE,edit=FALSE,savehtml=FALSE,filename="network",

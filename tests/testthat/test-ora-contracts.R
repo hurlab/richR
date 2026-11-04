@@ -25,7 +25,7 @@ test_that("annotation membership normalization validates and deduplicates rows",
 
   identity_named <- data.frame(data = c("A", "B", "C"), counts = c("T", "T", "U"))
   direct <- suppressMessages(richR:::.run_ora(
-    "A", identity_named, pvalue = 1, minSize = 1, minGSSize = 1,
+    "A", identity_named, pvalue = 1, padj = 1, minSize = 1, minGSSize = 1,
     keepRich = FALSE
   ))
   expect_equal(direct@result$Annotated, 2)
@@ -48,7 +48,7 @@ test_that("ORA membership counts and keepRich filtering use both bounds", {
     Term = c("T1", "T1", "T1", "T2", "T2", "T3", "T4", "T5")
   )
   result <- suppressMessages(richR:::enrich_internal(
-    "A", annot, pvalue = 1, minSize = 1, maxSize = 10,
+    "A", annot, pvalue = 1, padj = 1, minSize = 1, maxSize = 10,
     minGSSize = 1, maxGSSize = 10, keepRich = FALSE
   ))
   expect_equal(result@result$Annotated[result@result$Annot == "T1"], 2)
@@ -83,7 +83,7 @@ test_that("GO membership normalization precedes ontology selection", {
   )
 
   expect_warning(result <- suppressMessages(richR::richGO(
-    c("A", "B"), godata = annot, ontology = "BP", pvalue = 1,
+    c("A", "B"), godata = annot, ontology = "BP", pvalue = 1, padj = 1,
     minSize = 1, minGSSize = 1, keepRich = FALSE
   )), "excluded 1 invalid annotation row")
 
@@ -98,11 +98,11 @@ test_that("ORA correction covers positive overlaps before reporting size filters
     Term = c("T1", "T1", "T2", "T2", "T3", "T3", "T4", "T4", "T5", "T5")
   )
   full <- suppressMessages(richR:::enrich_internal(
-    c("A", "B", "C"), annot, pvalue = 1, minSize = 1,
+    c("A", "B", "C"), annot, pvalue = 1, padj = 1, minSize = 1,
     minGSSize = 1, keepRich = FALSE
   ))
   filtered <- suppressMessages(richR:::enrich_internal(
-    c("A", "B", "C"), annot, pvalue = 1, minSize = 2,
+    c("A", "B", "C"), annot, pvalue = 1, padj = 1, minSize = 2,
     minGSSize = 1, keepRich = FALSE
   ))
 

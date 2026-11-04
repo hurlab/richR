@@ -9,7 +9,7 @@ enrich_internal(
   object,
   ontology = "",
   pvalue = 0.05,
-  padj = NULL,
+  padj = 0.05,
   organism = NULL,
   minSize = 1,
   maxSize = 500,

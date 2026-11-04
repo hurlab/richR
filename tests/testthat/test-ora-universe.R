@@ -9,7 +9,7 @@ test_that("ORA uses the supplied effective universe for its hypergeometric test"
 
   res <- suppressMessages(richR::enrich(
     query, annot, universe = c("A", "B", "C", "D"),
-    pvalue = 1, minSize = 1, minGSSize = 1, keepRich = FALSE
+    pvalue = 1, padj = 1, minSize = 1, minGSSize = 1, keepRich = FALSE
   ))
 
   expect_equal(res@result$Pvalue[match(names(expected_p), res@result$Annot)],
@@ -24,22 +24,22 @@ test_that("ORA uses the supplied effective universe for its hypergeometric test"
                 keytype = "SYMBOL", annot = annot)
   object_result <- suppressMessages(richR::enrich(
     query, object, universe = c("A", "B", "C", "D"),
-    pvalue = 1, minSize = 1, minGSSize = 1, keepRich = FALSE
+    pvalue = 1, padj = 1, minSize = 1, minGSSize = 1, keepRich = FALSE
   ))
   expect_equal(object_result@result, res@result)
   object_sep <- suppressMessages(richR::enrich(
     query, object, universe = c("A", "B", "C", "D"),
-    pvalue = 1, minSize = 1, minGSSize = 1, keepRich = FALSE,
+    pvalue = 1, padj = 1, minSize = 1, minGSSize = 1, keepRich = FALSE,
     sep = "|", builtin = FALSE
   ))
   expect_equal(object_sep@result$GeneID[match("T1", object_sep@result$Annot)], "A|B")
 
   default <- suppressMessages(richR::enrich(
-    query, annot, pvalue = 1, minSize = 1, minGSSize = 1, keepRich = FALSE
+    query, annot, pvalue = 1, padj = 1, minSize = 1, minGSSize = 1, keepRich = FALSE
   ))
   all_genes <- suppressMessages(richR::enrich(
     query, annot, universe = c("A", "B", "C", "D", "E", "F"),
-    pvalue = 1, minSize = 1, minGSSize = 1, keepRich = FALSE
+    pvalue = 1, padj = 1, minSize = 1, minGSSize = 1, keepRich = FALSE
   ))
   expect_equal(all_genes@result, default@result)
   positional <- suppressMessages(richR::enrich(
@@ -53,7 +53,7 @@ test_that("ORA cleans explicit universes and errors when no effective query rema
   annot <- data.frame(GeneID = c("A", "B", "C"), Term = c("T", "T", "U"))
   res <- suppressMessages(richR::enrich(
     c("A", "B", "X"), annot, universe = c("A", "C", "Y", "Y", NA, ""),
-    pvalue = 1, minSize = 1, minGSSize = 1, keepRich = FALSE
+    pvalue = 1, padj = 1, minSize = 1, minGSSize = 1, keepRich = FALSE
   ))
   expect_equal(res@result$Pvalue[match("T", res@result$Annot)],
                stats::phyper(0, 1, 1, 1, lower.tail = FALSE))
@@ -83,7 +83,7 @@ test_that("richGO restricts the universe after selecting its ontology", {
   )
   res <- suppressMessages(richR::richGO(
     c("A", "B"), annot, ontology = "BP", universe = c("A", "B", "C", "D", "E"),
-    pvalue = 1, minSize = 1, minGSSize = 1, keepRich = FALSE
+    pvalue = 1, padj = 1, minSize = 1, minGSSize = 1, keepRich = FALSE
   ))
   expect_equal(res@result$Pvalue[match(c("T1", "T2"), res@result$Annot)],
                c(stats::phyper(1, 2, 2, 2, lower.tail = FALSE),
@@ -92,7 +92,7 @@ test_that("richGO restricts the universe after selecting its ontology", {
                 keytype = "SYMBOL", annot = annot)
   object_result <- suppressMessages(richR::richGO(
     c("A", "B"), object, ontology = "BP", universe = c("A", "B", "C", "D", "E"),
-    pvalue = 1, minSize = 1, minGSSize = 1, keepRich = FALSE
+    pvalue = 1, padj = 1, minSize = 1, minGSSize = 1, keepRich = FALSE
   ))
   expect_equal(object_result@result, res@result)
 })
@@ -104,7 +104,7 @@ test_that("richKEGG applies the effective universe for data.frame and Annot inpu
   expected <- stats::phyper(1, 2, 2, 2, lower.tail = FALSE)
   res <- suppressMessages(richR::richKEGG(
     c("A", "B"), annot, universe = c("A", "B", "C", "D"),
-    pvalue = 1, minSize = 1, minGSSize = 1, keepRich = FALSE
+    pvalue = 1, padj = 1, minSize = 1, minGSSize = 1, keepRich = FALSE
   ))
   expect_equal(res@result$Pvalue[match(terms[1], res@result$Annot)], expected)
 
@@ -112,7 +112,7 @@ test_that("richKEGG applies the effective universe for data.frame and Annot inpu
                 keytype = "SYMBOL", annot = annot)
   object_result <- suppressMessages(richR::richKEGG(
     c("A", "B"), object, universe = c("A", "B", "C", "D"),
-    pvalue = 1, minSize = 1, minGSSize = 1, keepRich = FALSE
+    pvalue = 1, padj = 1, minSize = 1, minGSSize = 1, keepRich = FALSE
   ))
   expect_equal(object_result@result, res@result)
 })
@@ -122,7 +122,7 @@ test_that("batchEnrich forwards the universe to ORA methods", {
                       Term = c("T1", "T1", "T2", "T2"))
   batch <- suppressMessages(richR::batchEnrich(
     list(sample = c("A", "B")), annot, fun = "enrich", verbose = FALSE,
-    universe = c("A", "B", "C"), pvalue = 1, minSize = 1,
+    universe = c("A", "B", "C"), pvalue = 1, padj = 1, minSize = 1,
     minGSSize = 1, keepRich = FALSE
   ))
   result <- batch$results[["sample"]]

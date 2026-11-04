@@ -8,7 +8,7 @@ richKEGG_internal(
   x,
   kodata,
   pvalue = 0.05,
-  padj = NULL,
+  padj = 0.05,
   ontology = "KEGG",
   organism = NULL,
   keytype = "SYMBOL",

@@ -81,7 +81,7 @@
 #' @param func_name name of calling function
 #' @return the input data.frame (may be zero-row)
 #' @keywords internal
-.handleEmptyResult <- function(resultFis, pvalue = 0.05, padj = NULL, func_name = "enrich") {
+.handleEmptyResult <- function(resultFis, pvalue = 0.05, padj = 0.05, func_name = "enrich") {
   if (nrow(resultFis) == 0) {
     message(func_name, ": no significant terms found. Consider:\n",
             "  - Increasing the cutoffs (current: pvalue <= ", pvalue,

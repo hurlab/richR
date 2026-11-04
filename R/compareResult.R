@@ -21,7 +21,7 @@
 #' }
 #' @author Kai Guo
 #' @export
-compareResult<-function (x, pvalue = 0.05, padj = NULL,include.all=FALSE)
+compareResult<-function (x, pvalue = 0.05, padj = 0.05,include.all=FALSE)
 {
   if (!is.list(x) || length(x) == 0L) {
     stop("x must be a non-empty list of enrichment results.", call. = FALSE)
@@ -119,7 +119,7 @@ compareResult<-function (x, pvalue = 0.05, padj = NULL,include.all=FALSE)
 richCompareDot<-function (x, pvalue = 0.05, low = "lightpink", high = "red",level="Level3",
                       pathway=NULL,
                       alpha = 0.7, font.x = "bold", font.y = "bold", fontsize.x = 10,
-                      fontsize.y = 10, short = FALSE, padj = NULL, usePadj = TRUE,
+                      fontsize.y = 10, short = FALSE, padj = 0.05, usePadj = TRUE,
                       filename = NULL, width = 10, height = 8,include.all=FALSE)
 {
   group_levels <- if (is.factor(x$group)) levels(x$group) else unique(as.character(x$group))
@@ -207,7 +207,7 @@ richCompareDot<-function (x, pvalue = 0.05, low = "lightpink", high = "red",leve
 #' @author Kai Guo
 #' @export
 compareGSEA<-function(x,object,gene=NULL,pathway=NULL,
-                      mycol=NULL,pvalue = 0.05, padj = NULL,label=FALSE,
+                      mycol=NULL,pvalue = 0.05, padj = 0.05,label=FALSE,
                       gseaParam = 1, ticksSize = 0.2,ncol=2,scales="fixed"){
   # The cutoffs are compared by the significance predicate outside any data
   # mask, so they can never resolve to the same-named columns (padj, pval) of

@@ -8,7 +8,7 @@ batch_test_annotation <- function() {
 
 batch_test_result <- function(genes, cutoff = 0.1) {
   suppressMessages(richR::enrich(
-    genes, batch_test_annotation(), pvalue = cutoff, minSize = 1,
+    genes, batch_test_annotation(), pvalue = cutoff, padj = NULL, minSize = 1,
     minGSSize = 1, keepRich = FALSE
   ))
 }
@@ -17,7 +17,7 @@ test_that("compareResult preserves unnamed and distinct explicit group identitie
   first <- batch_test_result(c("A", "B"))
   second <- batch_test_result(c("C", "D"))
 
-  unnamed <- richR::compareResult(list(first, second), pvalue = 0.1)
+  unnamed <- richR::compareResult(list(first, second), pvalue = 0.1, padj = NULL)
   expect_identical(unique(unnamed$group), c("Group 1", "Group 2"))
   expect_identical(unnamed$Annot, c("T1", "T2"))
 
@@ -44,12 +44,12 @@ test_that("compareResult keeps its strict cutoff policy and real extra columns",
 
   strict <- richR::compareResult(list(first = first, second = second))
   expect_equal(nrow(strict), 0L)
-  retained <- richR::compareResult(list(first = first, second = second), pvalue = 0.1)
+  retained <- richR::compareResult(list(first = first, second = second), pvalue = 0.1, padj = NULL)
   expect_equal(retained$Pvalue, c(1 / 15, 1 / 15), tolerance = 1e-12)
   expect_identical(retained$group, c("first", "second"))
 
   with_extra <- richR::compareResult(
-    list(first = first_df, second = second_df), pvalue = 0.1
+    list(first = first_df, second = second_df), pvalue = 0.1, padj = NULL
   )
   expect_identical(with_extra$extra_first, c("first", NA_character_))
   expect_identical(with_extra$extra_second, c(NA_integer_, 7L))
@@ -61,14 +61,14 @@ test_that("include-all comparison preserves group axes without synthetic terms",
   empty <- batch_test_result(c("A", "B"), cutoff = 0.05)
 
   all_nonempty <- richR::compareResult(
-    list(first = first, second = second), pvalue = 0.1, include.all = TRUE
+    list(first = first, second = second), pvalue = 0.1, padj = NULL, include.all = TRUE
   )
   expect_identical(levels(all_nonempty$group), c("first", "second"))
   expect_equal(nrow(all_nonempty), nrow(first@result) + nrow(second@result))
   expect_false(any(all_nonempty$Pvalue == 1))
 
   mixed <- richR::compareResult(
-    list(first = first, empty = empty, missing = NULL), pvalue = 0.1,
+    list(first = first, empty = empty, missing = NULL), pvalue = 0.1, padj = NULL,
     include.all = TRUE
   )
   expect_identical(levels(mixed$group), c("first", "empty", "missing"))
@@ -96,7 +96,7 @@ test_that("include-all plots retain empty axes and draw only real results", {
   first <- batch_test_result(c("A", "B"))
   empty <- batch_test_result(c("A", "B"), cutoff = 0.05)
   compared <- richR::compareResult(
-    list(first = first, empty = empty, missing = NULL), pvalue = 0.1,
+    list(first = first, empty = empty, missing = NULL), pvalue = 0.1, padj = NULL,
     include.all = TRUE
   )
 
@@ -113,7 +113,7 @@ test_that("include-all plots retain empty axes and draw only real results", {
   expect_identical(filtered_labels, c("first", "empty", "missing"))
 
   dropped_plot <- richR::richCompareDot(
-    compared, pvalue = 0.1, pathway = "T1", level = "Term"
+    compared, pvalue = 0.1, padj = NULL, pathway = "T1", level = "Term"
   )
   dropped_build <- ggplot2::ggplot_build(dropped_plot)
   expect_identical(dropped_build$layout$panel_params[[1]]$x$get_labels(), "first")
@@ -143,7 +143,7 @@ test_that("compareResult keeps values equal to the cutoffs without extra guards"
     RichFactor = c(0.5, 0.5, 0.5), GeneID = c("A", "B", "C"),
     stringsAsFactors = FALSE
   )
-  pfiltered <- richR::compareResult(list(g = boundary), pvalue = 0.05)
+  pfiltered <- richR::compareResult(list(g = boundary), pvalue = 0.05, padj = NULL)
   expect_identical(pfiltered$Annot, c("p-boundary", "padj-boundary", "inside"))
   padj_filtered <- richR::compareResult(list(g = boundary), padj = 1)
   expect_identical(padj_filtered$Annot, c("p-boundary", "padj-boundary", "inside"))

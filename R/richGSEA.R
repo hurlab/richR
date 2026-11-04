@@ -284,7 +284,7 @@
 #' @param annotation_provenance optional annotation provenance captured from an Annot object
 #' @importFrom fgsea fgseaMultilevel
 #' @author Kai Guo
-richGSEA_internal<-function(x,object,keytype="",pvalue=0.05,padj=NULL,KEGG=FALSE,minSize=15,maxSize=500,
+richGSEA_internal<-function(x,object,keytype="",pvalue=0.05,padj=0.05,KEGG=FALSE,minSize=15,maxSize=500,
                             padj.method="BH",organism=NULL,ontology=NULL,table=TRUE,sep=",",
                             eps=NULL,scoreType=NULL,nproc=NULL,BPPARAM=NULL,seed=NULL,
                             annotation_provenance=NULL){
@@ -467,7 +467,7 @@ richGSEA_internal<-function(x,object,keytype="",pvalue=0.05,padj=NULL,KEGG=FALSE
 #' res<-richGSEA(gene,object = hsako)
 #' }
 #' @author Kai Guo
-setMethod("richGSEA", signature(object = "data.frame"),definition = function(x,object,keytype="",pvalue=0.05,padj=NULL,KEGG=FALSE,minSize=15,ontology="",
+setMethod("richGSEA", signature(object = "data.frame"),definition = function(x,object,keytype="",pvalue=0.05,padj=0.05,KEGG=FALSE,minSize=15,ontology="",
                                                                              maxSize=500,padj.method="BH",organism=NULL,table=TRUE,sep=",",
                                                                              eps=NULL,scoreType=NULL,nproc=NULL,BPPARAM=NULL,seed=NULL) {
   richGSEA_internal(x,object,keytype=keytype,pvalue=pvalue,padj=padj,KEGG=KEGG,minSize=minSize,ontology=ontology,
@@ -507,7 +507,7 @@ setMethod("richGSEA", signature(object = "data.frame"),definition = function(x,o
 #' @param seed optional seed scoped to this GSEA call
 #' @details Gene sets are keyed by identifier and labelled afterwards; see the
 #'   \code{data.frame} method for the identifier and label rules.
-setMethod("richGSEA", signature(object = "Annot"),definition = function(x,object,keytype="",pvalue=0.05,padj=NULL,KEGG=FALSE,minSize=15,ontology="",
+setMethod("richGSEA", signature(object = "Annot"),definition = function(x,object,keytype="",pvalue=0.05,padj=0.05,KEGG=FALSE,minSize=15,ontology="",
                                                                         maxSize=500,padj.method="BH",organism=NULL,table=TRUE,sep=",",
                                                                         eps=NULL,scoreType=NULL,nproc=NULL,BPPARAM=NULL,seed=NULL) {
   provenance <- .annotation_provenance(object)
@@ -634,7 +634,7 @@ richGSEAcurve <- function(object, gseaRes, mycol = NULL,
                      up_color = "#E31A1C", down_color = "#1F78B4", show_direction = TRUE,
                      pathways = NULL, pathway_pattern = NULL, category = NULL,
                      min_genes = NULL, max_genes = NULL, top = 10,
-                     pvalue = 0.05, padj = NULL, gseaParam = 1, ticksSize = 0.2,
+                     pvalue = 0.05, padj = 0.05, gseaParam = 1, ticksSize = 0.2,
                      plot_title = "GSEA Enrichment Plot", show_pathway_names = FALSE,
                      pathway_name_size = 10, line_alpha = 0.8, point_alpha = 0.6,
                      legend_position = "bottom", legend_ncol = 2,
@@ -1220,7 +1220,7 @@ filterPathways <- function(gseaRes, nes_cutoff = NULL, padj_cutoff = 0.05, pval_
 #' @author Kai Guo
 parGSEA<-function(x,object,log2FC="log2FoldChange",gene.col=NULL,
                   simplify=FALSE,keytype="",
-                  pvalue=0.05,padj=NULL,KEGG=FALSE,minSize=15,ontology="",
+                  pvalue=0.05,padj=0.05,KEGG=FALSE,minSize=15,ontology="",
                   maxSize=500,padj.method="BH",organism=NULL,table=TRUE,sep=",",
                   eps=NULL,scoreType=NULL,nproc=NULL,BPPARAM=NULL,seed=NULL){
   fc<-x[,log2FC]

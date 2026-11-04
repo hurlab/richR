@@ -52,38 +52,6 @@ setMethod(
 #' @rdname subset-methods
 NULL
 
-#' @rdname subset-methods
-#' @aliases [,Annot-method
-setMethod(
-  f = "[",
-  signature = signature(x = "Annot", i = "ANY", j = "ANY", drop = "ANY"),
-  definition = function(x, i, j, ..., drop = TRUE) {
-    x@annot[i, j, drop = drop]
-  }
-)
-
-#' @rdname subset-methods
-#' @aliases [,richResult-method
-setMethod(
-  f = "[",
-  signature = signature(x = "richResult", i = "ANY", j = "ANY", drop = "ANY"),
-  definition = function(x, i, j, ..., drop = TRUE) {
-    x@result[i, j, drop = drop]
-  }
-)
-
-#' @rdname subset-methods
-#' @aliases [,GSEAResult-method
-setMethod(
-  f = "[",
-  signature = signature(x = "GSEAResult", i = "ANY", j = "ANY", drop = "ANY"),
-  definition = function(x, i, j, ..., drop = TRUE) {
-    # if GSEAResult extends richResult, you might simply do:
-    # callNextMethod() or x@result[i, j, drop=drop]
-    x@result[i, j, drop = drop]
-  }
-)
-
 #' S4 `$` accessors for Annot and richResult
 #'
 #' Provide `obj$name` access that extracts from the relevant slot columns.
@@ -94,39 +62,6 @@ setMethod(
 #' @name dollar-methods
 #' @rdname dollar-methods
 NULL
-
-#' @rdname dollar-methods
-#' @aliases $-Annot
-setMethod(
-  f = "$",
-  signature = signature(x = "Annot"),
-  definition = function(x, name) {
-    # x@annot is presumably a data.frame or matrix, so
-    # use standard R subsetting by column name
-    x@annot[[name]]
-  }
-)
-
-#' @rdname dollar-methods
-#' @aliases $-richResult
-setMethod(
-  f = "$",
-  signature = signature(x = "richResult"),
-  definition = function(x, name) {
-    x@result[[name]]
-  }
-)
-
-#' @rdname dollar-methods
-#' @aliases $-GSEAResult
-setMethod(
-  f = "$",
-  signature = signature(x = "GSEAResult"),
-  definition = function(x, name) {
-    # If GSEAResult inherits from richResult
-    x@result[[name]]
-  }
-)
 
 #' S4 methods for result() and detail() on richResult and GSEAResult
 #'

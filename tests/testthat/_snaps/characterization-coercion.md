@@ -127,7 +127,7 @@
     Output
       Total significant biological term is: 2 
 
-# detail() is pinned for richResult and for GSEAResult (current failure mode)
+# detail() is pinned for richResult; for GSEAResult it messages and returns result
 
     structure(list(TERM = c("GO:0001", "GO:0001", "GO:0002"), Annot = c("apoptosis", 
     "apoptosis", "cell cycle"), GeneID = c("A", "B", "D"), Pvalue = c(0.001, 
@@ -137,10 +137,9 @@
 ---
 
     Code
-      detail(.char_gsea_result())
-    Condition
-      Error in `as.data.frame()`:
-      ! no slot of name "detail" for this object of class "GSEAResult"
+      returned <- detail(gsea)
+    Message
+      GSEAResult does not have a detail slot; returning result instead
 
 # as.data.frame() and as(<class>, 'data.frame') pin the three coercions
 

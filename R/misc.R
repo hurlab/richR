@@ -55,17 +55,6 @@ NULL
 #' @rdname result_detail_methods
 NULL
 
-#' @rdname result_detail_methods
-#' @aliases detail,GSEAResult-method
-#' @export
-setMethod(
-  f = "detail",
-  signature = "GSEAResult",
-  definition = function(x) {
-    as.data.frame(x@detail)
-  }
-)
-
 #' reverse List
 #' @param lhs list with names
 #' @export

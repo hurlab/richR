@@ -61,12 +61,16 @@ test_that("result() and summary() are pinned for richResult and GSEAResult", {
   })
 })
 
-test_that("detail() is pinned for richResult and for GSEAResult (current failure mode)", {
+test_that("detail() is pinned for richResult; for GSEAResult it messages and returns result", {
   expect_snapshot_value(detail(.char_richResult()), style = "deparse")
-  # Known defect today: the live detail,GSEAResult method reads a slot the
-  # class does not have, so the call errors. REQ-010 changes this in M1.3 (the
-  # one deliberate behaviour change); this snapshot flips in that commit.
-  expect_snapshot(error = TRUE, detail(.char_gsea_result()))
+  # REQ-010, the one deliberate behaviour change of M1: in 0.1.5 the live
+  # detail,GSEAResult method read a slot the class does not have and errored.
+  # It now emits a message and returns as.data.frame(x@result).
+  gsea <- .char_gsea_result()
+  expect_snapshot(returned <- detail(gsea))
+  expect_message(detail(gsea), "GSEAResult does not have a detail slot")
+  expect_identical(returned, as.data.frame(gsea@result))
+  expect_s3_class(returned, "data.frame")
 })
 
 test_that("as.data.frame() and as(<class>, 'data.frame') pin the three coercions", {

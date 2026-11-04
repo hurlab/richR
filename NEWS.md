@@ -1,5 +1,12 @@
 # richR Updates
 
+## Version 0.2.0 (unreleased)
+
+- `detail(<GSEAResult>)` now emits a message that the class has no `detail`
+  slot and returns `as.data.frame(x@result)`. In 0.1.5 the call failed with
+  `no slot of name "detail"` because an outdated duplicate method read a slot
+  that `GSEAResult` does not have.
+
 ## Version 0.1.5 (2026-10-20)
 
 - Bundled KEGG and pathway data load from the richR namespace into local

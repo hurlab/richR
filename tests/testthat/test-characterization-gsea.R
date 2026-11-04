@@ -48,3 +48,10 @@ test_that("richGSEA() pins the default pvalue filter on ranked list A", {
   res <- run_gsea(gsea_ranked("gsea_ranked_a.csv"))
   expect_snapshot_value(pin_gsea(res), style = "deparse", tolerance = 1e-8)
 })
+
+test_that("detail() on a fixture-built GSEAResult messages and returns the result table", {
+  res <- run_gsea(gsea_ranked("gsea_ranked_a.csv"), pvalue = 1)
+  expect_message(returned <- detail(res), "does not have a detail slot")
+  expect_identical(returned, as.data.frame(res@result))
+  expect_gt(nrow(returned), 0L)
+})

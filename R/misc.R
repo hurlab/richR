@@ -78,23 +78,6 @@ reverseList_bk<-function(lhs){
 }
 
 ##'
-setAs(from = "data.frame", to = "Annot", def = function(from){
-  keytype <- character()
-  species <- character()
-  anntype <- character()
-  GeneID <- as.vector(from[,1])
-  Term<-as.vector(from[,2])
-  Annot=from$Annot
-  annot <- data.frame(GeneID, Term, Annot)
-  new("Annot",
-      species = species,
-      anntype = anntype,
-      keytype = keytype,
-      annot = annot
-  )
-})
-
-##'
 ##'
 setAs(from = "data.frame", to = "richResult", def = function(from){
   keytype <- character()
@@ -139,23 +122,6 @@ setAs(from = "data.frame", to = "richResult", def = function(from){
 .clean.char <- function(x) {
   gsub("\\n", " ", x)
 }
-
-##'
-setAs(from = "richResult", to = "data.frame", def = function(from){
-  result <- as.data.frame(from@result)
-  result
-})
-##'
-setAs(from = "GSEAResult", to = "data.frame", def = function(from){
-  result <- as.data.frame(from@result)
-  result
-})
-
-##'
-setAs(from = "Annot", to = "data.frame", def = function(from){
-  result <- as.data.frame(from@annot)
-  result
-})
 
 ###
 .calGSEA<-function (obj,sigpathway, fc, gseaParam = 1, ticksSize = 0.2){

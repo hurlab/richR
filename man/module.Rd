@@ -5,15 +5,24 @@
 \alias{module}
 \title{KEGG module data}
 \format{
-A data.frame with KEGG module identifiers and descriptions
+A data.frame with 473 rows and one column. The row names are KEGG
+  module identifiers (for example \code{"M00001"}); the column
+  \code{annotation} holds the module name.
 }
 \source{
-KEGG database via KEGGREST
+KEGG database via KEGGREST (\code{keggList("module")}).
 }
 \usage{
-module
+data(module)
 }
 \description{
-A data.frame containing KEGG module information.
+KEGG module identifiers and names, used by the module annotation builders.
+}
+\details{
+The date the bundled snapshot was retrieved from KEGG is unknown.
+  The script \file{data-raw/module.R} in the source repository rebuilds the
+  object and stamps the retrieval date on the line below.
+
+  Retrieval date (module): unknown (bundled snapshot predates data-raw/).
 }
 \keyword{datasets}

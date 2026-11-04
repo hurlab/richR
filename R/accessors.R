@@ -416,23 +416,64 @@ setMethod("detail", signature = "GSEAResult", function(x) {
 ## ----------------------------------------------------------------
 ##  rbind methods
 ## ----------------------------------------------------------------
+## The bodies are the 0.1.5 live ones (do.call(rbind, ...)): they keep argument
+## names as row-name prefixes and return NULL when called with no arguments.
+## The `@importFrom S4Vectors bindROWS` tags are retained only so NAMESPACE
+## stays identical to 0.1.5; bindROWS() is not called.
 
 #' rbind for richResult objects
+#' @param ... richResult objects to combine
 #' @importFrom S4Vectors bindROWS
 #' @export
 #' @author Kai Guo
 rbind.richResult <- function(...) {
   objects <- list(...)
   objects <- lapply(objects, as.data.frame)
-  bindROWS(objects[[1L]], objects = objects[-1L])
+  do.call(rbind, objects)
 }
 
 #' rbind for GSEAResult objects
+#' @param ... GSEAResult objects to combine
 #' @importFrom S4Vectors bindROWS
 #' @export
 #' @author Kai Guo
 rbind.GSEAResult <- function(...) {
   objects <- list(...)
   objects <- lapply(objects, as.data.frame)
-  bindROWS(objects[[1L]], objects = objects[-1L])
+  do.call(rbind, objects)
 }
+
+##'
+##'
+setAs(from = "data.frame", to = "richResult", def = function(from){
+  keytype <- character()
+  organism <- character()
+  ontology <- character()
+  pvalueCutoff <- numeric()
+  pAdjustMethod <-character()
+  padjCutoff <- numeric()
+  Annot <- from$Annot
+  Term <- from$Term
+  Annotated <- from$Annotated
+  Significant <- from$Significant
+  Pvalue <- from$Pvalue
+  Padj <- from$Padj
+  GeneID <- as.vector(from$GeneID)
+  gene<-unique(unlist(strsplit(GeneID,",")))
+  genenumber <- length(gene)
+  resultFis <- data.frame(Annot, Term, Annotated, Significant, Pvalue, Padj, GeneID)
+  rownames(resultFis) <- Annot
+  new("richResult",
+      result=resultFis,
+      detail=data.frame(),
+      pvalueCutoff   = pvalueCutoff,
+      pAdjustMethod  = pAdjustMethod,
+      padjCutoff   = padjCutoff,
+      genenumber    = genenumber,
+      organism       = organism,
+      ontology       = ontology,
+      gene           = gene,
+      keytype        = keytype,
+      sep            = ","
+  )
+})

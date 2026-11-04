@@ -5,15 +5,25 @@
 \alias{kegg.db}
 \title{KEGG pathway database}
 \format{
-A data.frame with KEGG pathway identifiers and descriptions
+A data.frame with 567 rows and one column. The row names are KEGG
+  pathway identifiers without the organism prefix (for example
+  \code{"01100"}); the column \code{annotation} holds the pathway name.
 }
 \source{
-KEGG database via KEGGREST
+KEGG database via KEGGREST (\code{keggList("pathway")}).
 }
 \usage{
-kegg.db
+data(kegg)
 }
 \description{
-A data.frame containing KEGG pathway and species mapping information.
+KEGG pathway identifiers and names, used to label pathway terms in
+\code{\link{richKEGG}}.
+}
+\details{
+The date the bundled snapshot was retrieved from KEGG is unknown.
+  The script \file{data-raw/kegg.R} in the source repository rebuilds the
+  object and stamps the retrieval date on the line below.
+
+  Retrieval date (kegg.db): unknown (bundled snapshot predates data-raw/).
 }
 \keyword{datasets}

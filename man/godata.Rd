@@ -3,22 +3,30 @@
 \docType{data}
 \name{godata}
 \alias{godata}
-\title{GO annotation data for human}
+\title{GO term to offspring mapping}
 \format{
-A data.frame with columns:
-\describe{
-  \item{GeneID}{Gene identifier}
-  \item{GO}{GO term identifier}
-  \item{Ontology}{GO ontology (BP, CC, MF)}
-}
+A named list of 42,984 character vectors. Each name is a GO
+  identifier (for example \code{"GO:0000002"}) and each element holds that
+  identifier followed by the identifiers of all of its offspring terms.
 }
 \source{
-Generated from Bioconductor org.Hs.eg.db and GO.db
+Gene Ontology offspring relations. The exact source and GO release
+  are unknown; the mapping has the shape of the \code{GOBPOFFSPRING},
+  \code{GOCCOFFSPRING} and \code{GOMFOFFSPRING} tables of the Bioconductor
+  GO.db package.
 }
 \usage{
-godata
+data(godata)
 }
 \description{
-A data.frame containing GO annotation mappings for human genes.
+A named list that maps each Gene Ontology term to itself and all of its
+offspring terms, covering the biological process, molecular function and
+cellular component ontologies.
+}
+\details{
+richR does not load this object: GO offspring terms are read from
+  GO.db at run time. It is kept in the package so that user code that loads
+  it keeps working. The date of the bundled snapshot is unknown, and no
+  script rebuilds it.
 }
 \keyword{datasets}

@@ -1,5 +1,3 @@
-context("S4 class construction and show methods")
-
 test_that("richResult can be constructed and displayed", {
   res <- new("richResult",
     result = data.frame(

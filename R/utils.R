@@ -666,3 +666,25 @@ msigdbinfo <- function() {
   spe <- tbl$species[!is.na(tbl$msigdb)]
   cat(sort(spe), "\n")
 }
+
+#' reverse List
+#' @param lhs list with names
+#' @export
+#' @author Kai Guo
+# replace this with c++
+reverseList_bk<-function(lhs){
+  lhs_n<-rep(names(lhs),times=lapply(lhs,function(x)length(x)))
+  res<-sf(as.data.frame(cbind(lhs_n,unlist(lhs))))
+  return(res)
+}
+
+#' Remove newlines
+#'
+#' Replaces any newline characters with a space.
+#'
+#' @param x Character vector.
+#' @return Character vector without newlines.
+#' @keywords internal
+.clean.char <- function(x) {
+  gsub("\\n", " ", x)
+}

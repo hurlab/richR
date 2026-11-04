@@ -119,7 +119,7 @@ test_that("annotation constructors record custom source and normalization histor
 test_that("package-backed constructors retain observed provider provenance", {
   go_rows <- data.frame(GeneID = c("A", NA_character_), GOALL = c("GO:1", "GO:2"),
                         ONTOLOGYALL = c("BP", "BP"), Annot = c("term", "term"))
-  go <- expect_warning(testthat::with_mocked_bindings(
+  expect_warning(go <- testthat::with_mocked_bindings(
     .makeGOdata = function(...) go_rows,
     .getdbname = function(...) "stats",
     richR::buildAnnot(species = "human", keytype = "SYMBOL", anntype = "GO"),
@@ -135,7 +135,7 @@ test_that("package-backed constructors retain observed provider provenance", {
                           gene_symbol = c("A", NA_character_), gs_exact_source = c("T", "T"),
                           gs_name = c("HALLMARK_T", "HALLMARK_T"),
                           db_version = "2025.1")
-  msig <- expect_warning(testthat::with_mocked_bindings(
+  expect_warning(msig <- testthat::with_mocked_bindings(
     .getmsig = function(...) "Homo sapiens",
     msigdbr = function(...) msig_rows,
     richR::buildMSIGDB(anntype = "HALLMARK"),
@@ -147,7 +147,8 @@ test_that("package-backed constructors retain observed provider provenance", {
   expect_equal(msig_info$provenance$annotation$provider_version,
                as.character(utils::packageVersion("msigdbr")))
 
-  own <- expect_warning(testthat::with_mocked_bindings(
+  skip_if_not_installed("org.Hs.eg.db")
+  expect_warning(own <- testthat::with_mocked_bindings(
     keys = function(x, keytype) "A",
     getann = function(...) data.frame(annotation = c("term", "other"),
                                       row.names = c("GO:1", "GO:2")),

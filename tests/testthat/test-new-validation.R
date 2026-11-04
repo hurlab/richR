@@ -1,5 +1,3 @@
-context("Input validation (new validators)")
-
 test_that("empty gene input raises error", {
   expect_error(
     richR:::.validateGeneInput(character(0), func_name = "test"),

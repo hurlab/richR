@@ -19,26 +19,6 @@
 #' @rdname utilities-methods
 NULL
 
-## summary methods defined in accessors.R (canonical location)
-## These are kept here only as fallback definitions without roxygen tags
-setMethod(
-  f = "summary",
-  signature = "richResult",
-  definition = function(object, ...) {
-    cat("Total input genes is:", length(object@gene),
-        "and significant biological term is:", nrow(object@result), "\n")
-  }
-)
-
-setMethod(
-  f = "summary",
-  signature = "GSEAResult",
-  definition = function(object, ...) {
-    cat("Total significant biological term is:",
-        sum(object@result$padj < 0.05, na.rm = TRUE), "\n")
-  }
-)
-
 #' S4 subsetting methods for Annot, richResult, and GSEAResult
 #'
 #' These methods define `[` subsetting on each respective S4 class.
@@ -74,39 +54,6 @@ NULL
 #' @name result_detail_methods
 #' @rdname result_detail_methods
 NULL
-
-#' @rdname result_detail_methods
-#' @aliases result,richResult-method
-#' @export
-setMethod(
-  f = "result",
-  signature = "richResult",
-  definition = function(x) {
-    as.data.frame(x@result)
-  }
-)
-
-#' @rdname result_detail_methods
-#' @aliases result,GSEAResult-method
-#' @export
-setMethod(
-  f = "result",
-  signature = "GSEAResult",
-  definition = function(x) {
-    as.data.frame(x@result)
-  }
-)
-
-#' @rdname result_detail_methods
-#' @aliases detail,richResult-method
-#' @export
-setMethod(
-  f = "detail",
-  signature = "richResult",
-  definition = function(x) {
-    as.data.frame(x@detail)
-  }
-)
 
 #' @rdname result_detail_methods
 #' @aliases detail,GSEAResult-method

@@ -13,7 +13,11 @@
   Direct access such as `richR::path`, which worked in 0.1.5, now fails with
   `'path' is not an exported object from 'namespace:richR'`; load the dataset
   with `data()` first. The same applies to `godata`, `kegg.db`, `module` and
-  `pathway`.
+  `pathway`. Four of the five load under their own name (`data(path)`,
+  `data(godata)`, `data(module)`, `data(pathway)`); the KEGG table `kegg.db` is
+  stored in `data/kegg.rdata`, so it is loaded with `data(kegg)`, which creates
+  the object `kegg.db`. `data(kegg.db)` loads nothing and warns that the data
+  set was not found.
 - Added `data-raw/` scripts (`kegg.R`, `module.R`, `path.R`, `pathway.R`) that
   rebuild the bundled KEGG data and record the retrieval date. They were not
   run for this release: the files in `data/` are unchanged, and the retrieval

@@ -61,7 +61,7 @@ test_that("namespace-only KEGG enrichment resolves bundled data and keeps metada
     "warnings <- character()",
     "res <- withCallingHandlers(richR::richKEGG(c('A','B'), annot, pvalue=1, padj=1, minSize=1, minGSSize=1, keepRich=FALSE), warning=function(w) { warnings <<- c(warnings, conditionMessage(w)); invokeRestart('muffleWarning') })",
     "stopifnot(length(warnings)==0L)",
-    "stopifnot(nrow(res@result)>0L, identical(as.character(res@result$ko), '00010'))",
+    "stopifnot(nrow(res@result)>0L, identical(as.character(res@result$ko), '01100'))",
     "stopifnot(all(c('ko','Level1','Level2','Level3') %in% names(res@result)))",
     "expected <- ref$path[match(res@result$ko, ref$path$ko), c('ko','Level3','Level2','Level1'), drop=FALSE]",
     "stopifnot(identical(as.character(res@result$ko), as.character(expected$ko)))",

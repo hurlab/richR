@@ -169,6 +169,8 @@ test_that("short = TRUE keeps labels that differ only in whitespace apart", {
   on.exit(grDevices::dev.off(), add = TRUE)
   plots <- list(
     richBar = attempt(richBar(res, pvalue = 1, padj = 1, short = TRUE)),
+    richDot = attempt(richDot(res, pvalue = 1, padj = 1, short = TRUE)),
+    richDot_df = attempt(richDot(res@result, pvalue = 1, padj = 1, short = TRUE)),
     richLollipop = attempt(richLollipop(res, pvalue = 1, padj = 1, short = TRUE)),
     richCircle = attempt(richCircle(res, pvalue = 1, padj = 1, short = TRUE)),
     richGeneDot = attempt(richGeneDot(res, fc = fc, pvalue = 1, padj = 1, short = TRUE)),
@@ -178,6 +180,9 @@ test_that("short = TRUE keeps labels that differ only in whitespace apart", {
     expect_false(inherits(plots[[what]], "error"), info = what)
     if (inherits(plots[[what]], "error")) next
     cats <- plot_categories(plots[[what]])
-    expect_equal(length(unique(cats[startsWith(cats, "a")])), 2, info = what)
+    long <- unique(cats[startsWith(cats, "a")])
+    expect_equal(length(long), 2, info = what)
+    # short = TRUE reached the label: the eight-word labels are wrapped.
+    expect_true(length(long) > 0 && all(grepl("\n", long, fixed = TRUE)), info = what)
   }
 })

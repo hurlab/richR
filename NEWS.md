@@ -312,6 +312,25 @@ described in the sections above.)
   fixtures) that pin the ORA, GSEA, `richLevel`, `compareResult`,
   `compareGSEA`, `richCluster`, accessor and coercion behaviour of 0.1.5.
 
+## Version 0.1.6 (2026-11-05)
+
+Bug-fix release on top of 0.1.5; no changes to statistics, cutoffs or result columns.
+
+- `richDot(short = TRUE)` now shortens long term labels; the option was
+  previously ignored.
+- With `builtin = FALSE`, `richKEGG()` no longer stops when the live KEGG
+  pathway listing cannot be reached. It uses the bundled KEGG labels and warns,
+  and it now also warns when it falls back because the live listing is
+  incomplete.
+- ORA plots draw two terms that share a label as two categories,
+  `label [ID]`. Before, `richBar()` and `richDot()` with `order = TRUE`,
+  `richNetwork()`, `richNetplot()` and `richHeatmap()` stopped with an error,
+  and the other plots merged the two terms into one. `richHeatmap()` now
+  matches rows across results by term ID.
+- `compareGSEA()` with a `padj` cutoff no longer stops with
+  "object 'Padj' not found", and it labels each group's NES, adjusted and raw
+  p-values from that group's own pathway instead of by position.
+
 ## Version 0.1.5 (2026-10-20)
 
 - Bundled KEGG and pathway data load from the richR namespace into local

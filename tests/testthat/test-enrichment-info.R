@@ -291,6 +291,44 @@ test_that("richKEGG records the KEGG label source it actually used", {
                "KEGGREST")
 })
 
+test_that("buildOwn KEGG and KEGGM record the bundled label source they used", {
+  # Catches: a package-built KEGG / KEGGM annotation that cannot say where its
+  # labels came from or which snapshot (REQ-013).
+  skip_if_not_installed("org.Hs.eg.db")
+  snapshot_date <- function(dataset, object) {
+    env <- new.env(parent = emptyenv())
+    utils::data(list = dataset, package = "richR", envir = env)
+    attr(env[[object]], "richR_source", exact = TRUE)$retrieved
+  }
+  build_own <- function(anntype, ids) {
+    suppressMessages(testthat::with_mocked_bindings(
+      keys = function(x, keytype) c("1", "2"),
+      .package = "richR",
+      testthat::with_mocked_bindings(
+        select = function(x, keys, keytype, columns) {
+          out <- data.frame(ENTREZID = c("1", "2"), ids)
+          names(out)[2] <- columns
+          out
+        },
+        richR::buildOwn(dbname = "org.Hs.eg.db", anntype = anntype, keytype = "ENTREZID"),
+        .package = "AnnotationDbi"
+      )
+    ))
+  }
+  expected <- list(
+    KEGG = list(ids = c("00010", "00020"), retrieved = snapshot_date("kegg", "kegg.db")),
+    KEGGM = list(ids = c("M00001", "M00002"), retrieved = snapshot_date("module", "module"))
+  )
+  for (anntype in names(expected)) {
+    own <- build_own(anntype, expected[[anntype]]$ids)
+    info <- richR::enrichmentInfo(own)$provenance$annotation
+    expect_identical(info$label_source$source, "bundled", info = anntype)
+    expect_true(is.na(info$label_source$release), info = anntype)
+    expect_identical(info$label_source$retrieved, expected[[anntype]]$retrieved, info = anntype)
+    expect_true(is.na(info$source_version), info = anntype)
+  }
+})
+
 test_that("KEGG module constructor records its actual membership provider", {
   module <- testthat::with_mocked_bindings(
     .getdbname = function(...) "org.Hs.eg.db",

@@ -442,6 +442,7 @@
 #' @param universe optional character vector defining the ORA background
 #' @param annotation_provenance optional annotation provenance captured from an Annot object
 #' @param metadata_ontology ontology label retained for diagnostics
+#' @param label_provenance optional record of the label source used (richKEGG)
 #' @return richResult S4 object
 #' @keywords internal
 .run_ora <- function(x, annot, term_names = NULL, extra_cols = NULL,
@@ -450,7 +451,7 @@
                      keepRich = TRUE, organism = NULL, ontology = "",
                      keytype = "", filename = NULL, sep = ",", universe = NULL,
                      annotation_provenance = NULL, metadata_ontology = ontology,
-                     padj.family = c("overlap", "all")) {
+                     padj.family = c("overlap", "all"), label_provenance = NULL) {
   padj.family <- match.arg(padj.family)
   normalization <- if (!is.data.frame(annot) && is.list(annot) &&
                        all(c("data", "counts") %in% names(annot))) {
@@ -605,7 +606,7 @@
   }
   attr(result, "richR_metadata") <- .analysis_metadata(
     "ORA", input_metadata, annotation_counts, background_counts, testing,
-    options, annotation_provenance
+    options, annotation_provenance, labels = label_provenance
   )
   result
 }
@@ -702,15 +703,33 @@ overlap <- function(x, y) {
 #' With \code{builtin = FALSE} the labels come from the live KEGG listing. When
 #' that listing fails or lacks the reference pathway 04148, the bundled labels
 #' are returned instead and a warning names the reason.
-#' @importFrom KEGGREST keggList
 #' @param builtin use built-in KEGG data or fetch from API
 #' @return data.frame with rownames as pathway IDs and "annotation" column
 #' @keywords internal
 .get_kg_dat <- function(builtin = TRUE) {
-  bundled <- function() {
+  .kegg_labels(builtin = builtin)$data
+}
+
+#' KEGG pathway labels together with the source they actually came from
+#'
+#' @param builtin use the bundled snapshot (TRUE) or the live KEGG listing
+#' @param query_release query the KEGG release for a live listing
+#' @return list: \code{data} (labels, as \code{.get_kg_dat}), \code{source}
+#'   (\code{"KEGGREST"} or \code{"bundled"}), \code{release} (character or
+#'   \code{NA}; only for a live listing whose release query yields one),
+#'   \code{retrieved} (date of the labels, or \code{NA} when unknown) and
+#'   \code{reason} (why a live request fell back, else \code{NULL})
+#' @importFrom KEGGREST keggList
+#' @noRd
+.kegg_labels <- function(builtin = TRUE, query_release = FALSE) {
+  bundled <- function(reason = NULL) {
     kegg_env <- new.env(parent = emptyenv())
     utils::data("kegg", package = "richR", envir = kegg_env)
-    kegg_env$kegg.db
+    data <- kegg_env$kegg.db
+    retrieved <- attr(data, "richR_source", exact = TRUE)$retrieved
+    list(data = data, source = "bundled", release = NA_character_,
+         retrieved = if (is.null(retrieved)) NA_character_ else as.character(retrieved),
+         reason = reason)
   }
   if (isTRUE(builtin)) {
     return(bundled())
@@ -725,13 +744,31 @@ overlap <- function(x, y) {
     pathway <- as.data.frame(pathway)
     pathway$annotation <- as.vector(pathway$annotation)
     if (!is.na(pathway["04148", "annotation"])) {
-      return(pathway)
+      return(list(data = pathway, source = "KEGGREST",
+                  release = if (isTRUE(query_release)) .kegg_release() else NA_character_,
+                  retrieved = format(Sys.Date()), reason = NULL))
     }
     reason <- "live KEGG listing lacks reference pathway 04148"
   }
   warning("KEGG pathway labels: ", reason,
           "; using the bundled KEGG snapshot.", call. = FALSE)
-  bundled()
+  bundled(reason)
+}
+
+#' KEGG release reported by the KEGG pathway database, or NA
+#'
+#' Reads the \code{Release ...} entry of \code{keggInfo("pathway")}. Any error,
+#' or an answer without such an entry, gives \code{NA}; no release is inferred
+#' from dates or entry counts.
+#' @importFrom KEGGREST keggInfo
+#' @noRd
+.kegg_release <- function() {
+  info <- tryCatch(keggInfo("pathway"), error = function(e) NULL)
+  if (!is.character(info) || length(info) == 0L) {
+    return(NA_character_)
+  }
+  release <- regmatches(info, regexpr("Release [^,\n]+", info))
+  if (length(release) == 0L) NA_character_ else trimws(release[1])
 }
 
 #' Get KEGG module annotation terms

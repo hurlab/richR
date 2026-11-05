@@ -158,6 +158,7 @@ importFrom(AnnotationDbi,
   keys
 )
 importFrom(KEGGREST,
+  keggInfo,
   keggLink,
   keggList
 )

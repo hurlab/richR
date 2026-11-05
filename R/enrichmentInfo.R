@@ -58,7 +58,8 @@ enrichmentInfo <- function(x) {
                                    source_name = NULL, source_version = NA_character_,
                                    provider_package = NULL,
                                    provider_version = NULL,
-                                   constructor_normalization = NULL) {
+                                   constructor_normalization = NULL,
+                                   label_source = NULL) {
   if (methods::is(object, "Annot")) {
     previous <- attr(object, "richR_metadata", exact = TRUE)
     if (is.list(previous) && is.list(previous$provenance$annotation)) {
@@ -74,7 +75,7 @@ enrichmentInfo <- function(x) {
     source_type <- source_type %||% "unknown"
     source_name <- source_name %||% NA_character_
   }
-  list(
+  provenance <- list(
     constructor = constructor,
     species = species,
     keytype = keytype,
@@ -86,6 +87,10 @@ enrichmentInfo <- function(x) {
     provider_version = provider_version,
     constructor_normalization = constructor_normalization
   )
+  ## Where the labels came from (KEGG / KEGGM), kept apart from the membership
+  ## provider above so a bundled fallback is never read as a live retrieval.
+  if (!is.null(label_source)) provenance$label_source <- label_source
+  provenance
 }
 
 `%||%` <- function(x, y) if (is.null(x)) y else x
@@ -110,8 +115,9 @@ enrichmentInfo <- function(x) {
 
 .analysis_metadata <- function(analysis, input, annotation, background,
                                testing, options, annotation_provenance,
-                               fgsea_version = NULL, rng = NULL) {
-  list(schema_version = 1L, available = TRUE, analysis = analysis,
+                               fgsea_version = NULL, rng = NULL,
+                               labels = NULL) {
+  metadata <- list(schema_version = 1L, available = TRUE, analysis = analysis,
        input = input, annotation = annotation, background = background,
        testing = testing, options = options,
        provenance = list(richR_version = .richr_version(),
@@ -119,4 +125,7 @@ enrichmentInfo <- function(x) {
                          fgsea_version = fgsea_version,
                          annotation = annotation_provenance,
                          rng = rng))
+  ## Label source used at analysis time (richKEGG), when the analysis looked labels up.
+  if (!is.null(labels)) metadata$provenance$labels <- labels
+  metadata
 }

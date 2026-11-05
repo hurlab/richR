@@ -23,6 +23,7 @@ buildAnnot<-function(species="human",keytype="SYMBOL",anntype="GO",builtin=TRUE,
     stop("Unsupported anntype '", anntype,
          "'. Use one of: GO, KEGG, Reactome, KEGGM")
   )
+  label_source <- attr(annot, "richR_label_source", exact = TRUE)
   normalization <- .normalize_annotation(annot, func_name = "buildAnnot")
   annot <- normalization$data
   n_genes <- length(unique(annot[, 1]))
@@ -40,9 +41,11 @@ buildAnnot<-function(species="human",keytype="SYMBOL",anntype="GO",builtin=TRUE,
     anntype = anntype,
     source_type = if (live_kegg) "KEGG" else "package",
     source_name = if (live_kegg) "KEGG" else provider_package,
-    source_version = NA_character_, provider_package = provider_package,
+    source_version = if (is.null(label_source)) NA_character_ else label_source$release,
+    provider_package = provider_package,
     provider_version = .package_version_or_na(provider_package),
-    constructor_normalization = normalization$counts
+    constructor_normalization = normalization$counts,
+    label_source = label_source
   )
   .attach_annotation_metadata(new("Annot",
       species = species,
@@ -101,11 +104,14 @@ buildAnnot<-function(species="human",keytype="SYMBOL",anntype="GO",builtin=TRUE,
     }
     KO_FILE=tmp
   }
-  annot<-getann("KEGG", builtin = builtin)
+  labels<-.kegg_labels(builtin = builtin, query_release = TRUE)
+  annot<-labels$data
   KO_FILE[,1]<-as.vector(KO_FILE[,1])
   KO_FILE[,2]<-as.vector(KO_FILE[,2])
   KO_FILE$Annot<-annot[KO_FILE[,2],"annotation"]
   colnames(KO_FILE)[1]<-"GeneID"
+  ## Read by buildAnnot before normalization, which drops custom attributes.
+  attr(KO_FILE, "richR_label_source") <- labels[c("source", "release", "retrieved")]
   return(KO_FILE)
 }
 
@@ -290,6 +296,11 @@ buildMSIGDB<-function(species="human",keytype="SYMBOL",anntype="GO"){
     MO_FILE[,2]<-as.vector(MO_FILE[,2])
     MO_FILE$Annot<-annot[MO_FILE[,2],"annotation"]
     colnames(MO_FILE)[1]<-"GeneID"
+    ## Module labels always come from the bundled module snapshot.
+    retrieved <- attr(annot, "richR_source", exact = TRUE)$retrieved
+    attr(MO_FILE, "richR_label_source") <- list(
+      source = "bundled", release = NA_character_,
+      retrieved = if (is.null(retrieved)) NA_character_ else as.character(retrieved))
     return(MO_FILE)
 }
 

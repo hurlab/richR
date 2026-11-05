@@ -169,24 +169,116 @@ test_that("package-backed constructors retain observed provider provenance", {
   expect_equal(own_info$provenance$annotation$constructor_normalization$invalid_rows, 1L)
 })
 
-test_that("live KEGG annotation records KEGGREST as its mapping provider", {
-  kegg <- testthat::with_mocked_bindings(
+kegg_info_legacy <- paste(
+  "pathway          KEGG Pathway Database",
+  "path             Release 116.0+/10-28, Oct 25",
+  "                 Kanehisa Laboratories",
+  "                 587 entries",
+  sep = "\n"
+)
+# Shape returned by KEGG REST on 2026-11-05 (R-4): no release line, only a date.
+kegg_info_current <- paste(
+  "pathway\tKEGG pathway maps", "path\t587 entries",
+  "\tLast update 2026/10/28", "\tKanehisa Laboratories", sep = "\n"
+)
+kegg_listing_healthy <- function(...) {
+  c(map00010 = "glycolysis", map00020 = "citrate cycle", map04148 = "Efferocytosis")
+}
+kegg_listing_failing <- function(...) stop("simulated KEGG outage")
+
+build_live_kegg <- function(listing, info) {
+  testthat::with_mocked_bindings(
     .getdbname = function(...) "org.Hs.eg.db",
     .getspeices = function(...) "hsa",
     keggLink = function(...) c("hsa:1" = "path:hsa00010", "hsa:2" = "path:hsa00020"),
-    getann = function(...) data.frame(annotation = c("glycolysis", "citrate cycle"),
-                                      row.names = c("00010", "00020")),
+    keggList = listing,
+    keggInfo = info,
     richR::buildAnnot(species = "human", keytype = "ENTREZID", anntype = "KEGG",
                       builtin = FALSE),
     .package = "richR"
   )
+}
+
+test_that("live KEGG annotation records KEGGREST as its mapping provider", {
+  kegg <- build_live_kegg(kegg_listing_healthy, function(...) kegg_info_legacy)
   info <- richR::enrichmentInfo(kegg)
   expect_equal(info$provenance$annotation$source_type, "KEGG")
   expect_equal(info$provenance$annotation$source_name, "KEGG")
   expect_equal(info$provenance$annotation$provider_package, "KEGGREST")
   expect_equal(info$provenance$annotation$provider_version,
                as.character(utils::packageVersion("KEGGREST")))
+  expect_equal(info$provenance$annotation$source_version, "Release 116.0+/10-28")
+  expect_equal(info$provenance$annotation$label_source$source, "KEGGREST")
+  expect_equal(info$provenance$annotation$label_source$release, "Release 116.0+/10-28")
+  expect_equal(as.character(kegg@annot$Annot[kegg@annot$PATH == "00010"]), "glycolysis")
+})
+
+test_that("a KEGG label fallback is never recorded as a live retrieval", {
+  expect_warning(
+    fallback <- build_live_kegg(kegg_listing_failing, function(...) kegg_info_legacy),
+    "bundled"
+  )
+  info <- richR::enrichmentInfo(fallback)
+  expect_equal(info$provenance$annotation$label_source$source, "bundled")
+  expect_true(is.na(info$provenance$annotation$label_source$release))
   expect_true(is.na(info$provenance$annotation$source_version))
+  # The membership still came from KEGG REST.
+  expect_equal(info$provenance$annotation$provider_package, "KEGGREST")
+
+  skip_if_not_installed("org.Hs.eg.db")
+  builtin <- testthat::with_mocked_bindings(
+    keys = function(x, keytype) c("1", "2"),
+    .package = "richR",
+    testthat::with_mocked_bindings(
+      select = function(x, keys, keytype, columns) {
+        data.frame(ENTREZID = c("1", "2"), PATH = c("00010", "00020"))
+      },
+      richR::buildAnnot(species = "human", keytype = "ENTREZID", anntype = "KEGG",
+                        builtin = TRUE),
+      .package = "AnnotationDbi"
+    )
+  )
+  builtin_info <- richR::enrichmentInfo(builtin)
+  expect_equal(builtin_info$provenance$annotation$label_source$source, "bundled")
+  expect_true(is.na(builtin_info$provenance$annotation$label_source$release))
+  expect_true(is.na(builtin_info$provenance$annotation$source_version))
+})
+
+test_that("the KEGG release is recorded only when the release query yields one", {
+  failing_info <- build_live_kegg(kegg_listing_healthy,
+                                  function(...) stop("simulated info outage"))
+  no_release <- build_live_kegg(kegg_listing_healthy, function(...) kegg_info_current)
+  for (kegg in list(failing_info, no_release)) {
+    info <- richR::enrichmentInfo(kegg)
+    expect_equal(info$provenance$annotation$label_source$source, "KEGGREST")
+    expect_true(is.na(info$provenance$annotation$label_source$release))
+    expect_true(is.na(info$provenance$annotation$source_version))
+  }
+})
+
+test_that("richKEGG records the KEGG label source it actually used", {
+  kegg <- build_live_kegg(kegg_listing_healthy, function(...) kegg_info_legacy)
+  run <- function(listing, builtin) {
+    testthat::with_mocked_bindings(
+      keggList = listing,
+      keggInfo = function(...) kegg_info_legacy,  # keeps the run offline
+      richR::richKEGG(c("1"), kegg, pvalue = 1, padj = 1, minSize = 1,
+                      minGSSize = 1, builtin = builtin),
+      .package = "richR"
+    )
+  }
+  live <- run(kegg_listing_healthy, builtin = FALSE)
+  expect_equal(richR::enrichmentInfo(live)$provenance$labels$source, "KEGGREST")
+  expect_equal(live@result$Term[live@result$Annot == "00010"], "glycolysis")
+
+  expect_warning(fallback <- run(kegg_listing_failing, builtin = FALSE), "bundled")
+  expect_equal(richR::enrichmentInfo(fallback)$provenance$labels$source, "bundled")
+
+  builtin <- run(kegg_listing_failing, builtin = TRUE)
+  expect_equal(richR::enrichmentInfo(builtin)$provenance$labels$source, "bundled")
+  # The annotation's membership provider is unaffected by the label source.
+  expect_equal(richR::enrichmentInfo(fallback)$provenance$annotation$provider_package,
+               "KEGGREST")
 })
 
 test_that("KEGG module constructor records its actual membership provider", {
@@ -205,6 +297,8 @@ test_that("KEGG module constructor records its actual membership provider", {
   expect_equal(info$provenance$annotation$provider_version,
                as.character(utils::packageVersion("KEGGREST")))
   expect_true(is.na(info$provenance$annotation$source_version))
+  expect_equal(info$provenance$annotation$label_source$source, "bundled")
+  expect_true(is.na(info$provenance$annotation$label_source$release))
 })
 
 test_that("GO constructor normalizes duplicate rows from the actual helper path", {

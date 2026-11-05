@@ -107,9 +107,18 @@
 - Plots of a `GSEAResult` show the `Term` label; where two pathways share a
   label, the identifier is appended (`"label [ID]"`) so they are drawn as two
   categories with their own values.
-- Reactome pathways that share a name are still tested as one gene set,
-  because `buildAnnot(anntype = "Reactome")` returns no identifier column.
-  This is fixed in a later milestone of 0.2.0.
+- `buildAnnot(anntype = "Reactome")` now keeps the pathway identifier: the
+  annotation has the columns `GeneID`, `Term` (the `R-HSA-` identifier) and
+  `Annot` (the pathway name without the species prefix). Reactome pathways
+  that share a name are tested as separate gene sets; in 0.1.x they were
+  merged by name (with reactome.db 1.96.0, 2845 human pathways with genes
+  became 2836 gene sets, because 18 pathways share 9 names). ORA results
+  report the identifier in `Annot` and the name in `Term`; GSEA results in
+  `pathway` and `Term`. No pathway is dropped: every human pathway with at
+  least one gene is kept.
+- `buildAnnot(anntype = "Reactome")` no longer needs reactome.db to be
+  attached; in 0.1.x it failed with `object 'reactomePATHNAME2ID' not found`
+  unless `library(reactome.db)` had been called first.
 - Removed the unused `minGSSize` and `maxGSSize` arguments of the internal
   GSEA routine: they were validated and recorded but never passed to fgsea,
   and the exported `richGSEA()` methods never exposed them. The GSEA family

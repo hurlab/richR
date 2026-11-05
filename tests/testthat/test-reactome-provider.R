@@ -28,13 +28,11 @@ test_that("buildAnnot(Reactome) works from the real provider without attaching i
 test_that("every human pathway with a gene is its own identifier", {
   skip_if_not_installed("reactome.db")
   # Catches: real Reactome identifiers lost to a shared pathway name.
+  # Independent oracle: human pathways by their stable-identifier prefix
+  # (R-HSA-), not by the species name the implementation filters on.
   id2gene <- AnnotationDbi::as.list(reactome.db::reactomePATHID2EXTID)
-  id2name <- AnnotationDbi::as.list(reactome.db::reactomePATHID2NAME)
-  first_name <- vapply(id2name, function(x) as.character(x)[1], character(1))
-  human <- names(first_name)[startsWith(first_name, "Homo sapiens: ")]
-  with_genes <- human[human %in% names(id2gene)]
-  with_genes <- with_genes[vapply(id2gene[with_genes],
-                                  function(g) any(!is.na(g)), logical(1))]
+  human <- grep("^R-HSA-[0-9]+$", names(id2gene), value = TRUE)
+  with_genes <- human[vapply(id2gene[human], function(g) any(!is.na(g)), logical(1))]
   terms <- unique(reactome_provider_annot()@annot$Term)
   expect_identical(sort(terms), sort(unique(with_genes)))
   if (identical(as.character(utils::packageVersion("reactome.db")), "1.96.0")) {

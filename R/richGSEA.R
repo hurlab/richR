@@ -284,6 +284,7 @@ richGSEA_internal<-function(x,object,keytype="",pvalue=0.05,padj=0.05,KEGG=FALSE
   x<-sort(x)
   # Memberships come from gene-identifier pairs; labels are attached afterwards.
   identity_frame <- .annotation_identity_frame(object)
+  fingerprint <- .geneset_fingerprint(object)
   normalization <- .normalize_annotation(identity_frame, func_name = "richGSEA")
   label_map <- .annotation_label_map(identity_frame, func_name = "richGSEA")
   object <- normalization$data[, 1:2, drop = FALSE]
@@ -386,6 +387,8 @@ richGSEA_internal<-function(x,object,keytype="",pvalue=0.05,padj=0.05,KEGG=FALSE
       source_type = "custom", source_name = NA_character_
     )
   }
+  # Computed from the frame passed, replacing any copy stored on the Annot (REQ-017).
+  annotation_provenance$fingerprint <- fingerprint
   attr(result, "richR_metadata") <- .analysis_metadata(
     "GSEA", input_info, normalization$counts, background, testing, options,
     annotation_provenance, fgsea_version = .package_version_or_na("fgsea"),

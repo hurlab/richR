@@ -460,6 +460,8 @@
     .normalize_annotation(annot, func_name = "ORA")
   }
   annot <- normalization$data
+  # Fingerprint of the frame passed (callers that narrow it supply their own).
+  fingerprint <- normalization$fingerprint %||% .geneset_fingerprint(annot)
   # Gene sets are keyed by the identifier column of the shared identity rule.
   id_col <- .annotation_id_column(annot)
   annot <- annot[, c(colnames(annot)[1L], id_col), drop = FALSE]
@@ -604,6 +606,8 @@
       source_type = "custom", source_name = NA_character_
     )
   }
+  # Computed now, replacing any copy stored on the Annot (REQ-017).
+  annotation_provenance$fingerprint <- fingerprint
   attr(result, "richR_metadata") <- .analysis_metadata(
     "ORA", input_metadata, annotation_counts, background_counts, testing,
     options, annotation_provenance, labels = label_provenance

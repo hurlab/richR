@@ -170,6 +170,7 @@ importFrom(cowplot,
   ggdraw,
   plot_grid
 )
+importFrom(digest,digest)
 importFrom(dplyr,
   arrange,
   distinct,

@@ -68,6 +68,8 @@ richGO_internal<-function(x,godata,ontology="BP",pvalue=0.05,padj=0.05,
     annot_2col <- godata_filt[, c(colnames(godata_filt)[1L], id_col), drop = FALSE]
   }
   normalization$counts$eligible_rows <- as.integer(nrow(annot_2col))
+  ## Fingerprint the frame passed, before the ontology narrowing (REQ-017).
+  normalization$fingerprint <- .geneset_fingerprint(godata)
   normalization$data <- annot_2col
   .run_ora(x, annot = normalization, term_names = term_names,
            pvalue = pvalue, padj = padj, padj.method = padj.method,

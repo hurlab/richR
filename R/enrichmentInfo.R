@@ -105,8 +105,54 @@ enrichmentInfo <- function(x) {
        options = options)
 }
 
+#' Gene-set fingerprints of an annotation frame (canonical form richR-geneset-v1)
+#'
+#' Pairs are (identifier, gene) under the shared identity rule, restricted to
+#' valid rows, de-duplicated and sorted in C-locale byte order; values are
+#' UTF-8 and escaped (backslash, TAB, LF, CR). \code{membership} hashes
+#' \code{id<TAB>gene} lines; \code{full} adds each identifier's label (first
+#' non-blank \code{Annot} in row order, else the identifier). Both are SHA-256
+#' of the text itself, never of a serialized R object.
+#' @param annot annotation data.frame or Annot object
+#' @return list(algorithm, canonicalization, membership, full, n_pairs, n_sets, n_genes)
+#' @importFrom digest digest
+#' @noRd
+.geneset_fingerprint <- function(annot) {
+  frame <- .annotation_identity_frame(annot)
+  ids <- as.character(frame$id)
+  genes <- as.character(frame$GeneID)
+  valid <- !is.na(ids) & !is.na(genes) & nzchar(trimws(ids)) & nzchar(trimws(genes))
+  frame <- frame[valid, , drop = FALSE]
+  labels <- suppressWarnings(.annotation_label_map(frame, func_name = "fingerprint"))
+  pairs <- unique(data.frame(id = enc2utf8(ids[valid]), gene = enc2utf8(genes[valid]),
+                             stringsAsFactors = FALSE))
+  pairs <- pairs[order(pairs$id, pairs$gene, method = "radix"), , drop = FALSE]
+  label <- unname(labels[pairs$id])
+  label[is.na(label)] <- pairs$id[is.na(label)]
+  escape <- function(x) {
+    x <- gsub("\\", "\\\\", x, fixed = TRUE)
+    x <- gsub("\t", "\\t", x, fixed = TRUE)
+    x <- gsub("\n", "\\n", x, fixed = TRUE)
+    gsub("\r", "\\r", x, fixed = TRUE)
+  }
+  id <- escape(pairs$id)
+  gene <- escape(pairs$gene)
+  label <- escape(enc2utf8(label))
+  hash <- function(text) digest(text, algo = "sha256", serialize = FALSE)
+  list(
+    algorithm = "sha256", canonicalization = "richR-geneset-v1",
+    membership = hash(paste0("richR-geneset-v1\n",
+                             paste0(id, "\t", gene, "\n", collapse = ""))),
+    full = hash(paste0("richR-geneset-v1/full\n",
+                       paste0(id, "\t", gene, "\t", label, "\n", collapse = ""))),
+    n_pairs = nrow(pairs), n_sets = length(unique(pairs$id)),
+    n_genes = length(unique(pairs$gene))
+  )
+}
+
 .attach_annotation_metadata <- function(object, normalization, provenance,
                                         options = list()) {
+  provenance$fingerprint <- .geneset_fingerprint(object@annot)
   attr(object, "richR_metadata") <- .annotation_metadata(
     normalization, provenance, options
   )

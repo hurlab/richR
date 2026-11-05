@@ -169,6 +169,9 @@
   that the class has no `detail` slot. In 0.1.5 the call failed with
   `no slot of name "detail"` because an outdated duplicate method read a slot
   that `GSEAResult` does not have.
+- `richDot()` now honours `short = TRUE` and shortens long term labels like
+  the other dot and bar plots; in 0.1.x both of its methods accepted `short`
+  but ignored it.
 
 ### Internal changes
 

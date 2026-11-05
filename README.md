@@ -62,7 +62,21 @@ hsakom <- buildAnnot(species = "human", keytype = "SYMBOL", anntype = "KEGGM")
 
 # MSigDB
 hsamgi <- buildMSIGDB(species = "human", keytype = "SYMBOL", anntype = "GO")
+
+# Reactome (needs reactome.db installed; it does not have to be attached)
+hsaro <- buildAnnot(species = "human", keytype = "SYMBOL", anntype = "Reactome")
 ```
+
+In an annotation, `Term` (like `GOALL`, `PATH` and `Module`) is the
+identifier column and `Annot` holds the label. Reactome annotations keep the
+pathway identifier (`R-HSA-...`) in `Term` and the pathway name in `Annot`, so
+pathways that share a name stay separate gene sets.
+
+KEGG pathway labels come from the bundled snapshot by default. With
+`builtin = FALSE` they are read from live KEGG; when that listing fails, richR
+warns and uses the bundled labels instead. `enrichmentInfo()` records which
+source was used (`label_source`), the snapshot's retrieval date, and the KEGG
+version when KEGG states one (its release, or `last update YYYY-MM-DD`).
 
 ### 2. Run enrichment analysis
 
@@ -74,6 +88,7 @@ head(resgo)
 
 # KEGG enrichment
 resko <- richKEGG(gene, kodata = hsako, pvalue = 0.05)
+# Results: Annot holds the identifier ("04110"), Term the label ("Cell cycle")
 
 # Significance cutoffs: a term is reported when Pvalue <= pvalue AND
 # Padj <= padj (defaults pvalue = 0.05, padj = 0.05)

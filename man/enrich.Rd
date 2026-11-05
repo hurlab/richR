@@ -79,6 +79,15 @@ richResult
 \description{
 enrich
 }
+\section{Identifier convention}{
+
+\code{Term} (like \code{GOALL}, \code{PATH} and \code{Module}) is the
+identifier column in an annotation frame and \code{Annot} holds the label;
+in a result, \code{Annot} is the identifier and \code{Term} the label.
+Gene sets are keyed by the identifier; an identifier that carries
+conflicting labels takes the first in row order, with a warning.
+}
+
 \examples{
 \dontrun{
 library(bioAnno)

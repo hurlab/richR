@@ -23,10 +23,11 @@ buildAnnot<-function(species="human",keytype="SYMBOL",anntype="GO",builtin=TRUE,
     stop("Unsupported anntype '", anntype,
          "'. Use one of: GO, KEGG, Reactome, KEGGM")
   )
+  label_source <- attr(annot, "richR_label_source", exact = TRUE)
   normalization <- .normalize_annotation(annot, func_name = "buildAnnot")
   annot <- normalization$data
   n_genes <- length(unique(annot[, 1]))
-  n_terms <- length(unique(annot[, 2]))
+  n_terms <- length(unique(annot[[normalization$id_col]]))
   message("buildAnnot: done. ", n_genes, " genes, ", n_terms, " terms.")
   live_kegg <- anntype %in% c("KEGGM") ||
     (identical(anntype, "KEGG") && !isTRUE(builtin))
@@ -40,9 +41,11 @@ buildAnnot<-function(species="human",keytype="SYMBOL",anntype="GO",builtin=TRUE,
     anntype = anntype,
     source_type = if (live_kegg) "KEGG" else "package",
     source_name = if (live_kegg) "KEGG" else provider_package,
-    source_version = NA_character_, provider_package = provider_package,
+    source_version = if (is.null(label_source)) NA_character_ else label_source$release,
+    provider_package = provider_package,
     provider_version = .package_version_or_na(provider_package),
-    constructor_normalization = normalization$counts
+    constructor_normalization = normalization$counts,
+    label_source = label_source
   )
   .attach_annotation_metadata(new("Annot",
       species = species,
@@ -101,11 +104,14 @@ buildAnnot<-function(species="human",keytype="SYMBOL",anntype="GO",builtin=TRUE,
     }
     KO_FILE=tmp
   }
-  annot<-getann("KEGG", builtin = builtin)
+  labels<-.kegg_labels(builtin = builtin, query_release = TRUE)
+  annot<-labels$data
   KO_FILE[,1]<-as.vector(KO_FILE[,1])
   KO_FILE[,2]<-as.vector(KO_FILE[,2])
   KO_FILE$Annot<-annot[KO_FILE[,2],"annotation"]
   colnames(KO_FILE)[1]<-"GeneID"
+  ## Read by buildAnnot before normalization, which drops custom attributes.
+  attr(KO_FILE, "richR_label_source") <- labels[c("source", "release", "retrieved")]
   return(KO_FILE)
 }
 
@@ -223,31 +229,54 @@ buildMSIGDB<-function(species="human",keytype="SYMBOL",anntype="GO"){
 
 #' make Reactome annotation data function
 #' @importFrom AnnotationDbi as.list
-#' @importFrom dplyr left_join
 #' @param species you can check the supported species by using showAvailableRO
 #' @param keytype key type export
 #' @author Kai Guo
 .makeROdata<-function(species="human",keytype="SYMBOL"){
   dbname<-.getrodbname(species=species);
-  if (!requireNamespace("reactome.db", quietly = TRUE)) {
-    stop("Package 'reactome.db' is required. Install it with:\n",
-         "  BiocManager::install('reactome.db')", call. = FALSE)
-  }
   dbname=sapply(strsplit(dbname,"_"),'[[',1)
-  lhs<-as.list(reactomePATHNAME2ID)
-  lhs<-lhs[grep(dbname,names(lhs))]
-  roid<-as.list(reactomePATHID2EXTID)[unique(as.vector(unlist(lhs)))]
-  roid<-lapply(roid, function(x)unique(x))
-  roid<-data.frame("GeneID"=unlist(roid),"Term"=rep(names(roid),times=lapply(roid, length)),row.names=NULL)
-  ll<-lapply(lhs,function(x)unique(x))
-  roan<-data.frame("Term"=unlist(ll),"Annot"=rep(names(ll),times=lapply(ll,length)),row.names=NULL)
-  roan$Annot<-sub('.*@ ','',sub(':','@',roan$Annot))
-  res<-left_join(roid,roan,by=c("Term"="Term"))
+  ## Keyed by pathway identifier: every species pathway with >= 1 gene is kept,
+  ## whether or not its name is shared with another pathway.
+  id2gene<-as.list(.reactome_map("reactomePATHID2EXTID"))
+  id2name<-as.list(.reactome_map("reactomePATHID2NAME"))
+  first_name<-vapply(id2name,function(x)as.character(x)[1],character(1))
+  ids<-names(first_name)[!is.na(first_name)&startsWith(first_name,paste0(dbname,": "))]
+  roid<-lapply(id2gene[intersect(ids,names(id2gene))],
+               function(x)unique(as.character(x[!is.na(x)])))
+  roid<-roid[lengths(roid)>0]
+  ## An identifier with several names keeps the first, with one warning (REQ-003).
+  several<-names(roid)[vapply(id2name[names(roid)],function(x)
+    length(unique(as.character(x[!is.na(x)])))>1L,logical(1))]
+  if(length(several)){
+    warning("buildAnnot: Reactome identifier(s) with several names; using the first name: ",
+            paste(several,collapse=", "),call.=FALSE)
+  }
+  res<-data.frame("GeneID"=unlist(roid,use.names=FALSE),
+                  "Term"=rep(names(roid),times=lengths(roid)),
+                  "Annot"=rep(sub('.*@ ','',sub(':','@',first_name[names(roid)])),
+                              times=lengths(roid)),
+                  row.names=NULL,stringsAsFactors=FALSE)
   if(keytype!="ENTREZID"){
     keys = idconvert(species = species,keys = res$GeneID,fkeytype = "ENTREZID",tkeytype = keytype)
     res$GeneID = keys
   }
-  return(res[,c(1,3)])
+  return(res)
+}
+
+#' Reactome map accessor
+#'
+#' Namespace-qualified access to a reactome.db map, so Reactome annotations work
+#' whether or not reactome.db is attached; also the seam the tests mock.
+#' @param name name of the reactome.db map object
+#' @return the map
+#' @keywords internal
+#' @noRd
+.reactome_map<-function(name){
+  if (!requireNamespace("reactome.db", quietly = TRUE)) {
+    stop("Package 'reactome.db' is required. Install it with:\n",
+         "  BiocManager::install('reactome.db')", call. = FALSE)
+  }
+  getExportedValue("reactome.db", name)
 }
 
 ###
@@ -273,6 +302,11 @@ buildMSIGDB<-function(species="human",keytype="SYMBOL",anntype="GO"){
     MO_FILE[,2]<-as.vector(MO_FILE[,2])
     MO_FILE$Annot<-annot[MO_FILE[,2],"annotation"]
     colnames(MO_FILE)[1]<-"GeneID"
+    ## Module labels always come from the bundled module snapshot.
+    retrieved <- attr(annot, "richR_source", exact = TRUE)$retrieved
+    attr(MO_FILE, "richR_label_source") <- list(
+      source = "bundled", release = NA_character_,
+      retrieved = if (is.null(retrieved)) NA_character_ else as.character(retrieved))
     return(MO_FILE)
 }
 

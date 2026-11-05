@@ -9,7 +9,10 @@ test_that("KEGG falls back to term IDs for missing or blank labels", {
 
   run <- function(input, labels) {
     testthat::with_mocked_bindings(
-      .get_kg_dat = function(builtin = TRUE) labels,
+      .kegg_labels = function(builtin = TRUE, query_release = FALSE) {
+        list(data = labels, source = "bundled", release = NA_character_,
+             retrieved = NA_character_, reason = NULL)
+      },
       richR::richKEGG(c("A", "C"), input, pvalue = 1, padj = 1, minSize = 1,
                       minGSSize = 1, keepRich = FALSE),
       .package = "richR"

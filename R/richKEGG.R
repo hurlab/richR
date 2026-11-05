@@ -44,10 +44,20 @@ richKEGG_internal<-function(x,kodata,pvalue=0.05,padj=0.05,ontology="KEGG",
   ## KEGG-specific: term name lookup + pathway level annotation
   if (ontology == "KEGGM") {
     all_ko <- .get_kgm.data()
+    retrieved <- attr(all_ko, "richR_source", exact = TRUE)$retrieved
+    label_provenance <- list(source = "bundled", release = NA_character_,
+      retrieved = if (is.null(retrieved)) NA_character_ else as.character(retrieved))
   } else {
-    all_ko <- .get_kg_dat(builtin = builtin)
+    ## The release is not queried here; it is recorded by buildAnnot.
+    labels <- .kegg_labels(builtin = builtin)
+    all_ko <- labels$data
+    label_provenance <- labels[c("source", "release", "retrieved")]
   }
   term_names <- setNames(all_ko[, 1], rownames(all_ko))
+  ## Labels: KEGG term list first, then the frame's Annot, then the identifier.
+  covered <- names(term_names)[!is.na(term_names) & nzchar(trimws(term_names))]
+  term_names <- .fill_labels(
+    term_names, .frame_fallback_labels(normalization$data, covered, "richKEGG"))
   path_env <- new.env(parent = emptyenv())
   utils::data("path", package = "richR", envir = path_env)
     .run_ora(x, annot = normalization, term_names = term_names, extra_cols = path_env$path,
@@ -58,7 +68,7 @@ richKEGG_internal<-function(x,kodata,pvalue=0.05,padj=0.05,ontology="KEGG",
            keytype = keytype, filename = filename, sep = sep, universe = universe,
            annotation_provenance = annotation_provenance,
            metadata_ontology = ontology,
-           padj.family = padj.family)
+           padj.family = padj.family, label_provenance = label_provenance)
 }
 #' KEGG Pathway Enrichment analysis function
 #' @param x vector contains gene names or dataframe with DEGs information

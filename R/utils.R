@@ -107,10 +107,108 @@
   invisible(TRUE)
 }
 
+# ---- Annotation identity (shared by ORA and GSEA) ----------------------------
+# One identifier rule for every annotation frame: the gene is column 1; the
+# identifier is the first present of the names below, else column 2; the label
+# is the column named `Annot`. Gene sets are keyed by identifier, never by label.
+# Naming trap: in an annotation frame `Term` is an identifier column; in an ORA
+# or GSEA result `Term` holds the label.
+.identity_id_names <- c("GOALL", "PATH", "Module", "Term")
+
+#' Name of the identifier column of an annotation frame
+#' @param annot annotation data.frame
+#' @return column name
+#' @keywords internal
+#' @noRd
+.annotation_id_column <- function(annot) {
+  id_col <- intersect(.identity_id_names, colnames(annot))
+  if (length(id_col)) id_col[1L] else colnames(annot)[2L]
+}
+
+#' Annotation membership frame (gene, identifier, label)
+#' @param object annotation data.frame or Annot object
+#' @return data.frame with columns GeneID, id, label (label NA when absent)
+#' @keywords internal
+#' @noRd
+.annotation_identity_frame <- function(object) {
+  annot <- if (methods::is(object, "Annot")) object@annot else object
+  if (!is.data.frame(annot) || ncol(annot) < 2L) {
+    return(annot)
+  }
+  id_col <- .annotation_id_column(annot)
+  label <- if ("Annot" %in% colnames(annot)) annot[["Annot"]] else NA_character_
+  data.frame(GeneID = annot[[1L]], id = annot[[id_col]],
+             label = rep_len(as.character(label), nrow(annot)),
+             stringsAsFactors = FALSE)
+}
+
+#' Identifier-to-label map
+#'
+#' Missing or blank labels are skipped (the identifier is used instead). An
+#' identifier carrying several labels keeps the first non-missing label in
+#' annotation row order, with one warning naming the affected identifiers.
+#' @param frame output of .annotation_identity_frame
+#' @param func_name name used in the warning
+#' @return named character vector (names = identifiers)
+#' @keywords internal
+#' @noRd
+.annotation_label_map <- function(frame, func_name) {
+  ids <- as.character(frame$id)
+  labels <- as.character(frame$label)
+  keep <- !is.na(ids) & nzchar(trimws(ids)) & !is.na(labels) & nzchar(trimws(labels))
+  ids <- ids[keep]
+  labels <- labels[keep]
+  first <- !duplicated(ids)
+  map <- stats::setNames(labels[first], ids[first])
+  conflicting <- unique(ids[labels != map[ids]])
+  if (length(conflicting)) {
+    warning(func_name, ": conflicting labels (Annot) for gene set(s) ",
+            paste(conflicting, collapse = ", "),
+            "; using the first label in annotation row order. Gene sets are keyed ",
+            "by Term (or GOALL, PATH, Module; otherwise column 2) and labelled by ",
+            "Annot.", call. = FALSE)
+  }
+  map
+}
+
+#' Label map with a fallback source
+#'
+#' Identifiers whose primary label is missing or blank take the fallback label;
+#' identifiers absent from both are labelled with themselves by .run_ora.
+#' @param primary,fallback named character vectors (names = identifiers)
+#' @return named character vector
+#' @keywords internal
+#' @noRd
+.fill_labels <- function(primary, fallback) {
+  primary <- stats::setNames(as.character(primary), names(primary))
+  primary <- primary[!is.na(primary) & nzchar(trimws(primary))]
+  extra <- fallback[setdiff(names(fallback), names(primary))]
+  c(primary, extra)
+}
+
+#' Frame labels for the identifiers a primary label source does not cover
+#'
+#' Only the uncovered identifiers are read, so a conflict among frame labels
+#' that are never shown raises no warning.
+#' @param annot annotation data.frame
+#' @param covered identifiers that already have a label
+#' @param func_name name used in the conflicting-label warning
+#' @return named character vector
+#' @keywords internal
+#' @noRd
+.frame_fallback_labels <- function(annot, covered, func_name) {
+  frame <- .annotation_identity_frame(annot)
+  frame <- frame[!as.character(frame$id) %in% covered, , drop = FALSE]
+  .annotation_label_map(frame, func_name = func_name)
+}
+
 #' Normalize annotation membership rows for enrichment
-#' @param annot annotation data.frame with gene and term in its first two columns
+#'
+#' The gene is column 1 and the identifier is the column chosen by the shared
+#' identity rule (.annotation_id_column); the frame keeps its column order.
+#' @param annot annotation data.frame
 #' @param func_name name used in validation messages
-#' @return normalized data.frame and row counts
+#' @return normalized data.frame, row counts and the identifier column name
 #' @keywords internal
 .normalize_annotation <- function(annot, func_name = "enrichment") {
   if (!is.data.frame(annot)) {
@@ -123,7 +221,9 @@
   if (nrow(annot) == 0L) {
     stop(func_name, ": annotation has no membership rows.", call. = FALSE)
   }
-  valid_col <- vapply(annot[1:2], function(col) {
+  id_col <- .annotation_id_column(annot)
+  id_pos <- match(id_col, colnames(annot))
+  valid_col <- vapply(annot[c(1L, id_pos)], function(col) {
     is.atomic(col) && is.null(dim(col))
   }, logical(1))
   if (!all(valid_col)) {
@@ -132,7 +232,7 @@
   }
 
   genes <- as.character(annot[[1]])
-  terms <- as.character(annot[[2]])
+  terms <- as.character(annot[[id_pos]])
   valid <- !is.na(genes) & !is.na(terms) &
     nzchar(trimws(genes)) & nzchar(trimws(terms))
   original_rows <- nrow(annot)
@@ -149,15 +249,16 @@
 
   normalized <- annot[valid, , drop = FALSE]
   normalized[[1]] <- genes[valid]
-  normalized[[2]] <- terms[valid]
+  normalized[[id_pos]] <- terms[valid]
   duplicated_pair <- duplicated(data.frame(
-    gene = normalized[[1]], term = normalized[[2]], stringsAsFactors = FALSE
+    gene = normalized[[1]], term = normalized[[id_pos]], stringsAsFactors = FALSE
   ))
   duplicate_rows <- sum(duplicated_pair)
   normalized <- normalized[!duplicated_pair, , drop = FALSE]
   rownames(normalized) <- NULL
   list(
     data = normalized,
+    id_col = id_col,
     counts = list(
       original_rows = as.integer(original_rows),
       valid_rows = as.integer(valid_rows),
@@ -343,6 +444,7 @@
 #' @param universe optional character vector defining the ORA background
 #' @param annotation_provenance optional annotation provenance captured from an Annot object
 #' @param metadata_ontology ontology label retained for diagnostics
+#' @param label_provenance optional record of the label source used (richKEGG)
 #' @return richResult S4 object
 #' @keywords internal
 .run_ora <- function(x, annot, term_names = NULL, extra_cols = NULL,
@@ -351,7 +453,7 @@
                      keepRich = TRUE, organism = NULL, ontology = "",
                      keytype = "", filename = NULL, sep = ",", universe = NULL,
                      annotation_provenance = NULL, metadata_ontology = ontology,
-                     padj.family = c("overlap", "all")) {
+                     padj.family = c("overlap", "all"), label_provenance = NULL) {
   padj.family <- match.arg(padj.family)
   normalization <- if (!is.data.frame(annot) && is.list(annot) &&
                        all(c("data", "counts") %in% names(annot))) {
@@ -360,6 +462,11 @@
     .normalize_annotation(annot, func_name = "ORA")
   }
   annot <- normalization$data
+  # Fingerprint of the frame passed (callers that narrow it supply their own).
+  fingerprint <- normalization$fingerprint %||% .geneset_fingerprint(annot)
+  # Gene sets are keyed by the identifier column of the shared identity rule.
+  id_col <- .annotation_id_column(annot)
+  annot <- annot[, c(colnames(annot)[1L], id_col), drop = FALSE]
   .validate_enrichment_input(x, annot = annot, pvalue = pvalue,
                              padj.method = padj.method, minSize = minSize, maxSize = maxSize)
   .check_cutoff(padj, "padj", allow_null = TRUE)
@@ -501,9 +608,11 @@
       source_type = "custom", source_name = NA_character_
     )
   }
+  # Computed now, replacing any copy stored on the Annot (REQ-017).
+  annotation_provenance$fingerprint <- fingerprint
   attr(result, "richR_metadata") <- .analysis_metadata(
     "ORA", input_metadata, annotation_counts, background_counts, testing,
-    options, annotation_provenance
+    options, annotation_provenance, labels = label_provenance
   )
   result
 }
@@ -596,28 +705,86 @@ overlap <- function(x, y) {
 }
 
 #' Get KEGG pathway annotation terms
-#' @importFrom KEGGREST keggList
+#'
+#' With \code{builtin = FALSE} the labels come from the live KEGG listing. When
+#' that listing fails or lacks the reference pathway 04148, the bundled labels
+#' are returned instead and a warning names the reason.
 #' @param builtin use built-in KEGG data or fetch from API
 #' @return data.frame with rownames as pathway IDs and "annotation" column
 #' @keywords internal
 .get_kg_dat <- function(builtin = TRUE) {
-  if (isTRUE(builtin)) {
+  .kegg_labels(builtin = builtin)$data
+}
+
+#' KEGG pathway labels together with the source they actually came from
+#'
+#' @param builtin use the bundled snapshot (TRUE) or the live KEGG listing
+#' @param query_release query the KEGG release for a live listing
+#' @return list: \code{data} (labels, as \code{.get_kg_dat}), \code{source}
+#'   (\code{"KEGGREST"} or \code{"bundled"}), \code{release} (character or
+#'   \code{NA}; only for a live listing whose release query yields one),
+#'   \code{retrieved} (date of the labels, or \code{NA} when unknown) and
+#'   \code{reason} (why a live request fell back, else \code{NULL})
+#' @importFrom KEGGREST keggList
+#' @noRd
+.kegg_labels <- function(builtin = TRUE, query_release = FALSE) {
+  bundled <- function(reason = NULL) {
     kegg_env <- new.env(parent = emptyenv())
     utils::data("kegg", package = "richR", envir = kegg_env)
-    return(kegg_env$kegg.db)
+    data <- kegg_env$kegg.db
+    retrieved <- attr(data, "richR_source", exact = TRUE)$retrieved
+    list(data = data, source = "bundled", release = NA_character_,
+         retrieved = if (is.null(retrieved)) NA_character_ else as.character(retrieved),
+         reason = reason)
+  }
+  if (isTRUE(builtin)) {
+    return(bundled())
+  }
+  listing <- tryCatch(keggList('pathway'), error = function(e) e)
+  if (inherits(listing, "error")) {
+    reason <- paste0("live KEGG listing failed (", conditionMessage(listing), ")")
   } else {
-    pathway <- cbind(keggList('pathway'))
+    pathway <- cbind(listing)
     rownames(pathway) <- sub('.*map', '', rownames(pathway))
     colnames(pathway) <- "annotation"
     pathway <- as.data.frame(pathway)
     pathway$annotation <- as.vector(pathway$annotation)
-    if (is.na(pathway['04148', ])) {
-      kegg_env <- new.env(parent = emptyenv())
-      utils::data("kegg", package = "richR", envir = kegg_env)
-      pathway <- kegg_env$kegg.db
+    if (!is.na(pathway["04148", "annotation"])) {
+      return(list(data = pathway, source = "KEGGREST",
+                  release = if (isTRUE(query_release)) .kegg_release() else NA_character_,
+                  retrieved = format(Sys.Date()), reason = NULL))
     }
-    return(pathway)
+    reason <- "live KEGG listing lacks reference pathway 04148"
   }
+  warning("KEGG pathway labels: ", reason,
+          "; using the bundled KEGG snapshot.", call. = FALSE)
+  bundled(reason)
+}
+
+#' KEGG version stated by the KEGG pathway database, or NA
+#'
+#' From \code{keggInfo("pathway")}: the \code{Release ...} entry verbatim when
+#' present; otherwise the stated \code{Last update YYYY/MM/DD} as
+#' \code{"last update YYYY-MM-DD"}; otherwise (or on any error) \code{NA}.
+#' Nothing is inferred from entry counts or other dates.
+#' @importFrom KEGGREST keggInfo
+#' @noRd
+.kegg_release <- function() {
+  info <- tryCatch(keggInfo("pathway"), error = function(e) NULL)
+  if (!is.character(info) || length(info) == 0L) {
+    return(NA_character_)
+  }
+  release <- regmatches(info, regexpr("Release [^,\n]+", info))
+  if (length(release) > 0L) {
+    return(trimws(release[1]))
+  }
+  updated <- regmatches(info, regexec(
+    "Last update ([0-9]{4})/([0-9]{2})/([0-9]{2})", info))
+  updated <- Filter(length, updated)
+  if (length(updated) == 0L) {
+    return(NA_character_)
+  }
+  paste0("last update ", paste(updated[[1]][2:4], collapse = "-"))
 }
 
 #' Get KEGG module annotation terms

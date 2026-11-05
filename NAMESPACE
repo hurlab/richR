@@ -153,103 +153,127 @@ exportMethods(richVolcano)
 exportMethods(summary)
 import(dplyr)
 import(ggplot2)
-importFrom(AnnotationDbi,as.list)
-importFrom(AnnotationDbi,keys)
-importFrom(KEGGREST,keggLink)
-importFrom(KEGGREST,keggList)
+importFrom(AnnotationDbi,
+  as.list,
+  keys
+)
+importFrom(KEGGREST,
+  keggInfo,
+  keggLink,
+  keggList
+)
 importFrom(Rcpp,evalCpp)
 importFrom(S4Vectors,bindROWS)
-importFrom(cowplot,align_plots)
-importFrom(cowplot,draw_plot)
-importFrom(cowplot,ggdraw)
-importFrom(cowplot,plot_grid)
-importFrom(dplyr,arrange)
-importFrom(dplyr,distinct)
-importFrom(dplyr,filter)
-importFrom(dplyr,full_join)
-importFrom(dplyr,group_by)
-importFrom(dplyr,left_join)
-importFrom(dplyr,mutate)
-importFrom(dplyr,n)
-importFrom(dplyr,rename)
-importFrom(dplyr,select)
-importFrom(dplyr,slice)
-importFrom(dplyr,summarise)
-importFrom(fgsea,fgseaMultilevel)
-importFrom(fgsea,plotEnrichment)
-importFrom(fgsea,plotGseaTable)
-importFrom(ggplot2,"%+replace%")
-importFrom(ggplot2,aes)
-importFrom(ggplot2,annotate)
-importFrom(ggplot2,coord_equal)
-importFrom(ggplot2,coord_flip)
-importFrom(ggplot2,coord_polar)
-importFrom(ggplot2,element_blank)
-importFrom(ggplot2,element_line)
-importFrom(ggplot2,element_rect)
-importFrom(ggplot2,element_text)
-importFrom(ggplot2,facet_wrap)
-importFrom(ggplot2,geom_bar)
-importFrom(ggplot2,geom_hline)
-importFrom(ggplot2,geom_line)
-importFrom(ggplot2,geom_point)
-importFrom(ggplot2,geom_segment)
-importFrom(ggplot2,geom_step)
-importFrom(ggplot2,geom_text)
-importFrom(ggplot2,geom_tile)
-importFrom(ggplot2,geom_vline)
-importFrom(ggplot2,ggplot)
-importFrom(ggplot2,ggsave)
-importFrom(ggplot2,ggtitle)
-importFrom(ggplot2,guide_colourbar)
-importFrom(ggplot2,guide_legend)
-importFrom(ggplot2,guides)
-importFrom(ggplot2,labs)
-importFrom(ggplot2,margin)
-importFrom(ggplot2,scale_color_gradient)
-importFrom(ggplot2,scale_color_gradient2)
-importFrom(ggplot2,scale_color_identity)
-importFrom(ggplot2,scale_color_manual)
-importFrom(ggplot2,scale_fill_gradient)
-importFrom(ggplot2,scale_fill_gradient2)
-importFrom(ggplot2,scale_fill_identity)
-importFrom(ggplot2,scale_fill_manual)
-importFrom(ggplot2,scale_size_continuous)
-importFrom(ggplot2,scale_x_continuous)
-importFrom(ggplot2,scale_x_discrete)
-importFrom(ggplot2,scale_y_continuous)
-importFrom(ggplot2,theme)
-importFrom(ggplot2,theme_bw)
-importFrom(ggplot2,theme_light)
-importFrom(ggplot2,theme_minimal)
-importFrom(ggplot2,theme_void)
-importFrom(ggplot2,xlab)
-importFrom(ggplot2,ylab)
-importFrom(ggplot2,ylim)
-importFrom(grDevices,adjustcolor)
-importFrom(grDevices,col2rgb)
-importFrom(grDevices,colorRampPalette)
-importFrom(grDevices,rgb)
-importFrom(igraph,"E<-")
-importFrom(igraph,"V<-")
-importFrom(igraph,E)
-importFrom(igraph,V)
-importFrom(igraph,degree)
-importFrom(igraph,delete.edges)
-importFrom(igraph,graph.data.frame)
-importFrom(igraph,graph_from_data_frame)
-importFrom(igraph,simplify)
-importFrom(igraph,write_graph)
-importFrom(magrittr,"%<>%")
-importFrom(magrittr,"%>%")
+importFrom(cowplot,
+  align_plots,
+  draw_plot,
+  ggdraw,
+  plot_grid
+)
+importFrom(digest,digest)
+importFrom(dplyr,
+  arrange,
+  distinct,
+  filter,
+  full_join,
+  group_by,
+  left_join,
+  mutate,
+  n,
+  rename,
+  select,
+  slice,
+  summarise
+)
+importFrom(fgsea,
+  fgseaMultilevel,
+  plotEnrichment,
+  plotGseaTable
+)
+importFrom(ggplot2,
+  "%+replace%",
+  aes,
+  annotate,
+  coord_equal,
+  coord_flip,
+  coord_polar,
+  element_blank,
+  element_line,
+  element_rect,
+  element_text,
+  facet_wrap,
+  geom_bar,
+  geom_hline,
+  geom_line,
+  geom_point,
+  geom_segment,
+  geom_step,
+  geom_text,
+  geom_tile,
+  geom_vline,
+  ggplot,
+  ggsave,
+  ggtitle,
+  guide_colourbar,
+  guide_legend,
+  guides,
+  labs,
+  margin,
+  scale_color_gradient,
+  scale_color_gradient2,
+  scale_color_identity,
+  scale_color_manual,
+  scale_fill_gradient,
+  scale_fill_gradient2,
+  scale_fill_identity,
+  scale_fill_manual,
+  scale_size_continuous,
+  scale_x_continuous,
+  scale_x_discrete,
+  scale_y_continuous,
+  theme,
+  theme_bw,
+  theme_light,
+  theme_minimal,
+  theme_void,
+  xlab,
+  ylab,
+  ylim
+)
+importFrom(grDevices,
+  adjustcolor,
+  col2rgb,
+  colorRampPalette,
+  rgb
+)
+importFrom(igraph,
+  "E<-",
+  "V<-",
+  E,
+  V,
+  degree,
+  delete.edges,
+  graph.data.frame,
+  graph_from_data_frame,
+  simplify,
+  write_graph
+)
+importFrom(magrittr,
+  "%<>%",
+  "%>%"
+)
 importFrom(methods,new)
 importFrom(msigdbr,msigdbr)
 importFrom(rlang,sym)
-importFrom(stats,as.dist)
-importFrom(stats,cor)
-importFrom(stats,hclust)
-importFrom(stats,na.omit)
-importFrom(stats,setNames)
-importFrom(utils,data)
-importFrom(utils,write.table)
+importFrom(stats,
+  as.dist,
+  cor,
+  hclust,
+  na.omit,
+  setNames
+)
+importFrom(utils,
+  data,
+  write.table
+)
 useDynLib(richR, .registration = TRUE)

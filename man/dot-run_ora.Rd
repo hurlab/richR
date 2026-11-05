@@ -25,7 +25,8 @@
   universe = NULL,
   annotation_provenance = NULL,
   metadata_ontology = ontology,
-  padj.family = c("overlap", "all")
+  padj.family = c("overlap", "all"),
+  label_provenance = NULL
 )
 }
 \arguments{
@@ -72,6 +73,8 @@
 \item{padj.family}{family adjusted by \code{padj.method}: \code{"overlap"}
 (size-eligible terms with query overlap >= 1) or \code{"all"} (every
 size-eligible term, zero-overlap terms contributing p = 1)}
+
+\item{label_provenance}{optional record of the label source used (richKEGG)}
 }
 \value{
 richResult S4 object

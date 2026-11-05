@@ -58,7 +58,8 @@ enrichmentInfo <- function(x) {
                                    source_name = NULL, source_version = NA_character_,
                                    provider_package = NULL,
                                    provider_version = NULL,
-                                   constructor_normalization = NULL) {
+                                   constructor_normalization = NULL,
+                                   label_source = NULL) {
   if (methods::is(object, "Annot")) {
     previous <- attr(object, "richR_metadata", exact = TRUE)
     if (is.list(previous) && is.list(previous$provenance$annotation)) {
@@ -74,7 +75,7 @@ enrichmentInfo <- function(x) {
     source_type <- source_type %||% "unknown"
     source_name <- source_name %||% NA_character_
   }
-  list(
+  provenance <- list(
     constructor = constructor,
     species = species,
     keytype = keytype,
@@ -86,6 +87,10 @@ enrichmentInfo <- function(x) {
     provider_version = provider_version,
     constructor_normalization = constructor_normalization
   )
+  ## Where the labels came from (KEGG / KEGGM), kept apart from the membership
+  ## provider above so a bundled fallback is never read as a live retrieval.
+  if (!is.null(label_source)) provenance$label_source <- label_source
+  provenance
 }
 
 `%||%` <- function(x, y) if (is.null(x)) y else x
@@ -100,8 +105,78 @@ enrichmentInfo <- function(x) {
        options = options)
 }
 
+#' Gene-set fingerprints of an annotation frame (canonical form richR-geneset-v1)
+#'
+#' Pairs are (identifier, gene) under the shared identity rule, restricted to
+#' valid rows, de-duplicated and sorted in C-locale byte order; values are
+#' UTF-8 and escaped (backslash, TAB, LF, CR). \code{membership} hashes
+#' \code{id<TAB>gene} lines; \code{full} adds each identifier's label (first
+#' non-blank \code{Annot} in row order, else the identifier). Both are SHA-256
+#' of the text itself, never of a serialized R object.
+#' @param annot annotation data.frame or Annot object
+#' @return list(algorithm, canonicalization, membership, full, n_pairs, n_sets, n_genes)
+#' @importFrom digest digest
+#' @noRd
+.geneset_fingerprint <- function(annot) {
+  frame <- .annotation_identity_frame(annot)
+  ids <- as.character(frame$id)
+  genes <- as.character(frame$GeneID)
+  labels <- as.character(frame$label)
+  ## Blank = only spaces, TAB, CR or LF (what trimws() strips).
+  blank <- function(x) grepl("^[ \t\r\n]*$", x, perl = TRUE)
+  valid <- !is.na(ids) & !is.na(genes) & !blank(ids) & !blank(genes)
+  ids <- enc2utf8(ids[valid])
+  genes <- enc2utf8(genes[valid])
+  labels <- labels[valid]
+  ## Label of each identifier: its first non-blank label in row order (REQ-003).
+  labelled <- which(!is.na(labels) & !blank(labels))
+  first <- labelled[!duplicated(ids[labelled])]
+  ## Unique pairs in C-locale byte order: sort, then drop repeats of the previous pair.
+  o <- order(ids, genes, method = "radix")
+  id <- ids[o]
+  gene <- genes[o]
+  n <- length(id)
+  keep <- if (n > 1L) c(TRUE, id[-1L] != id[-n] | gene[-1L] != gene[-n]) else rep(TRUE, n)
+  id <- id[keep]
+  gene <- gene[keep]
+  label <- labels[first][match(id, ids[first])]
+  label[is.na(label)] <- id[is.na(label)]
+  escape <- function(x) {
+    if (!any(grepl("[\\\\\t\n\r]", x, perl = TRUE))) return(x)
+    x <- gsub("\\", "\\\\", x, fixed = TRUE)
+    x <- gsub("\t", "\\t", x, fixed = TRUE)
+    x <- gsub("\n", "\\n", x, fixed = TRUE)
+    gsub("\r", "\\r", x, fixed = TRUE)
+  }
+  id_text <- escape(id)
+  gene_text <- escape(gene)
+  label <- escape(enc2utf8(label))
+  ## Hash the canonical text's bytes, written field by field into memory (much
+  ## faster than paste(collapse =) on large annotations; same bytes).
+  hash <- function(header, fields) {
+    con <- rawConnection(raw(0), "wb")
+    on.exit(close(con))
+    writeLines(header, con, sep = "\n", useBytes = TRUE)
+    if (length(id)) {
+      writeLines(as.vector(do.call(rbind, fields)), con, sep = "", useBytes = TRUE)
+    }
+    digest(rawConnectionValue(con), algo = "sha256", serialize = FALSE)
+  }
+  m <- length(id)
+  list(
+    algorithm = "sha256", canonicalization = "richR-geneset-v1",
+    membership = hash("richR-geneset-v1", list(id_text, "\t", gene_text, "\n")),
+    full = hash("richR-geneset-v1/full",
+                list(id_text, "\t", gene_text, "\t", label, "\n")),
+    n_pairs = m,
+    n_sets = if (m) 1L + sum(id[-1L] != id[-m]) else 0L,
+    n_genes = length(unique(gene))
+  )
+}
+
 .attach_annotation_metadata <- function(object, normalization, provenance,
                                         options = list()) {
+  provenance$fingerprint <- .geneset_fingerprint(object@annot)
   attr(object, "richR_metadata") <- .annotation_metadata(
     normalization, provenance, options
   )
@@ -110,8 +185,9 @@ enrichmentInfo <- function(x) {
 
 .analysis_metadata <- function(analysis, input, annotation, background,
                                testing, options, annotation_provenance,
-                               fgsea_version = NULL, rng = NULL) {
-  list(schema_version = 1L, available = TRUE, analysis = analysis,
+                               fgsea_version = NULL, rng = NULL,
+                               labels = NULL) {
+  metadata <- list(schema_version = 1L, available = TRUE, analysis = analysis,
        input = input, annotation = annotation, background = background,
        testing = testing, options = options,
        provenance = list(richR_version = .richr_version(),
@@ -119,4 +195,7 @@ enrichmentInfo <- function(x) {
                          fgsea_version = fgsea_version,
                          annotation = annotation_provenance,
                          rng = rng))
+  ## Label source used at analysis time (richKEGG), when the analysis looked labels up.
+  if (!is.null(labels)) metadata$provenance$labels <- labels
+  metadata
 }

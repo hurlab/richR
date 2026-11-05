@@ -106,10 +106,13 @@ test_that("bundled KEGG and module loaders isolate existing and absent globals",
   }
 
   with_global_data_state(values = list(kegg.db = marker), code = {
-    fallback_kegg <- testthat::with_mocked_bindings(
-      keggList = function(...) setNames("fallback trigger", "path:hsa00001"),
-      active_kegg(builtin = FALSE),
-      .package = "richR"
+    expect_warning(
+      fallback_kegg <- testthat::with_mocked_bindings(
+        keggList = function(...) setNames("fallback trigger", "path:hsa00001"),
+        active_kegg(builtin = FALSE),
+        .package = "richR"
+      ),
+      "bundled"
     )
     expect_identical(fallback_kegg, kegg_reference)
     expect_identical(get("kegg.db", envir = .GlobalEnv), marker)

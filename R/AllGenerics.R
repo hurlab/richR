@@ -121,6 +121,11 @@ setGeneric("richKEGG", function(x,kodata,pvalue=0.05,padj=0.05,organism=NULL,ont
 #' @param seed optional seed scoped to this GSEA call
 #' @param ... additional arguments
 ##' @return GSEAResult
+#' @section Identifier convention:
+#' \code{Term} (like \code{GOALL}, \code{PATH} and \code{Module}) is the
+#' identifier column in an annotation frame and \code{Annot} holds the label;
+#' in a GSEA result, \code{pathway} is the identifier and \code{Term} the
+#' label (in an ORA result, \code{Annot} and \code{Term}).
 #' @examples
 #' \dontrun{
 #' set.seed(123)
@@ -169,6 +174,12 @@ setGeneric("richGSEA", function(x,object,keytype="",pvalue=0.05,padj=0.05,KEGG=F
 #' @param sep character string used to separate the genes when concatenating
 #' @param ... additional arguments
 ##' @return richResult
+#' @section Identifier convention:
+#' \code{Term} (like \code{GOALL}, \code{PATH} and \code{Module}) is the
+#' identifier column in an annotation frame and \code{Annot} holds the label;
+#' in a result, \code{Annot} is the identifier and \code{Term} the label.
+#' Gene sets are keyed by the identifier; an identifier that carries
+#' conflicting labels takes the first in row order, with a warning.
 ##' @examples
 ##' \dontrun{
 ##' library(bioAnno)

@@ -73,6 +73,14 @@ GSEAResult
 \description{
 richGSEA
 }
+\section{Identifier convention}{
+
+\code{Term} (like \code{GOALL}, \code{PATH} and \code{Module}) is the
+identifier column in an annotation frame and \code{Annot} holds the label;
+in a GSEA result, \code{pathway} is the identifier and \code{Term} the
+label (in an ORA result, \code{Annot} and \code{Term}).
+}
+
 \examples{
 \dontrun{
 set.seed(123)

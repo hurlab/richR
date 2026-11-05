@@ -89,6 +89,109 @@
   10 annotated genes, so `keepRich` has no effect unless `minGSSize` is
   lowered below `minSize`.
 
+### Annotation identity (changes ORA results and labels)
+
+- One identifier rule for every annotation builder, ORA function and
+  `richGSEA()`: column 1 is the gene; the identifier is the first of `GOALL`,
+  `PATH`, `Module` or `Term`, otherwise column 2; the label is `Annot`.
+  `Term` (like `GOALL`, `PATH` and `Module`) is the identifier column in an
+  annotation frame, while in an ORA result `Annot` is the identifier and
+  `Term` the label (in a GSEA result, `pathway` and `Term`). The help pages of
+  `enrich()`, `richGSEA()`, `readGMT()` and `buildAnnotFromList()` state this
+  convention.
+- `enrich()` results now show labels: `Term` holds the label taken from the
+  annotation frame's `Annot` column (the identifier where no label exists)
+  and `Annot` the identifier. In 0.1.x `enrich()` reported the identifier in
+  both. The result and detail columns are unchanged.
+- Migration: in 0.2.0 ORA, as in `richGSEA()`, `Term` is the identifier
+  column of an annotation frame and `Annot` the label, whatever the column
+  order. In 0.1.x, ORA keyed a three-column frame by column 2. Two layouts
+  with column 2 = `Annot` therefore change keying:
+  - `(GeneID, Annot = label, Term = ID)`: 0.1.x keyed it by the label, so
+    identifiers sharing a label were merged; 0.2.0 keys it by `Term`, the
+    identifier, and tests them separately. Gene sets, counts and result rows
+    can change; no action is needed.
+  - `(GeneID, Annot = ID, Term = label)` (named like a result): 0.1.x keyed it
+    by the identifier in `Annot`; 0.2.0 keys it by the label in `Term`, so
+    identifiers sharing a label are merged into one gene set, with a
+    conflicting-labels warning. For example, with
+    `Annot = c("T1", "T1", "T2", "T2")` and `Term = c("same", "same", "same", "same")`,
+    0.1.x tested two gene sets, `T1` and `T2`; 0.2.0 tests one, `same`, and
+    reports `Annot = "same"`, `Term = "T1"`. Rename the columns so that `Term`
+    holds the identifier and `Annot` the label:
+    `names(frame)[2:3] <- c("Term", "Annot")`.
+- An identifier that carries different labels in one annotation takes the
+  first label in row order, and ORA and GSEA warn once, naming the gene sets
+  (`conflicting labels (Annot) for gene set(s) ...`) and the column
+  convention.
+- Builder messages count gene sets by the identifier column rather than by
+  column position, and the set-name builders (`readGMT()`, `buildAnnotFromList()`, set-name
+  `buildMSIGDB()` collections) write the set name to both `Term` and `Annot`.
+- `buildAnnot(anntype = "Reactome")` now keeps the pathway identifier: the
+  annotation has the columns `GeneID`, `Term` (the `R-HSA-` identifier) and
+  `Annot` (the pathway name without the species prefix). Reactome pathways
+  that share a name are tested as separate gene sets; in 0.1.x they were
+  merged by name (with reactome.db 1.96.0, 2845 human pathways with genes
+  became 2836 gene sets, because 18 pathways share 9 names). ORA results
+  report the identifier in `Annot` and the name in `Term`; GSEA results in
+  `pathway` and `Term`. No pathway is dropped: every human pathway with at
+  least one gene is kept.
+- `buildAnnot(anntype = "Reactome")` no longer needs reactome.db to be
+  attached; in 0.1.x it failed with `object 'reactomePATHNAME2ID' not found`
+  unless `library(reactome.db)` had been called first.
+- ORA plots draw one category per identifier. Where two terms share a label,
+  the identifier is appended (`"label [ID]"`), in `richBar()`, `richDot()`,
+  `richNetplot()`, `richNetwork()`, `richHeatmap()`, `richCompareDot()`,
+  `richClusterDot()` and the other ORA plot functions; in 0.1.x such terms
+  were merged into one bar or point, or the plot failed while naming network
+  nodes. The labels are computed after `short = TRUE` shortening, so labels
+  that become equal once shortened stay apart (also for GSEA plots).
+- `richHeatmap()`, `richCompareDot()` and `richClusterDot()` match rows
+  across results by identifier (`Annot`) instead of by label; a legacy
+  result without `Annot` is still matched by `Term`.
+
+### KEGG labels and provenance
+
+- `richKEGG(builtin = FALSE)` and `buildAnnot(anntype = "KEGG", builtin =
+  FALSE)` read pathway labels from live KEGG. When that listing fails, or
+  lacks the reference pathway `04148`, richR now warns
+  (`KEGG pathway labels: <reason>; using the bundled KEGG snapshot.`) and uses
+  the bundled labels. In 0.1.x a failed listing stopped with an error and a
+  listing without `04148` switched to the bundled labels silently. There is
+  no option to silence the warning.
+- KEGG and KEGG module annotations, and `richKEGG()` results, record the
+  label source actually used, separately from the membership provider:
+  `enrichmentInfo(<Annot>)$provenance$annotation$label_source` and
+  `enrichmentInfo(<richResult>)$provenance$labels` hold `source`
+  (`"KEGGREST"` or `"bundled"`), `release` and `retrieved`. A fallback is
+  never recorded as a live retrieval.
+- For live KEGG labels the KEGG version is recorded in `label_source$release`
+  and in `source_version`: the release KEGG states, verbatim (for example
+  `Release 116.0+/10-28`); otherwise `last update YYYY-MM-DD`, built from the
+  update date KEGG states (for example `last update 2026-10-28` from
+  `Last update 2026/10/28`); otherwise `NA`. KEGG stopped stating a release
+  number in its database information; richR never infers one. For bundled
+  labels, a fallback or KEGG modules the KEGG version is `NA`.
+- `source_version` is recorded only where the source states a version (the
+  msigdbr `db_version`, the KEGG version above) and is `NA` otherwise; the
+  provider package and its version stay in their own fields.
+
+### Gene-set fingerprints
+
+- Every annotation built by richR (`buildAnnot()`, `buildOwn()`,
+  `buildMSIGDB()`, `readGMT()`, `buildAnnotFromList()`) and every ORA and
+  GSEA result records two gene-set fingerprints in
+  `enrichmentInfo(x)$provenance$annotation$fingerprint`: `membership`, the
+  sha256 of the identifier-gene pairs, and `full`, the sha256 of the pairs
+  plus each identifier's label, with `algorithm = "sha256"`,
+  `canonicalization = "richR-geneset-v1"` and the numbers of pairs, gene sets
+  and genes. Equal `membership` means the same gene sets were tested; equal
+  `full` means the same labels would be printed too. Both ignore row order,
+  duplicated rows, row names, extra columns and factor versus character
+  columns. Results fingerprint the annotation actually passed to the
+  analysis, so an annotation edited after it was built is fingerprinted as
+  used. `digest` is a new import.
+
 ### GSEA
 
 - `richGSEA()` keys gene sets by annotation identifier. Distinct gene sets
@@ -107,14 +210,37 @@
 - Plots of a `GSEAResult` show the `Term` label; where two pathways share a
   label, the identifier is appended (`"label [ID]"`) so they are drawn as two
   categories with their own values.
-- Reactome pathways that share a name are still tested as one gene set,
-  because `buildAnnot(anntype = "Reactome")` returns no identifier column.
-  This is fixed in a later milestone of 0.2.0.
 - Removed the unused `minGSSize` and `maxGSSize` arguments of the internal
   GSEA routine: they were validated and recorded but never passed to fgsea,
   and the exported `richGSEA()` methods never exposed them. The GSEA family
   is bounded by `minSize` / `maxSize` on the gene-set members found in the
   ranked list.
+
+### Bundled KEGG data (changes KEGG names, levels and counts)
+
+- The bundled `kegg.db`, `module` and `path` were rebuilt from live KEGG on
+  2026-11-05. KEGG stated no release number that day, only its last update,
+  so the KEGG version is recorded as `last update 2026-10-28`. The rebuild
+  depended on KEGG on that date and is not byte-reproducible. Each object
+  records its retrieval date, KEGG version and source URL in
+  `attr(<object>, "richR_source")`, and its help page states the same values
+  and the row count. A KEGG label fallback (`richKEGG(builtin = FALSE)` or
+  `buildAnnot(anntype = "KEGG", builtin = FALSE)` when the live listing fails)
+  now reports the snapshot's retrieval date in `enrichmentInfo()`.
+- `kegg.db` grew from 567 to 587 pathways (21 added, `03269` removed, 12
+  renamed, for example `04145` "Phagosome" is now "Phagocytosis"), `module`
+  from 473 to 583 modules (112 added, `M00166` and `M00167` removed, 32
+  renamed) and `path` from 580 rows to 587 pathways (8 added, 11 `Level3` and
+  1 `Level2` values changed). `richKEGG()`, `richLevel()` and `richGSEA()`
+  results on KEGG annotations show the new names and levels.
+- `path` now has exactly one row per pathway. The earlier snapshot listed
+  `00541` twice ("O-Antigen nucleotide sugar biosynthesis" under "Glycan
+  biosynthesis and metabolism", and "Biosynthesis of various nucleotide
+  sugars" under "Carbohydrate metabolism"), so `richLevel()` counted the
+  genes of `00541` under both rows, while `richKEGG()` and `richGSEA()` used
+  only the first. `richLevel()` now counts each pathway under one hierarchy
+  row; `00541` is the only pathway affected. Where KEGG lists a pathway under
+  several hierarchy rows, `data-raw/path.R` keeps the first in KEGG's order.
 
 ### Requirements and packaging
 
@@ -133,9 +259,10 @@
   the object `kegg.db`. `data(kegg.db)` loads nothing and warns that the data
   set was not found.
 - Added `data-raw/` scripts (`kegg.R`, `module.R`, `path.R`, `pathway.R`) that
-  rebuild the bundled KEGG data and record the retrieval date. They were not
-  run for this release: the files in `data/` are unchanged, and the retrieval
-  dates of the bundled snapshots remain unknown.
+  rebuild the bundled KEGG data and record the retrieval date and KEGG
+  version. `kegg.R`, `module.R` and `path.R` were run for this release (see
+  "Bundled KEGG data" below); `pathway.R` was not, and `godata` and `pathway`
+  are unchanged, with unknown retrieval dates.
 - Corrected the documentation of the bundled data: `godata` is a named list of
   GO terms mapped to themselves and their offspring, not a data frame of gene
   annotations.
@@ -160,13 +287,16 @@
   that the class has no `detail` slot. In 0.1.5 the call failed with
   `no slot of name "detail"` because an outdated duplicate method read a slot
   that `GSEAResult` does not have.
+- `richDot()` now honours `short = TRUE` and shortens long term labels like
+  the other dot and bar plots; in 0.1.x both of its methods accepted `short`
+  but ignored it.
 
 ### Internal changes
 
-These changes do not alter results: the `NAMESPACE` file, and so the set of
-exported functions, is unchanged from 0.1.5, and the only characterization
-snapshot they changed is the `detail()` bug fix above. (The GSEA and
-`compareGSEA()` snapshots were later re-pinned for the behaviour changes
+These changes do not alter results: the set of exported functions is
+unchanged from 0.1.5, and the only characterization snapshot they changed is
+the `detail()` bug fix above. (The GSEA, `compareGSEA()`, `enrich()` and
+`compareResult()` snapshots were later re-pinned for the behaviour changes
 described in the sections above.)
 
 - Removed `R/misc.R`, which held outdated duplicate definitions of 32 functions
@@ -181,6 +311,25 @@ described in the sections above.)
 - Added characterization tests (testthat edition 3 snapshots on small
   fixtures) that pin the ORA, GSEA, `richLevel`, `compareResult`,
   `compareGSEA`, `richCluster`, accessor and coercion behaviour of 0.1.5.
+
+## Version 0.1.6 (2026-11-05)
+
+Bug-fix release on top of 0.1.5; no changes to statistics, cutoffs or result columns.
+
+- `richDot(short = TRUE)` now shortens long term labels; the option was
+  previously ignored.
+- With `builtin = FALSE`, `richKEGG()` no longer stops when the live KEGG
+  pathway listing cannot be reached. It uses the bundled KEGG labels and warns,
+  and it now also warns when it falls back because the live listing is
+  incomplete.
+- ORA plots draw two terms that share a label as two categories,
+  `label [ID]`. Before, `richBar()` and `richDot()` with `order = TRUE`,
+  `richNetwork()`, `richNetplot()` and `richHeatmap()` stopped with an error,
+  and the other plots merged the two terms into one. `richHeatmap()` now
+  matches rows across results by term ID.
+- `compareGSEA()` with a `padj` cutoff no longer stops with
+  "object 'Padj' not found", and it labels each group's NES, adjusted and raw
+  p-values from that group's own pathway instead of by position.
 
 ## Version 0.1.5 (2026-10-20)
 

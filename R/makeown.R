@@ -20,6 +20,7 @@ buildOwn<-function(dbname,anntype="GO",OP=NULL,species="",keytype=""){
     stop("Please give the package name")
   }
   dbname<-getExportedValue(dbname, dbname)
+  label_source <- NULL
   if(anntype=="GO"){
     annof<-AnnotationDbi::select(dbname,keys=keys(dbname,keytype=keytype),keytype=keytype,columns=c("GOALL","ONTOLOGYALL"))
     colnames(annof)[1]<-"GeneID"
@@ -32,13 +33,19 @@ buildOwn<-function(dbname,anntype="GO",OP=NULL,species="",keytype=""){
     }
   }else if(anntype=="KEGG"){
     annof=AnnotationDbi::select(dbname,keys=keys(dbname,keytype=keytype),keytype=keytype,columns="PATH")
-    annot<-getann("KEGG")
+    labels<-.kegg_labels(builtin = TRUE)
+    annot<-labels$data
+    label_source<-labels[c("source", "release", "retrieved")]
     annof[,1]<-as.vector(annof[,1])
     annof[,2]<-as.vector(annof[,2])
     annof$Annot<-annot[annof[,2],"annotation"]
   }else if(anntype=="KEGGM"){
     annof=AnnotationDbi::select(dbname,keys=keys(dbname,keytype=keytype),keytype=keytype,columns="KEGGM")
     annot<-.get_kgm.data()
+    ## Module labels always come from the bundled module snapshot.
+    retrieved <- attr(annot, "richR_source", exact = TRUE)$retrieved
+    label_source <- list(source = "bundled", release = NA_character_,
+      retrieved = if (is.null(retrieved)) NA_character_ else as.character(retrieved))
     annof[,1]<-as.vector(annof[,1])
     annof[,2]<-as.vector(annof[,2])
     annof$Annot<-annot[annof[,2],"annotation"]
@@ -62,7 +69,8 @@ buildOwn<-function(dbname,anntype="GO",OP=NULL,species="",keytype=""){
     anntype = anntype, source_type = "package",
     source_name = provider_package, source_version = NA_character_,
     provider_package = provider_package, provider_version = provider_version,
-    constructor_normalization = normalization$counts
+    constructor_normalization = normalization$counts,
+    label_source = label_source
   )
   .attach_annotation_metadata(result, normalization, provenance,
                               options = list(ontology = OP))

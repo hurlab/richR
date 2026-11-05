@@ -81,6 +81,14 @@ Gene sets are keyed by identifier, so distinct identifiers that
   optionally organism-prefixed) are joined to the KEGG levels by identifier,
   other values by the \code{Level3} name.
 }
+\section{Identifier convention}{
+
+\code{Term} (like \code{GOALL}, \code{PATH} and \code{Module}) is the
+identifier column in an annotation frame and \code{Annot} holds the label;
+in a GSEA result, \code{pathway} is the identifier and \code{Term} the
+label (in an ORA result, \code{Annot} and \code{Term}).
+}
+
 \examples{
 \dontrun{
 hsako<-buildAnnot(species="human",keytype="SYMBOL",anntype = "KEGG")

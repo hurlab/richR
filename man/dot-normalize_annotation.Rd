@@ -7,14 +7,15 @@
 .normalize_annotation(annot, func_name = "enrichment")
 }
 \arguments{
-\item{annot}{annotation data.frame with gene and term in its first two columns}
+\item{annot}{annotation data.frame}
 
 \item{func_name}{name used in validation messages}
 }
 \value{
-normalized data.frame and row counts
+normalized data.frame, row counts and the identifier column name
 }
 \description{
-Normalize annotation membership rows for enrichment
+The gene is column 1 and the identifier is the column chosen by the shared
+identity rule (.annotation_id_column); the frame keeps its column order.
 }
 \keyword{internal}

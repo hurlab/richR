@@ -28,6 +28,15 @@ GMT format: each line is tab-separated with:
   \item Gene 1, Gene 2, ... (tab-separated)
 }
 }
+\section{Identifier convention}{
+
+\code{Term} (like \code{GOALL}, \code{PATH} and \code{Module}) is the
+identifier column in an annotation frame and \code{Annot} holds the label;
+in a result, \code{Annot} is the identifier and \code{Term} the label.
+This builder writes the gene-set name to both \code{Term} and
+\code{Annot}, so the identifier and the label are the same string.
+}
+
 \examples{
 \dontrun{
 # Read MSigDB hallmark gene sets

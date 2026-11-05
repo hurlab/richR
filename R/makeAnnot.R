@@ -229,7 +229,6 @@ buildMSIGDB<-function(species="human",keytype="SYMBOL",anntype="GO"){
 
 #' make Reactome annotation data function
 #' @importFrom AnnotationDbi as.list
-#' @importFrom dplyr left_join
 #' @param species you can check the supported species by using showAvailableRO
 #' @param keytype key type export
 #' @author Kai Guo

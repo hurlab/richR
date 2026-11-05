@@ -162,9 +162,11 @@
   map <- stats::setNames(labels[first], ids[first])
   conflicting <- unique(ids[labels != map[ids]])
   if (length(conflicting)) {
-    warning(func_name, ": identifier(s) with conflicting labels; using the first label ",
-            "in annotation row order: ", paste(conflicting, collapse = ", "),
-            call. = FALSE)
+    warning(func_name, ": conflicting labels (Annot) for gene set(s) ",
+            paste(conflicting, collapse = ", "),
+            "; using the first label in annotation row order. Gene sets are keyed ",
+            "by Term (or GOALL, PATH, Module; otherwise column 2) and labelled by ",
+            "Annot.", call. = FALSE)
   }
   map
 }

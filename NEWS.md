@@ -103,14 +103,27 @@
   annotation frame's `Annot` column (the identifier where no label exists)
   and `Annot` the identifier. In 0.1.x `enrich()` reported the identifier in
   both. The result and detail columns are unchanged.
-- Migration: a user frame laid out as `(GeneID, Annot, Term)`, with the label
-  column before the identifier, was keyed by the label (column 2) in 0.1.x
-  ORA. It is now keyed by `Term`, the identifier, as in `richGSEA()`, so its
-  gene sets, counts and result rows can change. Put the identifier in `Term`
-  (or column 2 of a two-column frame) and the label in `Annot`.
+- Migration: in 0.2.0 ORA, as in `richGSEA()`, `Term` is the identifier
+  column of an annotation frame and `Annot` the label, whatever the column
+  order. In 0.1.x, ORA keyed a three-column frame by column 2. Two layouts
+  with column 2 = `Annot` therefore change keying:
+  - `(GeneID, Annot = label, Term = ID)`: 0.1.x keyed it by the label, so
+    identifiers sharing a label were merged; 0.2.0 keys it by `Term`, the
+    identifier, and tests them separately. Gene sets, counts and result rows
+    can change; no action is needed.
+  - `(GeneID, Annot = ID, Term = label)` (named like a result): 0.1.x keyed it
+    by the identifier in `Annot`; 0.2.0 keys it by the label in `Term`, so
+    identifiers sharing a label are merged into one gene set, with a
+    conflicting-labels warning. For example, with
+    `Annot = c("T1", "T1", "T2", "T2")` and `Term = c("same", "same", "same", "same")`,
+    0.1.x tested two gene sets, `T1` and `T2`; 0.2.0 tests one, `same`, and
+    reports `Annot = "same"`, `Term = "T1"`. Rename the columns so that `Term`
+    holds the identifier and `Annot` the label:
+    `names(frame)[2:3] <- c("Term", "Annot")`.
 - An identifier that carries different labels in one annotation takes the
-  first label in row order, and ORA and GSEA warn once, naming the
-  identifiers (`identifier(s) with conflicting labels`).
+  first label in row order, and ORA and GSEA warn once, naming the gene sets
+  (`conflicting labels (Annot) for gene set(s) ...`) and the column
+  convention.
 - Builder messages count gene sets by the identifier column rather than by
   column position, and the set-name builders (`readGMT()`, `buildAnnotFromList()`, set-name
   `buildMSIGDB()` collections) write the set name to both `Term` and `Annot`.

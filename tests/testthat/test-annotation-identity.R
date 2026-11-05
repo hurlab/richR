@@ -97,6 +97,10 @@ test_that("ORA warns once on conflicting labels and keeps the first in row order
   expect_length(out$conflicts, 1L)
   expect_match(out$conflicts, "T1")
   expect_false(grepl("T2", out$conflicts))
+  # The message names the column convention, so a frame whose identifier and
+  # label columns are swapped can be recognised from it.
+  expect_match(out$conflicts, "Annot", fixed = TRUE)
+  expect_match(out$conflicts, "Term (or GOALL, PATH, Module", fixed = TRUE)
   res <- out$value@result
   expect_identical(res$Term[res$Annot == "T1"], "a")
   expect_identical(res$Term[res$Annot == "T2"], "fine")

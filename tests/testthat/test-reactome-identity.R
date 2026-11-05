@@ -1,6 +1,8 @@
 # Reactome annotation identity (REQ-006 .. REQ-008), offline: the reactome.db
 # maps are replaced by small in-memory maps through the .reactome_map accessor,
-# so these tests need neither reactome.db nor the network.
+# so these tests need neither reactome.db nor the network. Upstream-portable:
+# they assert only the annotation frame and ORA gene-set keys, never result
+# labels (the fork-only label checks live in test-reactome-provider.R).
 
 reactome_maps <- function(name) {
   maps <- list(
@@ -55,23 +57,6 @@ test_that("enrich() tests same-name Reactome pathways as two gene sets", {
                                  pvalue = 1, padj = 1, minSize = 1, minGSSize = 1))@result
   apoptosis <- res[res$Annot %in% c("R-HSA-1", "R-HSA-2"), ]
   expect_identical(sort(apoptosis$Annot), c("R-HSA-1", "R-HSA-2"))
-  expect_identical(apoptosis$Term, c("Apoptosis", "Apoptosis"))
   expect_equal(apoptosis$Annotated[match(c("R-HSA-1", "R-HSA-2"), apoptosis$Annot)],
                c(5, 7))
-})
-
-test_that("richGSEA() tests same-name Reactome pathways as two gene sets", {
-  skip_if_not_installed("fgsea")
-  # Catches: same-name Reactome pathways merged into one gene set in GSEA.
-  annot <- build_reactome()
-  genes <- c(as.character(101:112), as.character(120:122), as.character(301:330))
-  ranks <- stats::setNames(seq(3, -3, length.out = length(genes)), genes)
-  res <- NULL
-  utils::capture.output(
-    res <- richGSEA(ranks, annot, minSize = 1, maxSize = 50, pvalue = 1, padj = 1,
-                    seed = 7, nproc = 1)@result
-  )
-  apoptosis <- res[res$pathway %in% c("R-HSA-1", "R-HSA-2"), ]
-  expect_identical(sort(apoptosis$pathway), c("R-HSA-1", "R-HSA-2"))
-  expect_identical(apoptosis$Term, c("Apoptosis", "Apoptosis"))
 })

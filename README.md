@@ -74,9 +74,13 @@ pathways that share a name stay separate gene sets.
 
 KEGG pathway labels come from the bundled snapshot by default. With
 `builtin = FALSE` they are read from live KEGG; when that listing fails, richR
-warns and uses the bundled labels instead. `enrichmentInfo()` records which
-source was used (`label_source`), the snapshot's retrieval date, and the KEGG
-version when KEGG states one (its release, or `last update YYYY-MM-DD`).
+warns and uses the bundled labels instead. The label source actually used
+(`"KEGGREST"` or `"bundled"`) and the labels' retrieval date are recorded: an
+`Annot` keeps them in `enrichmentInfo(hsako)$provenance$annotation$label_source`,
+and a `richKEGG()` result in `enrichmentInfo(resko)$provenance$labels`. A live
+KEGG annotation also records the KEGG version when KEGG states one (its
+release, or `last update YYYY-MM-DD`) in `label_source$release` and
+`source_version`.
 
 ### 2. Run enrichment analysis
 

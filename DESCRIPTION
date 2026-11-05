@@ -82,7 +82,7 @@ Collate:
     zzz.R
     zzz_ggplots_aliases.R
 VignetteBuilder: knitr
-RoxygenNote: 7.3.3
 biocViews: GeneSetEnrichment, Pathways, GO, KEGG, Visualization, Software
 Encoding: UTF-8
 Config/testthat/edition: 3
+Config/roxygen2/version: 8.1.1

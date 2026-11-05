@@ -21,8 +21,8 @@ These objects are imported from other packages. Follow the links
 below to see their documentation.
 
 \describe{
-  \item{dplyr}{\code{\link[dplyr]{arrange}}, \code{\link[dplyr]{filter}}, \code{\link[dplyr]{group_by}}, \code{\link[dplyr]{mutate}}, \code{\link[dplyr:context]{n}}, \code{\link[dplyr]{rename}}, \code{\link[dplyr]{select}}, \code{\link[dplyr]{slice}}, \code{\link[dplyr]{summarise}}}
+  \item{dplyr}{\code{\link[dplyr:arrange]{arrange()}}, \code{\link[dplyr:filter]{filter()}}, \code{\link[dplyr:group_by]{group_by()}}, \code{\link[dplyr:mutate]{mutate()}}, \code{\link[dplyr:n]{n()}}, \code{\link[dplyr:rename]{rename()}}, \code{\link[dplyr:select]{select()}}, \code{\link[dplyr:slice]{slice()}}, \code{\link[dplyr:summarise]{summarise()}}}
 
-  \item{magrittr}{\code{\link[magrittr:compound]{\%<>\%}}, \code{\link[magrittr:pipe]{\%>\%}}}
+  \item{magrittr}{\code{\link[magrittr:\%<>\%]{\%<>\%}}, \code{\link[magrittr:\%>\%]{\%>\%}}}
 }}
 

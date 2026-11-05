@@ -40,12 +40,13 @@ richGO_internal<-function(x,godata,ontology="BP",pvalue=0.05,padj=0.05,
   .check_cutoff(padj, "padj", allow_null = TRUE)
   normalization <- .normalize_annotation(godata, func_name = "richGO")
   godata <- normalization$data
+  id_col <- .annotation_id_column(godata)
   ## GO-specific: filter annotation to terms in this ontology
   if ("ONTOLOGYALL" %in% colnames(godata)) {
     godata_filt <- godata[which(godata$ONTOLOGYALL == ontology), ]
   } else {
     all_go <- .get_go_dat(ont = ontology)
-    godata_filt <- godata[godata[, 2] %in% rownames(all_go), ]
+    godata_filt <- godata[godata[[id_col]] %in% rownames(all_go), ]
   }
   if (nrow(godata_filt) == 0) {
     stop("richGO: no GO terms found for ontology '", ontology,
@@ -58,9 +59,13 @@ richGO_internal<-function(x,godata,ontology="BP",pvalue=0.05,padj=0.05,
     term_names <- setNames(tm$Annot, tm$GOALL)
     annot_2col <- godata_filt[, c("GeneID", "GOALL"), drop = FALSE]
   } else {
+    ## GO.db labels first, then the frame's Annot, then the identifier.
     all_go <- .get_go_dat(ont = ontology)
     term_names <- setNames(all_go[, 1], rownames(all_go))
-    annot_2col <- godata_filt[, 1:2, drop = FALSE]
+    covered <- names(term_names)[!is.na(term_names) & nzchar(trimws(term_names))]
+    term_names <- .fill_labels(
+      term_names, .frame_fallback_labels(godata_filt, covered, "richGO"))
+    annot_2col <- godata_filt[, c(colnames(godata_filt)[1L], id_col), drop = FALSE]
   }
   normalization$counts$eligible_rows <- as.integer(nrow(annot_2col))
   normalization$data <- annot_2col

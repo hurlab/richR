@@ -71,6 +71,14 @@ GSEA Enrichment analysis function
 Gene sets are keyed by identifier and labelled afterwards; see the
   \code{data.frame} method for the identifier and label rules.
 }
+\section{Identifier convention}{
+
+\code{Term} (like \code{GOALL}, \code{PATH} and \code{Module}) is the
+identifier column in an annotation frame and \code{Annot} holds the label;
+in a GSEA result, \code{pathway} is the identifier and \code{Term} the
+label (in an ORA result, \code{Annot} and \code{Term}).
+}
+
 \examples{
 \dontrun{
 hsako<-buildAnnot(species="human",keytype="SYMBOL",anntype = "KEGG")

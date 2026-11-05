@@ -37,7 +37,10 @@ enrich_internal<-function(x,object,ontology= "",pvalue=0.05,padj=0.05,organism=N
                   minGSSize=minGSSize, maxGSSize=maxGSSize, func_name="enrich")
   .check_cutoff(padj, "padj", allow_null = TRUE)
   normalization <- .normalize_annotation(object, func_name = "enrich")
-  .run_ora(x, annot = normalization, term_names = NULL, extra_cols = NULL,
+  # Labels come from the frame's Annot column (the identifier where none exists).
+  label_map <- .annotation_label_map(.annotation_identity_frame(object),
+                                     func_name = "enrich")
+  .run_ora(x, annot = normalization, term_names = label_map, extra_cols = NULL,
            pvalue = pvalue, padj = padj, padj.method = padj.method,
            minSize = minSize, maxSize = maxSize,
            minGSSize = minGSSize, maxGSSize = maxGSSize,
@@ -82,6 +85,12 @@ enrich_internal<-function(x,object,ontology= "",pvalue=0.05,padj=0.05,organism=N
 #'   gene <- sample(unique(hsago$GeneID),1000)
 #'   res<-enrich(gene,godata = hsago)
 #' }
+#' @section Identifier convention:
+#' \code{Term} (like \code{GOALL}, \code{PATH} and \code{Module}) is the
+#' identifier column in an annotation frame and \code{Annot} holds the label;
+#' in a result, \code{Annot} is the identifier and \code{Term} the label.
+#' Gene sets are keyed by the identifier; an identifier that carries
+#' conflicting labels takes the first in row order, with a warning.
 #' @export
 #' @author Kai Guo
 #' @param universe optional character vector intersected with annotated genes to define the ORA background
@@ -122,6 +131,12 @@ setMethod("enrich", signature(object = "data.frame"),definition = function(x,obj
 #' @param filename output filename
 #' @param padj.method pvalue adjust method(default:"BH")
 #' @param sep character string used to separate the genes when concatenating
+#' @section Identifier convention:
+#' \code{Term} (like \code{GOALL}, \code{PATH} and \code{Module}) is the
+#' identifier column in an annotation frame and \code{Annot} holds the label;
+#' in a result, \code{Annot} is the identifier and \code{Term} the label.
+#' Gene sets are keyed by the identifier; an identifier that carries
+#' conflicting labels takes the first in row order, with a warning.
 #' @export
 #' @author Kai Guo
 #' @param universe optional character vector intersected with annotated genes to define the ORA background

@@ -427,6 +427,11 @@ richGSEA_internal<-function(x,object,keytype="",pvalue=0.05,padj=0.05,KEGG=FALSE
 #'   identifiers). With \code{KEGG = TRUE}, KEGG identifiers (five digits,
 #'   optionally organism-prefixed) are joined to the KEGG levels by identifier,
 #'   other values by the \code{Level3} name.
+#' @section Identifier convention:
+#' \code{Term} (like \code{GOALL}, \code{PATH} and \code{Module}) is the
+#' identifier column in an annotation frame and \code{Annot} holds the label;
+#' in a GSEA result, \code{pathway} is the identifier and \code{Term} the
+#' label (in an ORA result, \code{Annot} and \code{Term}).
 #' @export
 #' @examples
 #' \dontrun{
@@ -469,6 +474,11 @@ setMethod("richGSEA", signature(object = "data.frame"),definition = function(x,o
 #' names(gene)<-name
 #' res<-richGSEA(gene,object = hsako)
 #' }
+#' @section Identifier convention:
+#' \code{Term} (like \code{GOALL}, \code{PATH} and \code{Module}) is the
+#' identifier column in an annotation frame and \code{Annot} holds the label;
+#' in a GSEA result, \code{pathway} is the identifier and \code{Term} the
+#' label (in an ORA result, \code{Annot} and \code{Term}).
 #' @export
 #' @author Kai Guo
 #' @param eps optional fgsea convergence tolerance

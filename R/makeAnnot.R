@@ -26,7 +26,7 @@ buildAnnot<-function(species="human",keytype="SYMBOL",anntype="GO",builtin=TRUE,
   normalization <- .normalize_annotation(annot, func_name = "buildAnnot")
   annot <- normalization$data
   n_genes <- length(unique(annot[, 1]))
-  n_terms <- length(unique(annot[, 2]))
+  n_terms <- length(unique(annot[[normalization$id_col]]))
   message("buildAnnot: done. ", n_genes, " genes, ", n_terms, " terms.")
   live_kegg <- anntype %in% c("KEGGM") ||
     (identical(anntype, "KEGG") && !isTRUE(builtin))

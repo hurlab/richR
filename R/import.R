@@ -25,6 +25,12 @@
 #' # Read with species info
 #' annot <- readGMT("my_pathways.gmt", species = "human", keytype = "SYMBOL")
 #' }
+#' @section Identifier convention:
+#' \code{Term} (like \code{GOALL}, \code{PATH} and \code{Module}) is the
+#' identifier column in an annotation frame and \code{Annot} holds the label;
+#' in a result, \code{Annot} is the identifier and \code{Term} the label.
+#' This builder writes the gene-set name to both \code{Term} and
+#' \code{Annot}, so the identifier and the label are the same string.
 #' @export
 #' @author Junguk Hur
 readGMT <- function(file, species = "custom", keytype = "SYMBOL") {
@@ -106,6 +112,12 @@ readGMT <- function(file, species = "custom", keytype = "SYMBOL") {
 #' annot <- buildAnnotFromList(my_sets)
 #' res <- enrich(my_genes, annot)
 #' }
+#' @section Identifier convention:
+#' \code{Term} (like \code{GOALL}, \code{PATH} and \code{Module}) is the
+#' identifier column in an annotation frame and \code{Annot} holds the label;
+#' in a result, \code{Annot} is the identifier and \code{Term} the label.
+#' This builder writes the gene-set name to both \code{Term} and
+#' \code{Annot}, so the identifier and the label are the same string.
 #' @export
 #' @author Junguk Hur
 buildAnnotFromList <- function(gene_sets, species = "custom", keytype = "SYMBOL") {

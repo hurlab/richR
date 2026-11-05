@@ -169,10 +169,44 @@
   map
 }
 
+#' Label map with a fallback source
+#'
+#' Identifiers whose primary label is missing or blank take the fallback label;
+#' identifiers absent from both are labelled with themselves by .run_ora.
+#' @param primary,fallback named character vectors (names = identifiers)
+#' @return named character vector
+#' @keywords internal
+#' @noRd
+.fill_labels <- function(primary, fallback) {
+  primary <- stats::setNames(as.character(primary), names(primary))
+  primary <- primary[!is.na(primary) & nzchar(trimws(primary))]
+  extra <- fallback[setdiff(names(fallback), names(primary))]
+  c(primary, extra)
+}
+
+#' Frame labels for the identifiers a primary label source does not cover
+#'
+#' Only the uncovered identifiers are read, so a conflict among frame labels
+#' that are never shown raises no warning.
+#' @param annot annotation data.frame
+#' @param covered identifiers that already have a label
+#' @param func_name name used in the conflicting-label warning
+#' @return named character vector
+#' @keywords internal
+#' @noRd
+.frame_fallback_labels <- function(annot, covered, func_name) {
+  frame <- .annotation_identity_frame(annot)
+  frame <- frame[!as.character(frame$id) %in% covered, , drop = FALSE]
+  .annotation_label_map(frame, func_name = func_name)
+}
+
 #' Normalize annotation membership rows for enrichment
-#' @param annot annotation data.frame with gene and term in its first two columns
+#'
+#' The gene is column 1 and the identifier is the column chosen by the shared
+#' identity rule (.annotation_id_column); the frame keeps its column order.
+#' @param annot annotation data.frame
 #' @param func_name name used in validation messages
-#' @return normalized data.frame and row counts
+#' @return normalized data.frame, row counts and the identifier column name
 #' @keywords internal
 .normalize_annotation <- function(annot, func_name = "enrichment") {
   if (!is.data.frame(annot)) {
@@ -185,7 +219,9 @@
   if (nrow(annot) == 0L) {
     stop(func_name, ": annotation has no membership rows.", call. = FALSE)
   }
-  valid_col <- vapply(annot[1:2], function(col) {
+  id_col <- .annotation_id_column(annot)
+  id_pos <- match(id_col, colnames(annot))
+  valid_col <- vapply(annot[c(1L, id_pos)], function(col) {
     is.atomic(col) && is.null(dim(col))
   }, logical(1))
   if (!all(valid_col)) {
@@ -194,7 +230,7 @@
   }
 
   genes <- as.character(annot[[1]])
-  terms <- as.character(annot[[2]])
+  terms <- as.character(annot[[id_pos]])
   valid <- !is.na(genes) & !is.na(terms) &
     nzchar(trimws(genes)) & nzchar(trimws(terms))
   original_rows <- nrow(annot)
@@ -211,15 +247,16 @@
 
   normalized <- annot[valid, , drop = FALSE]
   normalized[[1]] <- genes[valid]
-  normalized[[2]] <- terms[valid]
+  normalized[[id_pos]] <- terms[valid]
   duplicated_pair <- duplicated(data.frame(
-    gene = normalized[[1]], term = normalized[[2]], stringsAsFactors = FALSE
+    gene = normalized[[1]], term = normalized[[id_pos]], stringsAsFactors = FALSE
   ))
   duplicate_rows <- sum(duplicated_pair)
   normalized <- normalized[!duplicated_pair, , drop = FALSE]
   rownames(normalized) <- NULL
   list(
     data = normalized,
+    id_col = id_col,
     counts = list(
       original_rows = as.integer(original_rows),
       valid_rows = as.integer(valid_rows),
@@ -422,6 +459,9 @@
     .normalize_annotation(annot, func_name = "ORA")
   }
   annot <- normalization$data
+  # Gene sets are keyed by the identifier column of the shared identity rule.
+  id_col <- .annotation_id_column(annot)
+  annot <- annot[, c(colnames(annot)[1L], id_col), drop = FALSE]
   .validate_enrichment_input(x, annot = annot, pvalue = pvalue,
                              padj.method = padj.method, minSize = minSize, maxSize = maxSize)
   .check_cutoff(padj, "padj", allow_null = TRUE)

@@ -48,6 +48,10 @@ richKEGG_internal<-function(x,kodata,pvalue=0.05,padj=0.05,ontology="KEGG",
     all_ko <- .get_kg_dat(builtin = builtin)
   }
   term_names <- setNames(all_ko[, 1], rownames(all_ko))
+  ## Labels: KEGG term list first, then the frame's Annot, then the identifier.
+  covered <- names(term_names)[!is.na(term_names) & nzchar(trimws(term_names))]
+  term_names <- .fill_labels(
+    term_names, .frame_fallback_labels(normalization$data, covered, "richKEGG"))
   path_env <- new.env(parent = emptyenv())
   utils::data("path", package = "richR", envir = path_env)
     .run_ora(x, annot = normalization, term_names = term_names, extra_cols = path_env$path,

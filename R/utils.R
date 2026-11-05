@@ -755,11 +755,12 @@ overlap <- function(x, y) {
   bundled(reason)
 }
 
-#' KEGG release reported by the KEGG pathway database, or NA
+#' KEGG version stated by the KEGG pathway database, or NA
 #'
-#' Reads the \code{Release ...} entry of \code{keggInfo("pathway")}. Any error,
-#' or an answer without such an entry, gives \code{NA}; no release is inferred
-#' from dates or entry counts.
+#' From \code{keggInfo("pathway")}: the \code{Release ...} entry verbatim when
+#' present; otherwise the stated \code{Last update YYYY/MM/DD} as
+#' \code{"last update YYYY-MM-DD"}; otherwise (or on any error) \code{NA}.
+#' Nothing is inferred from entry counts or other dates.
 #' @importFrom KEGGREST keggInfo
 #' @noRd
 .kegg_release <- function() {
@@ -768,7 +769,16 @@ overlap <- function(x, y) {
     return(NA_character_)
   }
   release <- regmatches(info, regexpr("Release [^,\n]+", info))
-  if (length(release) == 0L) NA_character_ else trimws(release[1])
+  if (length(release) > 0L) {
+    return(trimws(release[1]))
+  }
+  updated <- regmatches(info, regexec(
+    "Last update ([0-9]{4})/([0-9]{2})/([0-9]{2})", info))
+  updated <- Filter(length, updated)
+  if (length(updated) == 0L) {
+    return(NA_character_)
+  }
+  paste0("last update ", paste(updated[[1]][2:4], collapse = "-"))
 }
 
 #' Get KEGG module annotation terms

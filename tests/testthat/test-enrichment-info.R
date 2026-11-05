@@ -244,11 +244,21 @@ test_that("a KEGG label fallback is never recorded as a live retrieval", {
   expect_true(is.na(builtin_info$provenance$annotation$source_version))
 })
 
-test_that("the KEGG release is recorded only when the release query yields one", {
+test_that("KEGG's stated update date is recorded when no release is given", {
+  update_only <- build_live_kegg(kegg_listing_healthy, function(...) kegg_info_current)
+  info <- richR::enrichmentInfo(update_only)
+  expect_equal(info$provenance$annotation$label_source$source, "KEGGREST")
+  expect_equal(info$provenance$annotation$label_source$release, "last update 2026-10-28")
+  expect_equal(info$provenance$annotation$source_version, "last update 2026-10-28")
+})
+
+test_that("the KEGG version is NA when KEGG states neither a release nor an update date", {
   failing_info <- build_live_kegg(kegg_listing_healthy,
                                   function(...) stop("simulated info outage"))
-  no_release <- build_live_kegg(kegg_listing_healthy, function(...) kegg_info_current)
-  for (kegg in list(failing_info, no_release)) {
+  neither <- build_live_kegg(kegg_listing_healthy, function(...) paste(
+    "pathway\tKEGG pathway maps", "path\t587 entries", "\tKanehisa Laboratories",
+    sep = "\n"))
+  for (kegg in list(failing_info, neither)) {
     info <- richR::enrichmentInfo(kegg)
     expect_equal(info$provenance$annotation$label_source$source, "KEGGREST")
     expect_true(is.na(info$provenance$annotation$label_source$release))

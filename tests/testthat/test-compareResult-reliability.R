@@ -1,8 +1,8 @@
 batch_test_annotation <- function() {
   data.frame(
     GeneID = LETTERS[1:6],
-    Annot = rep(c("T1", "T2", "T3"), each = 2),
-    Term = rep(c("Term one", "Term two", "Term three"), each = 2)
+    Term = rep(c("T1", "T2", "T3"), each = 2),
+    Annot = rep(c("Term one", "Term two", "Term three"), each = 2)
   )
 }
 
@@ -107,13 +107,13 @@ test_that("include-all plots retain empty axes and draw only real results", {
   expect_equal(nrow(built$data[[1]]), nrow(first@result))
 
   filtered_plot <- richR::richCompareDot(
-    compared, include.all = TRUE, pathway = "T1", level = "Term"
+    compared, include.all = TRUE, pathway = "T1", level = "Annot"
   )
   filtered_labels <- ggplot2::ggplot_build(filtered_plot)$layout$panel_params[[1]]$x$get_labels()
   expect_identical(filtered_labels, c("first", "empty", "missing"))
 
   dropped_plot <- richR::richCompareDot(
-    compared, pvalue = 0.1, padj = NULL, pathway = "T1", level = "Term"
+    compared, pvalue = 0.1, padj = NULL, pathway = "T1", level = "Annot"
   )
   dropped_build <- ggplot2::ggplot_build(dropped_plot)
   expect_identical(dropped_build$layout$panel_params[[1]]$x$get_labels(), "first")

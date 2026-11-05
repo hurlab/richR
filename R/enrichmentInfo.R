@@ -121,32 +121,56 @@ enrichmentInfo <- function(x) {
   frame <- .annotation_identity_frame(annot)
   ids <- as.character(frame$id)
   genes <- as.character(frame$GeneID)
-  valid <- !is.na(ids) & !is.na(genes) & nzchar(trimws(ids)) & nzchar(trimws(genes))
-  frame <- frame[valid, , drop = FALSE]
-  labels <- suppressWarnings(.annotation_label_map(frame, func_name = "fingerprint"))
-  pairs <- unique(data.frame(id = enc2utf8(ids[valid]), gene = enc2utf8(genes[valid]),
-                             stringsAsFactors = FALSE))
-  pairs <- pairs[order(pairs$id, pairs$gene, method = "radix"), , drop = FALSE]
-  label <- unname(labels[pairs$id])
-  label[is.na(label)] <- pairs$id[is.na(label)]
+  labels <- as.character(frame$label)
+  ## Blank = only spaces, TAB, CR or LF (what trimws() strips).
+  blank <- function(x) grepl("^[ \t\r\n]*$", x, perl = TRUE)
+  valid <- !is.na(ids) & !is.na(genes) & !blank(ids) & !blank(genes)
+  ids <- enc2utf8(ids[valid])
+  genes <- enc2utf8(genes[valid])
+  labels <- labels[valid]
+  ## Label of each identifier: its first non-blank label in row order (REQ-003).
+  labelled <- which(!is.na(labels) & !blank(labels))
+  first <- labelled[!duplicated(ids[labelled])]
+  ## Unique pairs in C-locale byte order: sort, then drop repeats of the previous pair.
+  o <- order(ids, genes, method = "radix")
+  id <- ids[o]
+  gene <- genes[o]
+  n <- length(id)
+  keep <- if (n > 1L) c(TRUE, id[-1L] != id[-n] | gene[-1L] != gene[-n]) else rep(TRUE, n)
+  id <- id[keep]
+  gene <- gene[keep]
+  label <- labels[first][match(id, ids[first])]
+  label[is.na(label)] <- id[is.na(label)]
   escape <- function(x) {
+    if (!any(grepl("[\\\\\t\n\r]", x, perl = TRUE))) return(x)
     x <- gsub("\\", "\\\\", x, fixed = TRUE)
     x <- gsub("\t", "\\t", x, fixed = TRUE)
     x <- gsub("\n", "\\n", x, fixed = TRUE)
     gsub("\r", "\\r", x, fixed = TRUE)
   }
-  id <- escape(pairs$id)
-  gene <- escape(pairs$gene)
+  id_text <- escape(id)
+  gene_text <- escape(gene)
   label <- escape(enc2utf8(label))
-  hash <- function(text) digest(text, algo = "sha256", serialize = FALSE)
+  ## Hash the canonical text's bytes, written field by field into memory (much
+  ## faster than paste(collapse =) on large annotations; same bytes).
+  hash <- function(header, fields) {
+    con <- rawConnection(raw(0), "wb")
+    on.exit(close(con))
+    writeLines(header, con, sep = "\n", useBytes = TRUE)
+    if (length(id)) {
+      writeLines(as.vector(do.call(rbind, fields)), con, sep = "", useBytes = TRUE)
+    }
+    digest(rawConnectionValue(con), algo = "sha256", serialize = FALSE)
+  }
+  m <- length(id)
   list(
     algorithm = "sha256", canonicalization = "richR-geneset-v1",
-    membership = hash(paste0("richR-geneset-v1\n",
-                             paste0(id, "\t", gene, "\n", collapse = ""))),
-    full = hash(paste0("richR-geneset-v1/full\n",
-                       paste0(id, "\t", gene, "\t", label, "\n", collapse = ""))),
-    n_pairs = nrow(pairs), n_sets = length(unique(pairs$id)),
-    n_genes = length(unique(pairs$gene))
+    membership = hash("richR-geneset-v1", list(id_text, "\t", gene_text, "\n")),
+    full = hash("richR-geneset-v1/full",
+                list(id_text, "\t", gene_text, "\t", label, "\n")),
+    n_pairs = m,
+    n_sets = if (m) 1L + sum(id[-1L] != id[-m]) else 0L,
+    n_genes = length(unique(gene))
   )
 }
 

@@ -23,14 +23,20 @@
 #' KEGG pathway identifiers and names, used to label pathway terms in
 #' \code{\link{richKEGG}}.
 #'
-#' @format A data.frame with 567 rows and one column. The row names are KEGG
+#' @format A data.frame with 587 rows and one column. The row names are KEGG
 #'   pathway identifiers without the organism prefix (for example
 #'   \code{"01100"}); the column \code{annotation} holds the pathway name.
-#' @details The date the bundled snapshot was retrieved from KEGG is unknown.
-#'   The script \file{data-raw/kegg.R} in the source repository rebuilds the
-#'   object and stamps the retrieval date on the line below.
+#' @details The script \file{data-raw/kegg.R} in the source repository
+#'   rebuilds the object from live KEGG and stamps the retrieval date, the KEGG
+#'   version and the row count. The KEGG version is the release KEGG states,
+#'   verbatim; otherwise \code{"last update YYYY-MM-DD"} from the update date
+#'   KEGG states; otherwise \code{NA}. The snapshot depends on KEGG on the
+#'   retrieval date and is not byte-reproducible. The object's
+#'   \code{richR_source} attribute records the same retrieval date and KEGG
+#'   version (\code{retrieved}, \code{release}) and the KEGG REST URL
+#'   (\code{url}).
 #'
-#'   Retrieval date (kegg.db): unknown (bundled snapshot predates data-raw/).
+#'   Retrieval date (kegg.db): 2026-11-05; KEGG version: last update 2026-10-28; rebuilt by data-raw/kegg.R.
 #' @source KEGG database via KEGGREST (\code{keggList("pathway")}).
 #' @usage data(kegg)
 "kegg.db"
@@ -39,14 +45,20 @@
 #'
 #' KEGG module identifiers and names, used by the module annotation builders.
 #'
-#' @format A data.frame with 473 rows and one column. The row names are KEGG
+#' @format A data.frame with 583 rows and one column. The row names are KEGG
 #'   module identifiers (for example \code{"M00001"}); the column
 #'   \code{annotation} holds the module name.
-#' @details The date the bundled snapshot was retrieved from KEGG is unknown.
-#'   The script \file{data-raw/module.R} in the source repository rebuilds the
-#'   object and stamps the retrieval date on the line below.
+#' @details The script \file{data-raw/module.R} in the source repository
+#'   rebuilds the object from live KEGG and stamps the retrieval date, the KEGG
+#'   version and the row count. The KEGG version is the release KEGG states,
+#'   verbatim; otherwise \code{"last update YYYY-MM-DD"} from the update date
+#'   KEGG states; otherwise \code{NA}. The snapshot depends on KEGG on the
+#'   retrieval date and is not byte-reproducible. The object's
+#'   \code{richR_source} attribute records the same retrieval date and KEGG
+#'   version (\code{retrieved}, \code{release}) and the KEGG REST URL
+#'   (\code{url}).
 #'
-#'   Retrieval date (module): unknown (bundled snapshot predates data-raw/).
+#'   Retrieval date (module): 2026-11-05; KEGG version: last update 2026-10-28; rebuilt by data-raw/module.R.
 #' @source KEGG database via KEGGREST (\code{keggList("module")}).
 #' @usage data(module)
 "module"
@@ -57,17 +69,24 @@
 #' levels, used by \code{\link{richKEGG}}, \code{\link{richLevel}} and
 #' \code{\link{richGSEA}} to add and aggregate pathway levels.
 #'
-#' @format A data.frame with 580 rows and four character columns: \code{ko}
+#' @format A data.frame with 587 rows and four character columns: \code{ko}
 #'   (KEGG pathway identifier, also the row names), \code{Level3} (pathway
-#'   name), \code{Level2} (sub-category) and \code{Level1} (category).
-#' @details The date the bundled snapshot was retrieved from KEGG is unknown.
-#'   The script \file{data-raw/path.R} in the source repository rebuilds the
-#'   object and stamps the retrieval date on the line below.
+#'   name), \code{Level2} (sub-category) and \code{Level1} (category). There
+#'   is one row per pathway: where KEGG BRITE lists a pathway under several
+#'   hierarchy rows, the first row in BRITE order is kept.
+#' @details The script \file{data-raw/path.R} in the source repository
+#'   rebuilds the object from live KEGG and stamps the retrieval date, the KEGG
+#'   version and the row count. The KEGG version is the release KEGG states,
+#'   verbatim; otherwise \code{"last update YYYY-MM-DD"} from the update date
+#'   KEGG states; otherwise \code{NA}. The snapshot depends on KEGG on the
+#'   retrieval date and is not byte-reproducible. The object's
+#'   \code{richR_source} attribute records the same retrieval date and KEGG
+#'   version (\code{retrieved}, \code{release}) and the KEGG REST URL
+#'   (\code{url}).
 #'
-#'   Retrieval date (path): unknown (bundled snapshot predates data-raw/).
-#' @source KEGG pathway classification (BRITE hierarchy \code{br08901}). How the
-#'   bundled snapshot was retrieved is unknown; \file{data-raw/path.R} rebuilds
-#'   it from the KEGG REST API.
+#'   Retrieval date (path): 2026-11-05; KEGG version: last update 2026-10-28; rebuilt by data-raw/path.R.
+#' @source KEGG pathway classification (BRITE hierarchy \code{br08901}),
+#'   retrieved from the KEGG REST API by \file{data-raw/path.R}.
 #' @usage data(path)
 "path"
 

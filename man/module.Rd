@@ -5,7 +5,7 @@
 \alias{module}
 \title{KEGG module data}
 \format{
-A data.frame with 473 rows and one column. The row names are KEGG
+A data.frame with 583 rows and one column. The row names are KEGG
   module identifiers (for example \code{"M00001"}); the column
   \code{annotation} holds the module name.
 }
@@ -19,10 +19,16 @@ data(module)
 KEGG module identifiers and names, used by the module annotation builders.
 }
 \details{
-The date the bundled snapshot was retrieved from KEGG is unknown.
-  The script \file{data-raw/module.R} in the source repository rebuilds the
-  object and stamps the retrieval date on the line below.
+The script \file{data-raw/module.R} in the source repository
+  rebuilds the object from live KEGG and stamps the retrieval date, the KEGG
+  version and the row count. The KEGG version is the release KEGG states,
+  verbatim; otherwise \code{"last update YYYY-MM-DD"} from the update date
+  KEGG states; otherwise \code{NA}. The snapshot depends on KEGG on the
+  retrieval date and is not byte-reproducible. The object's
+  \code{richR_source} attribute records the same retrieval date and KEGG
+  version (\code{retrieved}, \code{release}) and the KEGG REST URL
+  (\code{url}).
 
-  Retrieval date (module): unknown (bundled snapshot predates data-raw/).
+  Retrieval date (module): 2026-11-05; KEGG version: last update 2026-10-28; rebuilt by data-raw/module.R.
 }
 \keyword{datasets}

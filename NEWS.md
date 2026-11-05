@@ -125,6 +125,32 @@
   is bounded by `minSize` / `maxSize` on the gene-set members found in the
   ranked list.
 
+### Bundled KEGG data (changes KEGG names, levels and counts)
+
+- The bundled `kegg.db`, `module` and `path` were rebuilt from live KEGG on
+  2026-11-05. KEGG stated no release number that day, only its last update,
+  so the KEGG version is recorded as `last update 2026-10-28`. The rebuild
+  depended on KEGG on that date and is not byte-reproducible. Each object
+  records its retrieval date, KEGG version and source URL in
+  `attr(<object>, "richR_source")`, and its help page states the same values
+  and the row count. A KEGG label fallback (`richKEGG(builtin = FALSE)` or
+  `buildAnnot(anntype = "KEGG", builtin = FALSE)` when the live listing fails)
+  now reports the snapshot's retrieval date in `enrichmentInfo()`.
+- `kegg.db` grew from 567 to 587 pathways (21 added, `03269` removed, 12
+  renamed, for example `04145` "Phagosome" is now "Phagocytosis"), `module`
+  from 473 to 583 modules (112 added, `M00166` and `M00167` removed, 32
+  renamed) and `path` from 580 rows to 587 pathways (8 added, 11 `Level3` and
+  1 `Level2` values changed). `richKEGG()`, `richLevel()` and `richGSEA()`
+  results on KEGG annotations show the new names and levels.
+- `path` now has exactly one row per pathway. The earlier snapshot listed
+  `00541` twice ("O-Antigen nucleotide sugar biosynthesis" under "Glycan
+  biosynthesis and metabolism", and "Biosynthesis of various nucleotide
+  sugars" under "Carbohydrate metabolism"), so `richLevel()` counted the
+  genes of `00541` under both rows, while `richKEGG()` and `richGSEA()` used
+  only the first. `richLevel()` now counts each pathway under one hierarchy
+  row; `00541` is the only pathway affected. Where KEGG lists a pathway under
+  several hierarchy rows, `data-raw/path.R` keeps the first in KEGG's order.
+
 ### Requirements and packaging
 
 - richR now requires R 4.6 or later (`Depends: R (>= 4.6)`). The package
@@ -142,9 +168,10 @@
   the object `kegg.db`. `data(kegg.db)` loads nothing and warns that the data
   set was not found.
 - Added `data-raw/` scripts (`kegg.R`, `module.R`, `path.R`, `pathway.R`) that
-  rebuild the bundled KEGG data and record the retrieval date. They were not
-  run for this release: the files in `data/` are unchanged, and the retrieval
-  dates of the bundled snapshots remain unknown.
+  rebuild the bundled KEGG data and record the retrieval date and KEGG
+  version. `kegg.R`, `module.R` and `path.R` were run for this release (see
+  "Bundled KEGG data" below); `pathway.R` was not, and `godata` and `pathway`
+  are unchanged, with unknown retrieval dates.
 - Corrected the documentation of the bundled data: `godata` is a named list of
   GO terms mapped to themselves and their offspring, not a data frame of gene
   annotations.

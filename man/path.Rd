@@ -5,14 +5,15 @@
 \alias{path}
 \title{KEGG pathway hierarchy}
 \format{
-A data.frame with 580 rows and four character columns: \code{ko}
+A data.frame with 587 rows and four character columns: \code{ko}
   (KEGG pathway identifier, also the row names), \code{Level3} (pathway
-  name), \code{Level2} (sub-category) and \code{Level1} (category).
+  name), \code{Level2} (sub-category) and \code{Level1} (category). There
+  is one row per pathway: where KEGG BRITE lists a pathway under several
+  hierarchy rows, the first row in BRITE order is kept.
 }
 \source{
-KEGG pathway classification (BRITE hierarchy \code{br08901}). How the
-  bundled snapshot was retrieved is unknown; \file{data-raw/path.R} rebuilds
-  it from the KEGG REST API.
+KEGG pathway classification (BRITE hierarchy \code{br08901}),
+  retrieved from the KEGG REST API by \file{data-raw/path.R}.
 }
 \usage{
 data(path)
@@ -23,10 +24,16 @@ levels, used by \code{\link{richKEGG}}, \code{\link{richLevel}} and
 \code{\link{richGSEA}} to add and aggregate pathway levels.
 }
 \details{
-The date the bundled snapshot was retrieved from KEGG is unknown.
-  The script \file{data-raw/path.R} in the source repository rebuilds the
-  object and stamps the retrieval date on the line below.
+The script \file{data-raw/path.R} in the source repository
+  rebuilds the object from live KEGG and stamps the retrieval date, the KEGG
+  version and the row count. The KEGG version is the release KEGG states,
+  verbatim; otherwise \code{"last update YYYY-MM-DD"} from the update date
+  KEGG states; otherwise \code{NA}. The snapshot depends on KEGG on the
+  retrieval date and is not byte-reproducible. The object's
+  \code{richR_source} attribute records the same retrieval date and KEGG
+  version (\code{retrieved}, \code{release}) and the KEGG REST URL
+  (\code{url}).
 
-  Retrieval date (path): unknown (bundled snapshot predates data-raw/).
+  Retrieval date (path): 2026-11-05; KEGG version: last update 2026-10-28; rebuilt by data-raw/path.R.
 }
 \keyword{datasets}

@@ -60,3 +60,31 @@ test_that("enrich() tests same-name Reactome pathways as two gene sets", {
   expect_equal(apoptosis$Annotated[match(c("R-HSA-1", "R-HSA-2"), apoptosis$Annot)],
                c(5, 7))
 })
+
+test_that("a Reactome identifier with several names takes the first and warns once", {
+  # Catches: a silent pick among an identifier's names (REQ-003 rule).
+  several_names <- function(name) {
+    map <- reactome_maps(name)
+    if (name == "reactomePATHID2EXTID") map[["R-HSA-7"]] <- c("130", "131")
+    if (name == "reactomePATHID2NAME") {
+      map[["R-HSA-7"]] <- c("Homo sapiens: First name", "Homo sapiens: Second name")
+    }
+    map
+  }
+  msgs <- character()
+  annot <- withCallingHandlers(
+    testthat::with_mocked_bindings(
+      suppressMessages(buildAnnot(species = "human", keytype = "ENTREZID",
+                                  anntype = "Reactome")),
+      .reactome_map = several_names, .package = "richR"
+    ),
+    warning = function(w) {
+      msgs <<- c(msgs, conditionMessage(w))
+      invokeRestart("muffleWarning")
+    }
+  )@annot
+  expect_identical(unique(annot$Annot[annot$Term == "R-HSA-7"]), "First name")
+  named <- grep("R-HSA-7", msgs, value = TRUE)
+  expect_identical(length(named), 1L)
+  expect_false(any(grepl("R-HSA-1|R-HSA-2|R-HSA-5", named)))
+})

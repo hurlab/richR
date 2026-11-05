@@ -245,6 +245,13 @@ buildMSIGDB<-function(species="human",keytype="SYMBOL",anntype="GO"){
   roid<-lapply(id2gene[intersect(ids,names(id2gene))],
                function(x)unique(as.character(x[!is.na(x)])))
   roid<-roid[lengths(roid)>0]
+  ## An identifier with several names keeps the first, with one warning (REQ-003).
+  several<-names(roid)[vapply(id2name[names(roid)],function(x)
+    length(unique(as.character(x[!is.na(x)])))>1L,logical(1))]
+  if(length(several)){
+    warning("buildAnnot: Reactome identifier(s) with several names; using the first name: ",
+            paste(several,collapse=", "),call.=FALSE)
+  }
   res<-data.frame("GeneID"=unlist(roid,use.names=FALSE),
                   "Term"=rep(names(roid),times=lengths(roid)),
                   "Annot"=rep(sub('.*@ ','',sub(':','@',first_name[names(roid)])),

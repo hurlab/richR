@@ -107,6 +107,68 @@
   invisible(TRUE)
 }
 
+# ---- Annotation identity (shared by ORA and GSEA) ----------------------------
+# One identifier rule for every annotation frame: the gene is column 1; the
+# identifier is the first present of the names below, else column 2; the label
+# is the column named `Annot`. Gene sets are keyed by identifier, never by label.
+# Naming trap: in an annotation frame `Term` is an identifier column; in an ORA
+# or GSEA result `Term` holds the label.
+.identity_id_names <- c("GOALL", "PATH", "Module", "Term")
+
+#' Name of the identifier column of an annotation frame
+#' @param annot annotation data.frame
+#' @return column name
+#' @keywords internal
+#' @noRd
+.annotation_id_column <- function(annot) {
+  id_col <- intersect(.identity_id_names, colnames(annot))
+  if (length(id_col)) id_col[1L] else colnames(annot)[2L]
+}
+
+#' Annotation membership frame (gene, identifier, label)
+#' @param object annotation data.frame or Annot object
+#' @return data.frame with columns GeneID, id, label (label NA when absent)
+#' @keywords internal
+#' @noRd
+.annotation_identity_frame <- function(object) {
+  annot <- if (methods::is(object, "Annot")) object@annot else object
+  if (!is.data.frame(annot) || ncol(annot) < 2L) {
+    return(annot)
+  }
+  id_col <- .annotation_id_column(annot)
+  label <- if ("Annot" %in% colnames(annot)) annot[["Annot"]] else NA_character_
+  data.frame(GeneID = annot[[1L]], id = annot[[id_col]],
+             label = rep_len(as.character(label), nrow(annot)),
+             stringsAsFactors = FALSE)
+}
+
+#' Identifier-to-label map
+#'
+#' Missing or blank labels are skipped (the identifier is used instead). An
+#' identifier carrying several labels keeps the first non-missing label in
+#' annotation row order, with one warning naming the affected identifiers.
+#' @param frame output of .annotation_identity_frame
+#' @param func_name name used in the warning
+#' @return named character vector (names = identifiers)
+#' @keywords internal
+#' @noRd
+.annotation_label_map <- function(frame, func_name) {
+  ids <- as.character(frame$id)
+  labels <- as.character(frame$label)
+  keep <- !is.na(ids) & nzchar(trimws(ids)) & !is.na(labels) & nzchar(trimws(labels))
+  ids <- ids[keep]
+  labels <- labels[keep]
+  first <- !duplicated(ids)
+  map <- stats::setNames(labels[first], ids[first])
+  conflicting <- unique(ids[labels != map[ids]])
+  if (length(conflicting)) {
+    warning(func_name, ": identifier(s) with conflicting labels; using the first label ",
+            "in annotation row order: ", paste(conflicting, collapse = ", "),
+            call. = FALSE)
+  }
+  map
+}
+
 #' Normalize annotation membership rows for enrichment
 #' @param annot annotation data.frame with gene and term in its first two columns
 #' @param func_name name used in validation messages

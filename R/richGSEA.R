@@ -63,30 +63,8 @@
 
 # ---- GSEA gene-set identity ---------------------------------------------------
 # Gene sets are keyed by identifier, never by label: distinct identifiers that
-# share a label stay distinct gene sets. The identifier column is located by the
-# builder names below (first present wins); a frame carrying none of them uses
-# column 2 (the positional rule of .normalize_annotation). The label is the
-# column named `Annot`. Note the naming trap: in an annotation a column named
-# `Term` holds identifiers (MSigDB layout); in a GSEA result `Term` holds labels.
-.gsea_id_names <- c("GOALL", "PATH", "Module", "Term")
-
-#' Annotation membership frame for GSEA (gene, identifier, label)
-#' @param object annotation data.frame or Annot object
-#' @return data.frame with columns GeneID, pathway, label (label NA when absent)
-#' @keywords internal
-#' @noRd
-.gsea_annotation_frame <- function(object) {
-  annot <- if (methods::is(object, "Annot")) object@annot else object
-  if (!is.data.frame(annot) || ncol(annot) < 2L) {
-    return(annot)
-  }
-  id_col <- intersect(.gsea_id_names, colnames(annot))
-  id_col <- if (length(id_col)) id_col[1L] else colnames(annot)[2L]
-  label <- if ("Annot" %in% colnames(annot)) annot[["Annot"]] else NA_character_
-  data.frame(GeneID = annot[[1L]], pathway = annot[[id_col]],
-             label = rep_len(as.character(label), nrow(annot)),
-             stringsAsFactors = FALSE)
-}
+# share a label stay distinct gene sets. The identifier and label columns follow
+# the shared annotation identity rule (.annotation_identity_frame, R/utils.R).
 
 #' Gene-set memberships keyed by identifier
 #' @param object annotation data.frame or Annot object
@@ -94,8 +72,8 @@
 #' @keywords internal
 #' @noRd
 .gsea_memberships <- function(object) {
-  frame <- .gsea_annotation_frame(object)
-  split(as.character(frame$GeneID), as.character(frame$pathway))
+  frame <- .annotation_identity_frame(object)
+  split(as.character(frame$GeneID), as.character(frame$id))
 }
 
 #' Gene-set memberships for the pathways of a GSEA result
@@ -112,39 +90,11 @@
   sets <- .gsea_memberships(object)
   missing <- setdiff(as.character(ids), names(sets))
   if (length(missing)) {
-    frame <- .gsea_annotation_frame(object)
+    frame <- .annotation_identity_frame(object)
     by_label <- split(as.character(frame$GeneID), as.character(frame$label))
     sets <- c(sets, by_label[intersect(missing, names(by_label))])
   }
   sets
-}
-
-#' Identifier-to-label map
-#'
-#' Missing or blank labels are skipped (the identifier is used instead, see
-#' .gsea_terms). An identifier carrying several labels keeps the first
-#' non-missing label in annotation row order, with one warning naming the
-#' affected identifiers.
-#' @param frame output of .gsea_annotation_frame
-#' @param func_name name used in the warning
-#' @return named character vector (names = identifiers)
-#' @keywords internal
-#' @noRd
-.gsea_label_map <- function(frame, func_name = "richGSEA") {
-  ids <- as.character(frame$pathway)
-  labels <- as.character(frame$label)
-  keep <- !is.na(ids) & nzchar(trimws(ids)) & !is.na(labels) & nzchar(trimws(labels))
-  ids <- ids[keep]
-  labels <- labels[keep]
-  first <- !duplicated(ids)
-  map <- stats::setNames(labels[first], ids[first])
-  conflicting <- unique(ids[labels != map[ids]])
-  if (length(conflicting)) {
-    warning(func_name, ": identifier(s) with conflicting labels; using the first label ",
-            "in annotation row order: ", paste(conflicting, collapse = ", "),
-            call. = FALSE)
-  }
-  map
 }
 
 #' Labels for identifiers (the identifier itself where no label exists)
@@ -333,9 +283,9 @@ richGSEA_internal<-function(x,object,keytype="",pvalue=0.05,padj=0.05,KEGG=FALSE
   original_input_ids <- names(x)
   x<-sort(x)
   # Memberships come from gene-identifier pairs; labels are attached afterwards.
-  identity_frame <- .gsea_annotation_frame(object)
+  identity_frame <- .annotation_identity_frame(object)
   normalization <- .normalize_annotation(identity_frame, func_name = "richGSEA")
-  label_map <- .gsea_label_map(identity_frame, func_name = "richGSEA")
+  label_map <- .annotation_label_map(identity_frame, func_name = "richGSEA")
   object <- normalization$data[, 1:2, drop = FALSE]
   normalization$counts$eligible_rows <- as.integer(nrow(object))
   normalization$counts$effective_rows <- normalization$counts$eligible_rows
@@ -1281,8 +1231,8 @@ parGSEA<-function(x,object,log2FC="log2FoldChange",gene.col=NULL,
 
 ###
 .calGSEA<-function (obj,sigpathway, fc, gseaParam = 1, ticksSize = 0.2){
-  frame <- .gsea_annotation_frame(obj)
-  pathway <- split(as.character(frame$GeneID), as.character(frame$pathway))[[sigpathway]]
+  frame <- .annotation_identity_frame(obj)
+  pathway <- split(as.character(frame$GeneID), as.character(frame$id))[[sigpathway]]
   if (is.null(pathway)) {
     # A result computed before gene sets were keyed by identifier stores the
     # label in `pathway`; its gene set was the label-keyed membership.

@@ -143,6 +143,8 @@ richCompareDot<-function (x, pvalue = 0.05, low = "lightpink", high = "red",leve
   if(!is.null(pathway)){
     x<-x[x[,level]%in%pathway,]
   }
+  # Display labels (after shortening) over all groups: one row per identifier.
+  x <- .ora_display_terms(x)
   if (isTRUE(include.all)) {
     x$group <- factor(as.character(x$group), levels = group_levels)
   }

@@ -63,7 +63,10 @@ requested), gene (radix order) and group (input order), with the columns:
     wins: \code{"failed"} (a \code{NULL} group), \code{"reported"} (a
     member is reported), \code{"tested_only"} (a member is tested but not
     reported), \code{"unavailable"} (a member's state cannot be known),
-    \code{"absent"} otherwise;}
+    \code{"undetermined"} (a member is untested or has zero overlap and
+    the tested table cannot distinguish these), \code{"absent"} otherwise.
+    Here \code{"unavailable"} remains separate; the \code{undetermined}
+    count in \code{\link{richSensitivity}} also includes unavailable states;}
   \item{the statistic columns}{the further columns of \code{stats}, joined
     by exact gene string; for GSEA without \code{stats}, \code{rank_score},
     the group's ranked input; for ORA without \code{stats}, none;}

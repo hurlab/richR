@@ -190,3 +190,47 @@ test_that("an empty theme selection is refused, while an analysis without themes
   expect_identical(names(tz), c("theme_id", "label", "gene", "group", "evidence_members",
                                 "n_evidence_members", "group_status", "stat_status"))
 })
+
+# SPEC-RICHR-009 AC-005: an omitted zero-overlap term is not known absent.
+test_that("zero overlap or untested members are undetermined, below positive evidence", {
+  annot <- data.frame(GeneID = paste0("G", 1:60),
+                       Annot = rep(paste0("T", 1:6), each = 10))
+  annot$Term <- annot$Annot
+  run <- function(q, ...) enrich(paste0("G", q), annot, pvalue = 1, padj = 1,
+                                 minSize = 1, minGSSize = 1, ...)
+  q1 <- run(c(1:8, 11:12))
+  qa <- run(c(11:18, 21:24), padj.family = "all")
+  qo <- run(c(11:18, 21:24))
+  groups <- list(q1 = q1, qa = qa, qo = qo, qu = as(qo@result, "richResult"))
+  b <- bindRich(groups)
+  expect_identical(b$state[b$Annot == "T1"],
+    c("reported", "untested_or_zero_overlap", "not_tested", "unavailable"))
+  th <- richThemes(groups)
+  tid <- th$members$theme_id[th$members$Annot == "T1"][1]
+  r <- themeGenes(th, tid)
+  expect_identical(unname(vapply(split(r$group_status, r$group), unique, "")),
+                   c("reported", "undetermined", "absent", "unavailable"))
+
+  annot <- rbind(data.frame(GeneID = paste0("G", 1:10), Annot = "K"),
+    data.frame(GeneID = paste0("G", c(1:8, 41:44)), Annot = "M"),
+    data.frame(GeneID = paste0("G", 21:30), Annot = "Z1"),
+    data.frame(GeneID = paste0("G", 31:40), Annot = "Z2"),
+    data.frame(GeneID = paste0("G", 45:60), Annot = "Z3"))
+  annot$Term <- annot$Annot
+  run <- function(q, ...) enrich(paste0("G", q), annot,
+                                 minSize = 1, minGSSize = 1, ...)
+  groups <- list(s1 = run(c(1:9, 41:43), pvalue = 1, padj = 1),
+    sr = run(c(41:44, 21:23, 31:33), pvalue = 1, padj = 1, padj.family = "all"),
+    st = run(c(41, 21:30, 31:35), pvalue = 0.001, padj = 1, padj.family = "all"))
+  b <- bindRich(groups)
+  expect_identical(b$state[b$Annot == "K"],
+                   c("reported", "untested_or_zero_overlap", "untested_or_zero_overlap"))
+  expect_identical(b$state[b$Annot == "M"],
+                   c("reported", "reported", "tested_not_reported"))
+  th <- richThemes(groups)
+  expect_identical(th$members$theme_id[th$members$Annot == "K"][1],
+                   th$members$theme_id[th$members$Annot == "M"][1])
+  r <- themeGenes(th, th$members$theme_id[th$members$Annot == "K"][1])
+  expect_identical(unname(vapply(split(r$group_status, r$group), unique, "")),
+                   c("reported", "reported", "tested_only"))
+})

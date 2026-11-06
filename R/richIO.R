@@ -49,18 +49,26 @@ writeRich <- function(x, path, overwrite = FALSE) {
   if (!is.logical(overwrite) || length(overwrite) != 1L || is.na(overwrite)) {
     stop("writeRich(): `overwrite` must be TRUE or FALSE.", call. = FALSE)
   }
+  supplied_path <- path
+  path <- path.expand(path)
   ## Everything is checked and encoded in memory before the first file
   ## operation, so a refused call leaves the disk as it was.
   files <- .rich_io_encode(x)
   replace <- .rich_io_check_target(path, overwrite)
   if (replace) {
     old <- file.path(path, .rich_io_known_files)
-    unlink(old[file.exists(old)])
+    if (file.access(path, 2L) != 0L) {
+      stop("writeRich(): folder '", path, "' is not writable.", call. = FALSE)
+    }
+    if (unlink(old[file.exists(old)], expand = FALSE) != 0L) {
+      stop("writeRich(): could not remove the old files in folder '", path, "'.",
+           call. = FALSE)
+    }
   }
   if (!dir.exists(path)) dir.create(path, recursive = TRUE)
   ## The manifest goes last: a folder without one is never read as a result.
   for (f in names(files)) .rich_io_write_lines(files[[f]], file.path(path, f))
-  invisible(path)
+  invisible(supplied_path)
 }
 
 ## The file names writeRich() writes; the only files overwrite = TRUE removes.
@@ -277,8 +285,12 @@ writeRich <- function(x, path, overwrite = FALSE) {
 }
 
 .rich_io_read_json <- function(file) {
-  txt <- readLines(file, warn = FALSE, encoding = "UTF-8")
-  jsonlite::fromJSON(paste(txt, collapse = "\n"), simplifyVector = FALSE)
+  txt <- paste(readLines(file, warn = FALSE, encoding = "UTF-8"), collapse = "\n")
+  ## fromJSON() follows a path/URL when its text is not valid JSON.
+  if (!isTRUE(jsonlite::validate(txt))) {
+    stop("the file is not a JSON document", call. = FALSE)
+  }
+  jsonlite::fromJSON(txt, simplifyVector = FALSE)
 }
 
 #' Read an enrichment result written by writeRich()
@@ -478,9 +490,16 @@ readRich <- function(path) {
   if (!type %in% .rich_io_plain_types) refuse(sprintf("a value of type '%s'", type))
   attrs <- node$attributes
   if (!is.null(attrs) && !is.list(attrs)) refuse("malformed attributes")
-  for (a in names(attrs)) {
+  if (length(attrs)) {
+    keys <- names(attrs)
+    if (is.null(keys) || anyNA(keys) || !all(nzchar(keys)) || anyDuplicated(keys)) {
+      refuse("attributes without unique names")
+    }
+  }
+  for (i in seq_along(attrs)) {
+    a <- names(attrs)[i]
     if (!a %in% .rich_io_plain_attributes) refuse(sprintf("attribute '%s'", a))
-    an <- attrs[[a]]
+    an <- attrs[[i]]
     if (!(is.list(an) && identical(an$type, "character") && !length(an$attributes))) {
       refuse(sprintf("attribute '%s' that is not text", a))
     }
@@ -644,7 +663,11 @@ readRich <- function(path) {
       ## as.numeric() alone would also take spaces, hex and other spellings.
       check(grepl("^-?[0-9]+(\\.[0-9]+)?(e[-+][0-9]+)?$", v, perl = TRUE) |
               v %in% c("NaN", "Inf", "-Inf"))
-      suppressWarnings(as.numeric(v))  # the missing token parses to NA
+      x <- suppressWarnings(as.numeric(v))  # the missing token parses to NA
+      special <- v %in% c("NaN", "Inf", "-Inf")
+      nonzero <- grepl("[1-9]", sub("e.*$", "", v))
+      check(special | (is.finite(x) & !(x == 0 & nonzero)))
+      x
     },
     logical = {
       check(v %in% c("TRUE", "FALSE"))
@@ -655,7 +678,8 @@ readRich <- function(path) {
       lapply(seq_along(v), function(i) {
         ## Only a JSON array is parsed (fromJSON() would read other text as a
         ## file path or URL).
-        p <- if (missing[i] || !startsWith(v[i], "[")) NULL else
+        p <- if (missing[i] || !startsWith(v[i], "[") ||
+                 !isTRUE(jsonlite::validate(v[i]))) NULL else
           tryCatch(jsonlite::fromJSON(v[i]), error = function(e) NULL)
         if (is.list(p) && !length(p)) return(character(0))
         if (is.character(p) && is.null(dim(p))) return(as.character(p))

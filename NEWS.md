@@ -317,7 +317,9 @@ table.
   `overwrite = TRUE`, and even then any folder it did not write itself; a
   grouped `@result` (convert it with `x@result <- as.data.frame(x@result)`);
   an `@result` without its identifier or `Term`; and columns of other
-  classes.
+  classes. Overwrite paths are treated literally, including wildcard
+  characters; writability is checked before deletion and failed removals stop
+  the overwrite before any new file is written.
 - New `readRich(path)` rebuilds the object `writeRich()` stored, every value
   exact: the tested table is unavailable exactly when it was in the stored
   object, and `enrichmentInfo()` returns the stored record unchanged, never
@@ -332,12 +334,15 @@ table.
   row count that differs from the manifest, a line with more or fewer fields
   than the manifest's columns, an unknown escape sequence or a cell that does
   not parse to its column's class (a double only in the form `writeRich()`
-  writes it); it never returns a partially read or silently coerced object.
+  writes it, without overflow or non-zero underflow); it never returns a
+  partially read or silently coerced object.
   The metadata and slots in the manifest are read as plain data only (`NULL`,
   logical, integer, double, character and lists, with names): a manifest
   holding a function, call, environment, namespace, raw or serialized bytes,
   an S4 object or a classed value is refused, naming the field, so reading a
-  folder never rebuilds code or loads a package.
+  folder never rebuilds code or loads a package. Every attribute is checked
+  by position and must have a unique, non-empty allowed name. Manifest and
+  list-cell contents are parsed as JSON text only, never as paths or URLs.
 
 ### Identifier mapping, background size and sensitivity grids
 
@@ -510,13 +515,16 @@ are unchanged.
 - New `themeGenes(themes, theme = NULL, stats = NULL)` lists, for each theme,
   every evidence gene crossed with every group: the members whose record in
   that group lists the gene, the theme's status in the group (`reported`,
-  `tested_only`, `unavailable`, `absent` or `failed`) and the statistics
+  `tested_only`, `unavailable`, `undetermined`, `absent` or `failed`) and the statistics
   joined by gene from `stats`, a named list of data frames with a `gene`
   column and the same further columns, of the same class and factor levels,
   in every entry (for GSEA without `stats`, the group's ranked input as
   `rank_score`). A statistic that is missing is `NA` with a `stat_status`
   reason, never `0`, so a theme found in two groups shows whether the same
-  or different genes support it.
+  or different genes support it. `undetermined` means an unlisted member may
+  be untested or have zero overlap; it is distinct from `unavailable`, where
+  no tested table was recorded. The `richSensitivity()` undetermined count
+  includes both kinds of uncertainty.
 - A theme summarizes the listed terms and is not a statistical test: no
   theme-level p-value exists and a representative's p-value is not one.
   Related or overlapping gene sets are not independent replications, so a

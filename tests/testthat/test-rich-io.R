@@ -640,3 +640,15 @@ test_that("a list cell must itself be JSON even when a matching local file exist
   writeLines('["LEAK"]', "[x")
   expect_error(readRich(p), "result.tsv.*column 'leadingEdge', row 1.*does not parse as list")
 })
+test_that("overwrite stops when a known entry cannot be removed", {
+  x <- .fora_reference()
+  p <- tempfile("locked-entry-"); writeRich(x, p)
+  unlink(file.path(p, "detail.tsv"))
+  dir.create(file.path(p, "detail.tsv"))
+  marker <- file.path(p, "detail.tsv", "keep.txt")
+  writeLines("keep", marker)
+  expect_error(writeRich(x, p, overwrite = TRUE), "writeRich.*could not remove")
+  expect_identical(readLines(marker), "keep")
+  # A failed overwrite must not write a fresh manifest after deletion.
+  expect_false(file.exists(file.path(p, "manifest.json")))
+})

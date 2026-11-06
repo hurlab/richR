@@ -197,7 +197,8 @@ richCompareDot<-function (x, pvalue = 0.05, low = "lightpink", high = "red",leve
 #' @importFrom ggplot2 facet_wrap
 #' @importFrom ggplot2 ggplot geom_hline aes geom_point geom_segment
 #' @importFrom ggplot2 geom_line theme_bw element_blank theme scale_color_manual
-#' @param x list of GSEAResult
+#' @param x Non-empty list of GSEAResult objects. Unnamed lists receive
+#'   positional Group labels; explicit names must be nonblank and unique.
 #' @param object Annot object
 #' @param gene list of a vector include all log2FC with gene name (optional)
 #' @param pathway pathways you want to display (optional): pathway identifiers,
@@ -242,6 +243,7 @@ compareGSEA<-function(x,object,gene=NULL,pathway=NULL,
   if (is.null(names(x))) {
     names(x) <- paste("Group", seq_along(x))
   }
+  .validate_named_list(x, "x")
   if(is.null(mycol)){
     mycol <- c("darkgreen","chocolate4","blueviolet","#223D6C","#D20A13","#088247","#58CDD9",
                "#7A142C","#5D90BA","#431A3D","#91612D","#6E568C","#E0367A","#D8D155","#64495D",

@@ -20,7 +20,8 @@ compareGSEA(
 )
 }
 \arguments{
-\item{x}{list of GSEAResult}
+\item{x}{Non-empty list of GSEAResult objects. Unnamed lists receive
+positional Group labels; explicit names must be nonblank and unique.}
 
 \item{object}{Annot object}
 

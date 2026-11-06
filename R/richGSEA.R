@@ -306,7 +306,7 @@ richGSEA_internal<-function(x,object,keytype="",pvalue=0.05,padj=0.05,KEGG=FALSE
   tested_count <- nrow(res)
   res$padj <- stats::p.adjust(res$pval, method = padj.method)
   if(isTRUE(table)){
-    res$leadingEdge<-unlist(lapply(res$leadingEdge, function(x)paste(gsub(" ","",x),collapse = sep,sep="")))
+    res$leadingEdge<-unlist(lapply(res$leadingEdge, function(x)paste(x,collapse = sep,sep="")))
   }
   # Term (the label) goes directly after leadingEdge, so fgsea's columns keep
   # their positions and KEGG level columns follow it.

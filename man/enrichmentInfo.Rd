@@ -38,6 +38,18 @@ does not list: non-zero only for ORA with \code{padj.family = "all"}, and
 \code{0} otherwise. The tested table's row count plus
 \code{zero_overlap_count} equals \code{tested_count}.
 
+\code{input$occurrences} (ORA: the number of times each identifier of
+\code{input$ids} occurred in the valid input; GSEA: 1 per ranked gene) and
+\code{input$mapping} are recorded by richR 0.2.0. \code{input$mapping} is
+the \code{\link{mapGenes}()} record carried by the analysed vector when its
+targets (and scores) match it, \code{list(available = FALSE, reason =
+"mapping record does not match the submitted input")} when they do not, and
+absent (\code{NULL}) when the input carried no record; read it with
+\code{\link{mappingAudit}()}. For ORA results,
+\code{options$universe_policy} records how \code{N} and \code{n} were
+counted (\code{"annotated"} or \code{"measured"}, see \code{\link{enrich}});
+metadata recorded without it describes the \code{"annotated"} behaviour.
+
 \code{schema_version} is \code{2} for \code{richResult} and
 \code{GSEAResult} metadata recorded by richR 0.2.0, and \code{1} for
 \code{Annot} metadata, for results created by earlier versions (which have

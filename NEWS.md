@@ -339,6 +339,135 @@ table.
   an S4 object or a classed value is refused, naming the field, so reading a
   folder never rebuilds code or loads a package.
 
+### Identifier mapping, background size and sensitivity grids
+
+Every existing entry point called without the new `universe_policy`
+argument reports the same rows, statistics and metadata fields as before;
+`idconvert()`, `buildAnnot()`, `richLevel()`, `compareResult()` and the plots
+are unchanged.
+
+- New `mapGenes(x, mapping, from, to, multiple = c("drop", "first"))`
+  converts a gene vector, or a ranking (a named numeric vector), through a
+  mapping table (a data frame whose `from` and `to` columns are character or
+  factor; a factor is read as its labels, any other column type is an error
+  naming the column), an `OrgDb` object, or a species name listed by
+  `showData()` (its OrgDb package must be installed). It never selects a
+  mapping silently: every input entry gets exactly one decision, decided in
+  this order — `invalid` (missing or blank identifier; for a ranking also a
+  missing or non-finite score), `unmapped` (no candidate), `ambiguous`
+  (several candidates under `multiple = "drop"`, the default), then, among the
+  entries still kept, `mapped` for the first entry of each target and
+  `merged` for later entries of the same target. With `multiple = "first"`
+  the first candidate in source order is kept and the `reason` names the
+  candidate count. A source pair whose target is missing or blank is not a
+  candidate, and a repeated pair counts once. For a ranking, entries sharing a
+  target are kept once when their scores are identical and are all dropped as
+  `conflict` when they differ: `mapGenes()` never chooses among entries by
+  score value or magnitude. The result holds each kept target once, in the
+  order of its first kept entry (for a ranking with the input scores
+  unchanged, so it can go straight to `richGSEA()`); under `"drop"` it does
+  not depend on the row order of the source. When every entry is dropped the
+  result is empty and a warning states the count per decision. Malformed
+  calls are errors naming the argument and the offending value.
+- The conversion is recorded in the attribute `"richR_mapping"` of the
+  result, as plain data (named lists and atomic vectors, no `class` or
+  `row.names`): `decisions`, a column list with one element per input entry
+  (`position`, `input_id`, `candidates`, `target`, `decision`, `reason`, and
+  `score` for a ranking), and `source`: `kind` (`"table"` or `"OrgDb"`),
+  `from`, `to`, `multiple`, the richR version and, for an OrgDb, its package,
+  installed version and `metadata = list(name, value)` from
+  `AnnotationDbi::metadata()`; for a table, its row count and a fingerprint
+  `list(algorithm = "sha256", canonicalization = "richR-idmap-v1", hash,
+  n_rows)`. The hash is the SHA-256 of the bytes of the text made of the line
+  `richR-idmap-v1` and one line `<from>\t<to>` per table row in row order, each
+  ended by LF, fields in UTF-8 with backslash, TAB, LF and CR written `\\`,
+  `\t`, `\n`, `\r` (the `richR-geneset-v1` rule) and a missing value `\N`.
+  Values a source does not state are `NA`.
+- `enrich()`, `richGO()`, `richKEGG()` (and `batchEnrich()`) and `richGSEA()`
+  keep a matching mapping record as `enrichmentInfo(x)$input$mapping`. A
+  record whose targets (and scores) no longer equal the submitted vector —
+  for example after `v[1] <- "X"` — is stored as
+  `list(available = FALSE, reason = "mapping record does not match the
+  submitted input")` with a warning; an input without a record (also after
+  `unique()`, `c()` or `[`, which drop attributes) records none. ORA results
+  also record `input$occurrences`, the number of times each identifier of
+  `input$ids` occurred in the valid input; GSEA results record 1 per ranked
+  gene. The record survives `writeRich()` / `readRich()` unchanged. The new
+  fields are additive within `schema_version = 2`.
+- New `mappingAudit(x)` lists one decision per identifier, read only from the
+  recorded metadata and mapping record — never reconstructed from `@result`,
+  `@gene` or `@detail`. For a `mapGenes()` vector it returns the decision
+  table as a data frame. For a `richResult` it returns the columns `role`,
+  `input_id`, `mapping`, `id`, `occurrences`, `decision`, `reason`: in the
+  plain layout one `query` row per unique valid query identifier (with its
+  recorded count) and one `invalid` row per missing or blank entry; in the
+  joined layout (the input carried a mapping record) one `query` row per
+  mapping entry, in input order, joining the original identifier and its
+  mapping decision to the engine decision of its target (`not_submitted` for
+  dropped entries; `occurrences` on the target's `mapped` row only). Query
+  decisions are `effective`, `not_annotated`, `outside_background` and
+  `invalid`; `background` rows are `effective` or `not_annotated`. The counts
+  reconcile with the engine: the distinct `effective` query ids number
+  `testing$effective_n`, the `effective` background rows number
+  `testing$effective_N`, and the recorded occurrences sum to
+  `input$original_count`. For a `GSEAResult` all rows are `ranked`
+  (`ranked_annotated`, `ranked_not_annotated` — the gene stays in the ranking
+  but belongs to no gene set — or `not_submitted`), with the gene's `score` in
+  the result's `input` slot and `tied` when another ranked gene has the same
+  score. Results recorded before this version give the plain layout with
+  `occurrences` `NA` and are read as `universe_policy = "annotated"`; objects
+  without metadata, with the unavailable record, or vectors without a mapping
+  record give `NULL` with a warning "mapping audit unavailable".
+- New argument `universe_policy = c("annotated", "measured")` on the `enrich()`,
+  `richGO()` and `richKEGG()` methods (and through `batchEnrich()`'s `...`).
+  The default, `"annotated"`, keeps `N` = the unique valid universe genes that
+  are annotated in the annotation the analysis tests (for `richGO()`, the
+  selected ontology) and `n` = the query genes among them. `"measured"`
+  requires an explicit `universe` and also counts its tested-but-unannotated
+  genes: `N` = the unique valid universe genes, `n` = the unique valid query
+  genes in the universe. Term sizes, overlaps and the tested family are the
+  same under both; `FoldEnrichment` and `zscore` follow the counted `N` and
+  `n`. Under `"measured"`, `background$effective_ids`, `input$effective_ids`
+  and `testing$effective_N` / `effective_n` hold the counted sets, while
+  `mapped_ids`, `unmapped_ids` and `excluded_by_universe_ids` keep their
+  annotation-membership meaning. The choice is recorded as
+  `options$universe_policy`. `"measured"` without a `universe`, or any other
+  value, is an error; a universe or query with no annotated gene keeps the
+  existing errors. `richLevel()` takes no `universe` and gets no
+  `universe_policy`; GSEA has no universe.
+- New `richSensitivity(x, object, backgrounds, maxGSSize = c(500, 1000), ...)`
+  runs one independent `enrich()` per cell of the named `backgrounds` levels
+  (`NULL` for the annotation-derived background or a character vector used as
+  `universe`) crossed with the `maxGSSize` bounds, every other argument
+  identical; a cell is never derived by filtering another cell (a filtered run
+  has different adjusted p-values). Cells are named `"<background>/<bound>"`.
+  It returns `cells` (execution `success`, `empty` or `failed` with the error,
+  the cell's warnings — each distinct message is signalled once —,
+  `background_size`, `effective_N`, `effective_n`, `tested_count`),
+  `results` (the per-cell results, `NULL` when failed), `states`
+  (`bindRich()` of the results with `background` and `maxGSSize` columns),
+  `summary` and `design`. The summary has one row per term: `cells`, `ran`
+  (success or empty), `tested` (reported or tested-not-reported), `reported`,
+  `not_tested`, `undetermined` (untested-or-zero-overlap or unavailable),
+  `support = reported / tested` (`NA` when untested), the ranges of the tested
+  cells' `Padj` and `FoldEnrichment`, and the best and worst `Pvalue` rank
+  among each tested cell's tested terms; values no cell records are `NA`,
+  never `0`. `design` records the backgrounds as passed, their sizes, the
+  bounds, the engine, the `...` arguments (including `universe_policy`, which
+  applies to every cell), the criterion (state `reported` under the cells'
+  cutoffs), the definitions of `ran`, `tested` and `support` and the richR
+  version, and reproduces the grid. The summary is descriptive stability
+  evidence across prespecified settings — not a p-value, a confidence
+  interval, an independent replication or a combined test; no statistic is
+  combined across cells. Invalid backgrounds or bounds, `universe` or
+  `maxGSSize` in `...`, `universe_policy = "measured"` with a `NULL` level, a
+  numeric ranking, or a grid whose every cell fails are errors. The grid is
+  ORA only.
+- Known residual: `idconvert()` and the conversions inside `buildAnnot()` and
+  `buildMSIGDB()` keep their first-candidate behaviour
+  (`AnnotationDbi::mapIds(multiVals = "first")`); use `mapGenes()` for a
+  recorded conversion.
+
 ### Requirements and packaging
 
 - richR now requires R 4.6 or later (`Depends: R (>= 4.6)`). The package

@@ -181,6 +181,40 @@ subset(result(res_gsea), Term == "Cell cycle")
 `parGSEA()` forwards the same controls. With `simplify = FALSE` it returns a
 `GSEAResult` with metadata; `simplify = TRUE` returns a data frame.
 
+#### Auditing identifiers, choosing N and checking stability
+
+`mapGenes()` converts identifiers and records one decision per input entry;
+a one-to-many identifier is dropped as `ambiguous` (or, with
+`multiple = "first"`, kept as its first candidate with the count recorded),
+never picked silently. `mappingAudit()` reads the decisions back, for the
+converted vector or for any result analysed from it:
+
+```r
+ens <- mapGenes(entrez_ids, "human", "ENTREZID", "ENSEMBL")
+mappingAudit(ens)                 # one row per input id: decision, target, reason
+res <- enrich(ens, ens_annot)
+mappingAudit(res)                 # input id -> mapping decision -> engine decision
+```
+
+By default `N` counts the universe genes annotated in the tested annotation.
+`universe_policy = "measured"` (with an explicit `universe`) also counts the
+measured genes the annotation does not cover:
+
+```r
+enrich(genes, annot, universe = measured_genes, universe_policy = "measured")
+```
+
+`richSensitivity()` re-runs `enrich()` over named backgrounds and `maxGSSize`
+bounds and summarises, per term, how often it was reported among the cells
+that tested it. The summary is descriptive, not a statistical test:
+
+```r
+g <- richSensitivity(genes, annot,
+                     backgrounds = list(annotation = NULL, measured = measured_genes),
+                     maxGSSize = c(500, 1000))
+g$summary
+```
+
 ### 3. Custom gene sets
 
 ```r

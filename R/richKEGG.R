@@ -30,13 +30,22 @@
 #' @param padj.method pvalue adjust method(default:"BH")
 #' @param sep character string used to separate the genes when concatenating
 #' @param universe optional character vector defining the ORA background
+#' @param universe_policy how \code{N} and \code{n} are counted: \code{"annotated"}
+#'   (default) counts only universe genes annotated in the tested annotation (for
+#'   \code{richGO}, the selected ontology); \code{"measured"} also counts the
+#'   tested-but-unannotated genes of an explicit \code{universe}: \code{N} = the
+#'   unique valid universe genes, \code{n} = the unique valid query genes in the
+#'   universe. Term sizes, overlaps and the tested family are the same under both;
+#'   \code{"measured"} requires \code{universe}. Recorded as
+#'   \code{options$universe_policy} in \code{\link{enrichmentInfo}()}.
 #' @param annotation_provenance optional annotation provenance captured from an Annot object
 #' @author Kai Guo
 richKEGG_internal<-function(x,kodata,pvalue=0.05,padj=0.05,ontology="KEGG",
                             organism=NULL,keytype="SYMBOL",minSize=2,maxSize=500,
                             minGSSize = 10, maxGSSize = 500,
                             keepRich=TRUE, filename=NULL,padj.method="BH",builtin=TRUE,sep=",",universe=NULL,
-                            annotation_provenance=NULL,padj.family=c("overlap","all")){
+                            annotation_provenance=NULL,padj.family=c("overlap","all"),
+                            universe_policy=c("annotated","measured")){
     .validateParams(pvalue=pvalue, minSize=minSize, maxSize=maxSize,
                     minGSSize=minGSSize, maxGSSize=maxGSSize, func_name="richKEGG")
     .check_cutoff(padj, "padj", allow_null = TRUE)
@@ -68,7 +77,8 @@ richKEGG_internal<-function(x,kodata,pvalue=0.05,padj=0.05,ontology="KEGG",
            keytype = keytype, filename = filename, sep = sep, universe = universe,
            annotation_provenance = annotation_provenance,
            metadata_ontology = ontology,
-           padj.family = padj.family, label_provenance = label_provenance)
+           padj.family = padj.family, label_provenance = label_provenance,
+           universe_policy = universe_policy)
 }
 #' KEGG Pathway Enrichment analysis function
 #' @param x vector contains gene names or dataframe with DEGs information
@@ -109,13 +119,22 @@ richKEGG_internal<-function(x,kodata,pvalue=0.05,padj=0.05,ontology="KEGG",
 #' @export
 #' @author Kai Guo
 #' @param universe optional character vector intersected with annotated genes to define the ORA background
+#' @param universe_policy how \code{N} and \code{n} are counted: \code{"annotated"}
+#'   (default) counts only universe genes annotated in the tested annotation (for
+#'   \code{richGO}, the selected ontology); \code{"measured"} also counts the
+#'   tested-but-unannotated genes of an explicit \code{universe}: \code{N} = the
+#'   unique valid universe genes, \code{n} = the unique valid query genes in the
+#'   universe. Term sizes, overlaps and the tested family are the same under both;
+#'   \code{"measured"} requires \code{universe}. Recorded as
+#'   \code{options$universe_policy} in \code{\link{enrichmentInfo}()}. Pass it by name.
 setMethod("richKEGG", signature(kodata = "data.frame"),definition = function(x,kodata,pvalue=0.05,padj=0.05,organism=NULL,ontology="KEGG",
                                                                              keytype=NULL,minSize=2,maxSize=500,minGSSize = 10, maxGSSize = 500,
-                                                                             keepRich=TRUE,filename=NULL,padj.method="BH",builtin=TRUE,sep=",",universe=NULL,padj.family=c("overlap","all")) {
+                                                                             keepRich=TRUE,filename=NULL,padj.method="BH",builtin=TRUE,sep=",",universe=NULL,padj.family=c("overlap","all"),universe_policy=c("annotated","measured")) {
   richKEGG_internal(x,kodata=kodata,pvalue=pvalue,padj=padj,
                     organism=organism,ontology=ontology,keytype=keytype,minSize=minSize,
                     maxSize=maxSize,minGSSize = minGSSize, maxGSSize = maxGSSize,keepRich=keepRich,filename=filename,
-                    padj.method=padj.method,builtin=builtin,sep=sep,universe=universe,padj.family=padj.family)
+                    padj.method=padj.method,builtin=builtin,sep=sep,universe=universe,padj.family=padj.family,
+                    universe_policy=universe_policy)
 })
 
 #' KEGG Enrichment analysis function
@@ -156,15 +175,23 @@ setMethod("richKEGG", signature(kodata = "data.frame"),definition = function(x,k
 #' @export
 #' @author Kai Guo
 #' @param universe optional character vector intersected with annotated genes to define the ORA background
+#' @param universe_policy how \code{N} and \code{n} are counted: \code{"annotated"}
+#'   (default) counts only universe genes annotated in the tested annotation (for
+#'   \code{richGO}, the selected ontology); \code{"measured"} also counts the
+#'   tested-but-unannotated genes of an explicit \code{universe}: \code{N} = the
+#'   unique valid universe genes, \code{n} = the unique valid query genes in the
+#'   universe. Term sizes, overlaps and the tested family are the same under both;
+#'   \code{"measured"} requires \code{universe}. Recorded as
+#'   \code{options$universe_policy} in \code{\link{enrichmentInfo}()}. Pass it by name.
 setMethod("richKEGG", signature(kodata = "Annot"),definition = function(x,kodata,pvalue=0.05,padj=0.05,organism=NULL,ontology="KEGG",
                                                                         keytype=NULL,minSize=2,maxSize=500,minGSSize = 10, maxGSSize = 500,
-                                                                        keepRich=TRUE,filename=NULL,padj.method="BH",builtin=TRUE,sep=",",universe=NULL,padj.family=c("overlap","all")) {
+                                                                        keepRich=TRUE,filename=NULL,padj.method="BH",builtin=TRUE,sep=",",universe=NULL,padj.family=c("overlap","all"),universe_policy=c("annotated","measured")) {
   provenance <- .annotation_provenance(kodata)
   richKEGG_internal(x,kodata@annot,pvalue=pvalue,padj=padj,
                   organism=kodata@species,ontology=kodata@anntype,keytype=kodata@keytype,minSize=minSize,
                   maxSize=maxSize,minGSSize = minGSSize, maxGSSize = maxGSSize,keepRich=keepRich,filename=filename,
                   padj.method=padj.method,builtin=builtin,sep=sep,universe=universe,padj.family=padj.family,
-                  annotation_provenance=provenance)
+                  annotation_provenance=provenance,universe_policy=universe_policy)
 })
 
 

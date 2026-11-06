@@ -125,6 +125,28 @@ test_that("padj.family = 'all' adjusts over every size-eligible term", {
   expect_equal(info$options$padj.family, "overlap")
 })
 
+test_that("enrich(<Annot>) receives padj.family by name, as the data.frame method does", {
+  # Catches: S4 dispatch handing padj.family positionally to another formal
+  # of the Annot method, so padj.family = "all" on an Annot object silently
+  # adjusted over the overlap family.
+  annot <- methods::new("Annot", species = "x", anntype = "custom",
+                        keytype = "SYMBOL", annot = fam_annot)
+  for (family in c("overlap", "all")) {
+    expected <- if (family == "all") fam_bh_all else fam_bh_overlap
+    args <- list(minGSSize = 3, minSize = 1, pvalue = 1, padj = 1, padj.family = family)
+    df <- suppressMessages(do.call(richR::enrich, c(list(fam_query, fam_annot), args)))
+    an <- suppressMessages(do.call(richR::enrich, c(list(fam_query, annot), args)))
+    fam_expect_padj(an, expected)
+    expect_equal(richR::testedTerms(an)$Padj, richR::testedTerms(df)$Padj, tolerance = 1e-12)
+    info <- richR::enrichmentInfo(an)
+    expect_equal(info$options$padj.family, family, info = family)
+    expect_equal(info$testing$family_policy,
+                 if (family == "all") "size_bounded_all_eligible" else "size_bounded_positive_overlap",
+                 info = family)
+    expect_equal(info$testing$tested_count, length(expected), info = family)
+  }
+})
+
 test_that("padj.family is validated", {
   expect_error(suppressMessages(richR::enrich(
     fam_query, fam_annot, minGSSize = 3, minSize = 1, padj.family = "bogus"

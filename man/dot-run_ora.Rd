@@ -26,7 +26,8 @@
   annotation_provenance = NULL,
   metadata_ontology = ontology,
   padj.family = c("overlap", "all"),
-  label_provenance = NULL
+  label_provenance = NULL,
+  universe_policy = c("annotated", "measured")
 )
 }
 \arguments{
@@ -75,6 +76,10 @@
 size-eligible term, zero-overlap terms contributing p = 1)}
 
 \item{label_provenance}{optional record of the label source used (richKEGG)}
+
+\item{universe_policy}{\code{"annotated"} (N and n count annotated genes only)
+or \code{"measured"} (N and n also count the tested-but-unannotated genes of
+an explicit universe)}
 }
 \value{
 richResult S4 object

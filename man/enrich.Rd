@@ -71,7 +71,12 @@ BH over that one term gives 0.01, so a null term is reported every time; BH
 over all 100 gives 1. Use \code{padj.family = "all"} for adjustment over every
 size-eligible term.}
 
-\item{...}{additional arguments}
+\item{...}{additional arguments passed to the method, among them
+\code{universe_policy}: \code{"annotated"} (default) counts only universe
+genes annotated in the tested annotation as \code{N} and \code{n};
+\code{"measured"} also counts the tested-but-unannotated genes of an
+explicit \code{universe} (see the data.frame and Annot method pages).
+Pass \code{universe_policy} by name.}
 }
 \value{
 richResult

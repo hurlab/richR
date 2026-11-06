@@ -30,7 +30,12 @@
 #' @param filename output filename
 #' @param padj.method pvalue adjust method(default:"BH")
 #' @param sep character string used to separate the genes when concatenating
-#' @param ... additional arguments
+#' @param ... additional arguments passed to the method, among them
+#'   \code{universe_policy}: \code{"annotated"} (default) counts only universe
+#'   genes annotated in the selected ontology as \code{N} and \code{n};
+#'   \code{"measured"} also counts the tested-but-unannotated genes of an
+#'   explicit \code{universe} (see the data.frame and Annot method pages).
+#'   Pass \code{universe_policy} by name.
 #' @return richResult
 ##' @examples
 #' \dontrun{
@@ -78,7 +83,12 @@ setGeneric("richGO", function(x,godata,ontology="BP",pvalue=0.05,padj=0.05,organ
 #' @param filename output filename
 #' @param padj.method pvalue adjust method(default:"BH")
 #' @param sep character string used to separate the genes when concatenating
-#' @param ... additional arguments
+#' @param ... additional arguments passed to the method, among them
+#'   \code{universe_policy}: \code{"annotated"} (default) counts only universe
+#'   genes annotated in the tested annotation as \code{N} and \code{n};
+#'   \code{"measured"} also counts the tested-but-unannotated genes of an
+#'   explicit \code{universe} (see the data.frame and Annot method pages).
+#'   Pass \code{universe_policy} by name.
 ##' @return richResult
 #' @examples
 #' \dontrun{
@@ -172,7 +182,12 @@ setGeneric("richGSEA", function(x,object,keytype="",pvalue=0.05,padj=0.05,KEGG=F
 #' @param filename output filename
 #' @param padj.method pvalue adjust method(default:"BH")
 #' @param sep character string used to separate the genes when concatenating
-#' @param ... additional arguments
+#' @param ... additional arguments passed to the method, among them
+#'   \code{universe_policy}: \code{"annotated"} (default) counts only universe
+#'   genes annotated in the tested annotation as \code{N} and \code{n};
+#'   \code{"measured"} also counts the tested-but-unannotated genes of an
+#'   explicit \code{universe} (see the data.frame and Annot method pages).
+#'   Pass \code{universe_policy} by name.
 ##' @return richResult
 #' @section Identifier convention:
 #' \code{Term} (like \code{GOALL}, \code{PATH} and \code{Module}) is the

@@ -488,6 +488,15 @@ readRich <- function(path) {
   type <- if (is.list(node)) node$type
   if (!(is.character(type) && length(type) == 1L)) refuse("a value without a type")
   if (!type %in% .rich_io_plain_types) refuse(sprintf("a value of type '%s'", type))
+  if (identical(type, "integer")) {
+    values <- node$value
+    valid <- vapply(values, function(v) {
+      identical(v, "NA") ||
+        (is.numeric(v) && length(v) == 1L && is.finite(v) &&
+         v == trunc(v) && abs(v) <= .Machine$integer.max)
+    }, logical(1))
+    if (!all(valid)) refuse("an integer value that cannot be represented exactly")
+  }
   attrs <- node$attributes
   if (!is.null(attrs) && !is.list(attrs)) refuse("malformed attributes")
   if (length(attrs)) {
@@ -527,10 +536,16 @@ readRich <- function(path) {
   slot <- entry$slot
   columns <- entry$columns
   n <- entry$nrow
-  if (!(is.numeric(n) && length(n) == 1L && n >= 0 && n == round(n))) {
-    bad(sprintf("the row count of %s is not a whole number", slot))
+  if (!(is.numeric(n) && length(n) == 1L && is.finite(n) &&
+        n >= 0 && n <= .Machine$integer.max && n == trunc(n))) {
+    bad(sprintf("the row count of %s is not an exactly representable whole number", slot))
   }
-  if (!is.list(columns) || !identical(length(columns), as.integer(entry$ncol))) {
+  nc <- entry$ncol
+  if (!(is.numeric(nc) && length(nc) == 1L && is.finite(nc) &&
+        nc >= 0 && nc <= .Machine$integer.max && nc == trunc(nc))) {
+    bad(sprintf("the column count of %s is not an exactly representable whole number", slot))
+  }
+  if (!is.list(columns) || !identical(length(columns), as.integer(nc))) {
     bad(sprintf("the columns of %s do not match its column count", slot))
   }
   col_names <- vapply(columns, function(cl) as.character(cl$name)[1L], character(1))
@@ -698,10 +713,14 @@ readRich <- function(path) {
   out <- switch(if (is.character(type) && length(type) == 1L) type else "",
     automatic = {
       k <- rn$n
-      if (!(is.numeric(k) && length(k) == 1L && abs(k) == n)) NULL
+      if (!(is.numeric(k) && length(k) == 1L && is.finite(k) &&
+            abs(k) <= .Machine$integer.max && k == trunc(k) && abs(k) == n)) NULL
       else c(NA_integer_, as.integer(k))
     },
-    integer = if (n == 0 || is.numeric(values)) as.integer(values) else NULL,
+    integer = if ((n == 0 && !length(values)) ||
+                  (is.numeric(values) && all(is.finite(values)) &&
+                   all(abs(values) <= .Machine$integer.max) &&
+                   all(values == trunc(values)))) as.integer(values) else NULL,
     character = if (n == 0 || is.character(values)) as.character(values) else NULL,
     NULL)
   if (is.null(out) || (!identical(type, "automatic") && length(out) != n)) {

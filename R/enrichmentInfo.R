@@ -187,7 +187,9 @@ enrichmentInfo <- function(x) {
                                testing, options, annotation_provenance,
                                fgsea_version = NULL, rng = NULL,
                                labels = NULL) {
-  metadata <- list(schema_version = 1L, available = TRUE, analysis = analysis,
+  ## Result metadata is schema 2 (testing$zero_overlap_count; the object carries
+  ## a tested slot). Annot metadata and the unavailable record stay schema 1.
+  metadata <- list(schema_version = 2L, available = TRUE, analysis = analysis,
        input = input, annotation = annotation, background = background,
        testing = testing, options = options,
        provenance = list(richR_version = .richr_version(),

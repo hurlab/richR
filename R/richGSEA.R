@@ -373,6 +373,7 @@ richGSEA_internal<-function(x,object,keytype="",pvalue=0.05,padj=0.05,KEGG=FALSE
                      effective_ids = ranked_ids)
   testing <- list(family_policy = "fgsea_returned_before_filtering",
                   tested_count = as.integer(tested_count),
+                  zero_overlap_count = 0L,
                   effective_N = NA_integer_, effective_n = NA_integer_)
   options <- list(pvalue = pvalue, padj = metadata_padj, minSize = minSize,
                   maxSize = maxSize, padj.method = padj.method,

@@ -57,8 +57,9 @@ testedTerms <- function(x) {
                  "before 0.2.0); it is not reconstructed from @result"))
   }
   if (ncol(x@tested) == 0L) {
-    return(paste("no tested table was recorded for this object (built",
-                 "outside an analysis, e.g. by as(), richDAVID() or new());",
+    ## Neutral on provenance: the object may come from as(), richDAVID() or
+    ## new(), or be a pre-0.2.0 result read back by readRich().
+    return(paste("no tested table was recorded for this object;",
                  "it is not reconstructed from @result"))
   }
   NULL

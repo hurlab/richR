@@ -329,9 +329,15 @@ table.
   read back without metadata.
   `readRich()` also stops, naming the folder, file, column and first offending
   row, on a missing manifest, a missing or unlisted table file, a header or
-  row count that differs from the manifest, an unknown escape sequence or a
-  cell that does not parse to its column's class; it never returns a
-  partially read or silently coerced object.
+  row count that differs from the manifest, a line with more or fewer fields
+  than the manifest's columns, an unknown escape sequence or a cell that does
+  not parse to its column's class (a double only in the form `writeRich()`
+  writes it); it never returns a partially read or silently coerced object.
+  The metadata and slots in the manifest are read as plain data only (`NULL`,
+  logical, integer, double, character and lists, with names): a manifest
+  holding a function, call, environment, namespace, raw or serialized bytes,
+  an S4 object or a classed value is refused, naming the field, so reading a
+  folder never rebuilds code or loads a package.
 
 ### Requirements and packaging
 

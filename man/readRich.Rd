@@ -32,9 +32,18 @@ naming the folder, file, column and first offending row, when
 \code{manifest.json} is missing or names another format or a class other
 than \code{richResult} or \code{GSEAResult}, when a table file the manifest
 lists is missing or a table file it does not list is present, when a
-table's header or row count differs from the manifest, on an unknown escape
-sequence, and on a cell that does not parse to its column's class. It never
-returns a partially read or silently coerced object.
+table's header or row count differs from the manifest, on a line with more
+or fewer fields than the manifest's columns, on an unknown escape sequence,
+and on a cell that does not parse to its column's class (a double only in
+the form \code{writeRich()} writes it). It never returns a partially read or
+silently coerced object.
+
+The metadata and slots stored in \code{manifest.json} are read as plain
+data only: \code{NULL}, logical, integer, double, character and lists, with
+names. A manifest holding a function, call, environment, namespace, raw or
+serialized bytes, an S4 object or a classed value is refused with an error
+naming the field, so reading a folder never rebuilds code or loads a
+package.
 }
 \seealso{
 \code{\link{writeRich}}

@@ -301,9 +301,18 @@ writeRich <- function(x, path, overwrite = FALSE) {
 #' \code{manifest.json} is missing or names another format or a class other
 #' than \code{richResult} or \code{GSEAResult}, when a table file the manifest
 #' lists is missing or a table file it does not list is present, when a
-#' table's header or row count differs from the manifest, on an unknown escape
-#' sequence, and on a cell that does not parse to its column's class. It never
-#' returns a partially read or silently coerced object.
+#' table's header or row count differs from the manifest, on a line with more
+#' or fewer fields than the manifest's columns, on an unknown escape sequence,
+#' and on a cell that does not parse to its column's class (a double only in
+#' the form \code{writeRich()} writes it). It never returns a partially read or
+#' silently coerced object.
+#'
+#' The metadata and slots stored in \code{manifest.json} are read as plain
+#' data only: \code{NULL}, logical, integer, double, character and lists, with
+#' names. A manifest holding a function, call, environment, namespace, raw or
+#' serialized bytes, an S4 object or a classed value is refused with an error
+#' naming the field, so reading a folder never rebuilds code or loads a
+#' package.
 #'
 #' @param path folder written by \code{writeRich()}
 #' @return the stored \code{richResult} or \code{GSEAResult}
@@ -348,14 +357,16 @@ readRich <- function(path) {
 
   metadata <- NULL
   if (m$metadata_recorded) {
-    metadata <- .rich_io_untyped(m$metadata, function() bad("the metadata cannot be decoded"))
+    metadata <- .rich_io_untyped(m$metadata, "metadata", where,
+                                 function() bad("the metadata cannot be decoded"))
     if (!is.list(metadata)) bad("the metadata is not a list")
     .rich_io_check_version(metadata$schema_version, 1:2,
                            "metadata schema_version", where)
   } else if (!is.null(m$metadata)) {
     bad("metadata is present but metadata_recorded is FALSE")
   }
-  slots <- .rich_io_untyped(m$slots, function() bad("the slots cannot be decoded"))
+  slots <- .rich_io_untyped(m$slots, "slots", where,
+                            function() bad("the slots cannot be decoded"))
   expected_slots <- .rich_io_scalar_slots(cls)
   if (!is.list(slots) || !setequal(names(slots), expected_slots) ||
       anyDuplicated(names(slots))) {
@@ -432,13 +443,63 @@ readRich <- function(path) {
   }
 }
 
-## Decode a typed JSON node of the manifest (see .rich_io_typed_json()).
-.rich_io_untyped <- function(node, fail) {
+## Decode a typed JSON node of the manifest (see .rich_io_typed_json()). The
+## node is checked to hold plain data before jsonlite::unserializeJSON() sees
+## it, which would otherwise rebuild functions, calls, environments, S4 objects
+## and serialized bytes from a folder the user did not write, and load the
+## namespaces such a folder names.
+.rich_io_untyped <- function(node, field, where, fail) {
   if (is.null(node)) fail()
+  .rich_io_check_plain(node, field, where)
   tryCatch(
     jsonlite::unserializeJSON(jsonlite::toJSON(node, auto_unbox = TRUE,
                                                null = "null", digits = I(17))),
     error = function(e) fail())
+}
+
+## What a typed JSON node of the manifest may hold: the node types and
+## attributes the metadata and slots of richR results are built from (lists of
+## NULL, logical, integer, double and character values; names on them; and
+## the package attribute of the class name a GSEA run records for BPPARAM).
+.rich_io_plain_types <- c("NULL", "logical", "integer", "double", "character",
+                          "list")
+.rich_io_plain_attributes <- c("names", "package")
+
+## Stop, naming the manifest field, on the first node that is not plain data.
+.rich_io_check_plain <- function(node, at, where) {
+  refuse <- function(what) {
+    stop(sprintf(paste("readRich(): %s holds %s at %s; readRich() decodes only",
+                       "plain data (NULL, logical, integer, double, character",
+                       "and lists, with names)."), where, what, at),
+         call. = FALSE)
+  }
+  type <- if (is.list(node)) node$type
+  if (!(is.character(type) && length(type) == 1L)) refuse("a value without a type")
+  if (!type %in% .rich_io_plain_types) refuse(sprintf("a value of type '%s'", type))
+  attrs <- node$attributes
+  if (!is.null(attrs) && !is.list(attrs)) refuse("malformed attributes")
+  for (a in names(attrs)) {
+    if (!a %in% .rich_io_plain_attributes) refuse(sprintf("attribute '%s'", a))
+    an <- attrs[[a]]
+    if (!(is.list(an) && identical(an$type, "character") && !length(an$attributes))) {
+      refuse(sprintf("attribute '%s' that is not text", a))
+    }
+  }
+  if (identical(type, "list")) {
+    if (!is.null(node$value) && !is.list(node$value)) refuse("a list without elements")
+    labels <- vapply(attrs$names$value, function(v) {
+      if (is.character(v) && length(v) == 1L) v else ""
+    }, character(1))
+    for (i in seq_along(node$value)) {
+      label <- if (i <= length(labels) && nzchar(labels[i])) {
+        paste0(at, "$", labels[i])
+      } else {
+        sprintf("%s[[%d]]", at, i)
+      }
+      .rich_io_check_plain(node$value[[i]], label, where)
+    }
+  }
+  invisible(TRUE)
 }
 
 ## Read one table as the manifest describes it; every check runs before the
@@ -474,20 +535,21 @@ readRich <- function(path) {
     stop(sprintf("readRich(): table file %s listed in manifest.json of '%s' is missing.",
                  file, path), call. = FALSE)
   }
-  raw <- tryCatch(
-    utils::read.delim(f, header = FALSE, quote = "", na.strings = character(0),
-                      blank.lines.skip = FALSE, comment.char = "", fill = FALSE,
-                      colClasses = "character", encoding = "UTF-8",
-                      check.names = FALSE),
-    error = function(e) {
-      stop(sprintf("readRich(): cannot read %s in '%s': %s", file, path,
-                   conditionMessage(e)), call. = FALSE)
-    })
+  cannot_read <- function(e) {
+    stop(sprintf("readRich(): cannot read %s in '%s': %s", file, path,
+                 conditionMessage(e)), call. = FALSE)
+  }
   fail <- function(column, row, what) {
     stop(sprintf("readRich(): %s in '%s', column '%s', row %d: %s.", file, path,
                  column, row, what), call. = FALSE)
   }
-  header <- .rich_io_unescape(unlist(raw[1L, ], use.names = FALSE),
+  ## The header and the field count of every line are checked before the table
+  ## is parsed, so a malformed line is reported by its own row. Cells never
+  ## hold a raw TAB (it is escaped), so splitting on TAB is exact; an empty
+  ## line is one empty field.
+  first <- tryCatch(readLines(f, n = 1L, warn = FALSE, encoding = "UTF-8"),
+                    error = cannot_read)
+  header <- .rich_io_unescape(strsplit(paste0(first, "\t"), "\t", fixed = TRUE)[[1L]],
                               function(row, what) fail("(header)", row, what))
   if (!identical(header, col_names)) {
     common <- seq_len(min(length(header), length(col_names)))
@@ -501,6 +563,24 @@ readRich <- function(path) {
                  if (k <= length(col_names)) paste0("'", col_names[k], "'") else "none"),
          call. = FALSE)
   }
+  counts <- tryCatch(
+    utils::count.fields(f, sep = "\t", quote = "", comment.char = "",
+                        blank.lines.skip = FALSE),
+    error = cannot_read)
+  counts[counts == 0L] <- 1L
+  wrong <- which(counts[-1L] != length(col_names))[1L]
+  if (!is.na(wrong)) {
+    stop(sprintf(paste("readRich(): %s in '%s', row %d: %d fields found, %d",
+                       "expected (the columns manifest.json records)."),
+                 file, path, wrong, counts[wrong + 1L], length(col_names)),
+         call. = FALSE)
+  }
+  raw <- tryCatch(
+    utils::read.delim(f, header = FALSE, quote = "", na.strings = character(0),
+                      blank.lines.skip = FALSE, comment.char = "", fill = FALSE,
+                      colClasses = "character", encoding = "UTF-8",
+                      check.names = FALSE),
+    error = cannot_read)
   body <- raw[-1L, , drop = FALSE]
   if (nrow(body) != n) {
     stop(sprintf("readRich(): %s in '%s' has %d data rows; manifest.json records %d.",
@@ -560,9 +640,11 @@ readRich <- function(path) {
       x
     },
     double = {
-      x <- suppressWarnings(as.numeric(v))
-      check(!is.na(x) | v == "NaN")
-      x
+      ## Only what writeRich() writes (sprintf("%.17g"), NaN, Inf, -Inf):
+      ## as.numeric() alone would also take spaces, hex and other spellings.
+      check(grepl("^-?[0-9]+(\\.[0-9]+)?(e[-+][0-9]+)?$", v, perl = TRUE) |
+              v %in% c("NaN", "Inf", "-Inf"))
+      suppressWarnings(as.numeric(v))  # the missing token parses to NA
     },
     logical = {
       check(v %in% c("TRUE", "FALSE"))

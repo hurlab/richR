@@ -310,6 +310,11 @@ test_that("readRich restores empty results, zero-column tables and unavailable r
     expect_warning(tt <- testedTerms(b), "tested table unavailable")
     expect_null(tt)
     expect_identical(enrichmentInfo(b)$schema_version, 1L)
+    # Read back, the object gains the slot prototype; the warning must not
+    # then claim it was built by as(), richDAVID() or new().
+    msg <- tryCatch(testedTerms(b), warning = conditionMessage)
+    expect_match(msg, "no tested table was recorded for this object")
+    expect_no_match(msg, "as\\(\\)|richDAVID|new\\(\\)|outside an analysis")
   }
 })
 
@@ -432,6 +437,80 @@ test_that("readRich refuses a folder it cannot read exactly", {
                "result.tsv.*column 'Pvalue', row 2")
   expect_error(readRich(set_cell(1L, "Term", "a\\qb")),
                "result.tsv.*column 'Term', row 1.*unknown escape")
+  # A double cell is read only in the forms writeRich() writes: text that
+  # as.numeric() would also accept (spaces, hex, other spellings) is refused.
+  for (cell in c(" 0x1p-3 ", "0x10", "1e5 ", "+1", "1E5", ".5", "Infinity",
+                 "nan", "inf")) {
+    expect_error(readRich(set_cell(1L, "Pvalue", cell)),
+                 "result.tsv.*column 'Pvalue', row 1.*does not parse as double",
+                 info = cell)
+  }
+  # A data row with a field too many or too few is named by its own row.
+  nc <- ncol(x@result)
+  edit_row <- function(row, f) {
+    changed(function(p) edit_lines(p, "result.tsv", function(l) {
+      l[row + 1L] <- f(l[row + 1L])
+      l
+    }))
+  }
+  expect_error(readRich(edit_row(2L, function(l) paste0(l, "\textra"))),
+               sprintf("result.tsv in '.*', row 2: %d fields found, %d expected",
+                       nc + 1L, nc))
+  expect_error(readRich(edit_row(1L, function(l) sub("\t[^\t]*$", "", l))),
+               sprintf("result.tsv in '.*', row 1: %d fields found, %d expected",
+                       nc - 1L, nc))
   expect_error(readRich(changed(function(p) unlink(file.path(p, "manifest.json")))),
                "manifest.json")
+})
+
+test_that("readRich decodes only plain data from the manifest", {
+  # Catches readRich() rebuilding functions, calls, environments, namespaces,
+  # serialized bytes, S4 objects or classed values from a folder it did not
+  # write (jsonlite::unserializeJSON() rebuilds all of them, and loads the
+  # package a namespace value names, while the folder is read).
+  x <- .fora_reference(pvalue = 1)
+  base <- io_dir()
+  writeRich(x, base)
+  node_of <- function(value) {
+    jsonlite::fromJSON(jsonlite::serializeJSON(value), simplifyVector = FALSE)
+  }
+  # A namespace not yet loaded; serializing it would load it, so its node is
+  # written by hand.
+  spare <- setdiff(c("splines", "stats4", "tcltk"), loadedNamespaces())[1L]
+  ns_node <- list(type = "namespace",
+                  attributes = structure(list(), names = character(0)),
+                  value = list(name = if (is.na(spare)) "splines" else spare))
+  inject <- function(node, where = "metadata") {
+    p <- copy_folder(base)
+    edit_manifest(p, function(m) {
+      tree <- m[[where]]
+      labels <- vapply(tree$attributes$names$value, as.character, character(1))
+      k <- if (where == "metadata") length(labels) + 1L else match("organism", labels)
+      tree$value[[k]] <- node
+      tree$attributes$names$value[[k]] <- if (where == "metadata") "injected" else "organism"
+      m[[where]] <- tree
+      m
+    })
+    p
+  }
+  before <- loadedNamespaces()
+  cases <- list(closure = node_of(function() system("echo PWNED")),
+                language = node_of(quote(system("echo PWNED"))),
+                environment = node_of(new.env()),
+                namespace = ns_node,
+                raw = node_of(as.raw(1:3)),
+                builtin = node_of(sum),
+                S4 = node_of(methods::new("Annot")))
+  for (type in names(cases)) {
+    expect_error(readRich(inject(cases[[type]])),
+                 sprintf("manifest.json of .*type '%s' at metadata\\$injected", type),
+                 info = type)
+  }
+  expect_error(readRich(inject(node_of(as.Date("2026-01-01")))),
+               "manifest.json of .*attribute 'class' at metadata\\$injected")
+  expect_error(readRich(inject(node_of(function() 1), "slots")),
+               "manifest.json of .*type 'closure' at slots\\$organism")
+  expect_identical(setdiff(loadedNamespaces(), before), character(0))
+  # The plain manifest the edits started from still reads exactly.
+  expect_round_trip(readRich(base), x)
 })

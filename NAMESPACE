@@ -126,6 +126,7 @@ export(slice)
 export(summarise)
 export(testedTerms)
 export(theme_richR)
+export(writeRich)
 exportClasses(Annot)
 exportClasses(GSEAResult)
 exportClasses(richResult)
@@ -258,6 +259,12 @@ importFrom(igraph,
   graph_from_data_frame,
   simplify,
   write_graph
+)
+importFrom(jsonlite,
+  fromJSON,
+  serializeJSON,
+  toJSON,
+  unserializeJSON
 )
 importFrom(magrittr,
   "%<>%",

@@ -17,6 +17,18 @@
 #'     returned by fgsea, before the significance cutoffs.}
 #' }
 #' For ORA results, \code{options$padj.family} records the family argument.
+#'
+#' For results, \code{testing$zero_overlap_count} is the number of tested
+#' terms with zero overlap that the tested table (\code{\link{testedTerms}})
+#' does not list: non-zero only for ORA with \code{padj.family = "all"}, and
+#' \code{0} otherwise. The tested table's row count plus
+#' \code{zero_overlap_count} equals \code{tested_count}.
+#'
+#' \code{schema_version} is \code{2} for \code{richResult} and
+#' \code{GSEAResult} metadata recorded by richR 0.2.0, and \code{1} for
+#' \code{Annot} metadata, for results created by earlier versions (which have
+#' no \code{zero_overlap_count} and no tested table) and for the unavailable
+#' record.
 #' @param x Annot, richResult, or GSEAResult object
 #' @return A named list containing diagnostics and provenance
 #' @export

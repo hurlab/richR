@@ -242,6 +242,95 @@
   row; `00541` is the only pathway affected. Where KEGG lists a pathway under
   several hierarchy rows, `data-raw/path.R` keeps the first in KEGG's order.
 
+### Tested terms, comparing and storing results
+
+`@result` and `compareResult()` are unchanged: every entry point reports the
+same rows, columns, values and order as before, and `compareResult()`,
+`richCompareDot()`, `batchEnrich()` and the plots do not read the new tested
+table.
+
+- `richResult` and `GSEAResult` objects have a new slot, `tested`, that
+  records what the analysis tested, not only what it reported. For ORA it
+  holds one row for every term of the tested family that shares at least one
+  gene with the query; for GSEA one row for every pathway fgsea returned. Its
+  columns are those of `@result`, with the values the analysis computed, plus
+  a logical column `reported` that is `TRUE` exactly for the rows `@result`
+  holds. Terms removed by `minSize`, `maxSize`, `keepRich` or the
+  significance cutoffs stay in the table with `reported = FALSE`, so running
+  with the default cutoffs no longer loses the statistics of the terms that
+  did not pass.
+- New `testedTerms(x)` returns the tested table as a data frame (zero rows
+  when nothing was tested).
+- `enrichmentInfo(x)$testing$zero_overlap_count` counts the tested terms with
+  zero overlap, which the tested table does not list. It is non-zero only for
+  ORA with `padj.family = "all"` and `0` otherwise; the tested table's rows
+  plus `zero_overlap_count` equal `testing$tested_count`. The metadata of
+  `richResult` and `GSEAResult` objects now has `schema_version = 2`;
+  `Annot` metadata and the unavailable record keep `schema_version = 1`.
+- Objects without a recorded tested table (saved by an earlier richR, built
+  with `as(<data.frame>, "richResult")`, by `richDAVID()` or by `new()`) are
+  reported as unavailable, never reconstructed: `testedTerms()` returns
+  `NULL` with the warning "tested table unavailable", and no function treats
+  `@result` as the tested set or fills in zeros. Objects saved before 0.2.0
+  fail `validObject()` ("slots in class definition but not in object:
+  \"tested\""), but richR functions do not call `validObject()` on their
+  inputs and keep accepting them.
+- `filter()`, `arrange()`, `mutate()`, `slice()`, `select()`, `rename()` and
+  `group_by()` on a result object change only `@result`; the tested table and
+  the `enrichmentInfo()` record stay those of the original analysis, so a
+  filtered object is a view of that analysis, not a new one.
+- New `bindRich()` binds a list of `richResult` objects, or of `GSEAResult`
+  objects, into one data frame with one row per group and identifier, taken
+  from the union of every group's `@result` and tested table. Its columns are,
+  in order: `group` (a factor with the groups in input order), the identifier
+  (`Annot` for ORA, `pathway` for GSEA), `Term`, `state`, `execution`, then
+  the other columns of the groups' results and tested tables. `execution` is
+  `"success"` (the group's `@result` has rows), `"empty"` (it has none) or
+  `"failed"` (a `NULL` entry, as `batchEnrich()` returns for a failed group).
+  `state` is `NA` for a failed group and otherwise `"reported"` (in the
+  group's `@result`), `"tested_not_reported"` (in its tested table only),
+  `"not_tested"` (absent from a complete tested table),
+  `"untested_or_zero_overlap"` (absent, and the group counted zero-overlap
+  terms it does not list) or `"unavailable"` (absent from a group whose tested
+  table or metadata is not recorded, so what it tested is unknown). Each row's
+  `Term` and statistics come from that group's own record, and are `NA` in
+  every other state: `bindRich()` applies no cutoff, re-adjusts no p-value,
+  computes no statistic and never writes `0` for a missing value. Groups are
+  named as in `compareResult()`; ORA and GSEA results cannot be mixed.
+- New `writeRich(x, path)` stores a `richResult` or `GSEAResult` as a folder:
+  `manifest.json` plus UTF-8 tab-separated tables `result.tsv`, `tested.tsv`
+  (when a tested table is recorded), `detail.tsv` (`richResult`) or
+  `input.tsv` (`GSEAResult`, the ranked genes and scores in stored order).
+  Each table has a header row and one line per row. In text, factor and list
+  cells a backslash is written `\\`, TAB `\t`, newline `\n` and carriage
+  return `\r`; a missing value of any class is written `\N`, so `NA`, `""`
+  and the text `"NA"` stay distinct; identifiers keep their text (`"00010"`
+  is not read back as `10`). Doubles are written with 17 significant digits,
+  which on Linux read back bit-identical (the default 15-digit text form
+  changes most of them); `NaN`, `Inf` and `-Inf` are spelled out, and list
+  cells such as a GSEA `leadingEdge` are written as JSON arrays. A table with
+  no columns is recorded in the manifest only. The manifest records the
+  format name `richR-result`, format version `1`, the class, every other
+  slot, the `enrichmentInfo()` record and, per table, its file, column names
+  and classes, row names and row count. `writeRich()` checks everything before
+  it writes: it refuses an existing non-empty folder unless
+  `overwrite = TRUE`, and even then any folder it did not write itself; a
+  grouped `@result` (convert it with `x@result <- as.data.frame(x@result)`);
+  an `@result` without its identifier or `Term`; and columns of other
+  classes.
+- New `readRich(path)` rebuilds the object `writeRich()` stored, every value
+  exact: the tested table is unavailable exactly when it was in the stored
+  object, and `enrichmentInfo()` returns the stored record unchanged, never
+  upgraded or re-dated. Version policy: the folder format version must be `1`
+  and the metadata `schema_version` `1` or `2`; an older `schema_version` is
+  read as it is, without conversion, and a missing, non-integer, older or
+  newer version is an error naming the found and supported versions.
+  `readRich()` also stops, naming the folder, file, column and first offending
+  row, on a missing manifest, a missing or unlisted table file, a header or
+  row count that differs from the manifest, an unknown escape sequence or a
+  cell that does not parse to its column's class; it never returns a
+  partially read or silently coerced object.
+
 ### Requirements and packaging
 
 - richR now requires R 4.6 or later (`Depends: R (>= 4.6)`). The package
@@ -263,6 +352,8 @@
   version. `kegg.R`, `module.R` and `path.R` were run for this release (see
   "Bundled KEGG data" below); `pathway.R` was not, and `godata` and `pathway`
   are unchanged, with unknown retrieval dates.
+- `jsonlite` is a new import, used by `writeRich()` and `readRich()` for the
+  folder manifest.
 - Corrected the documentation of the bundled data: `godata` is a named list of
   GO terms mapped to themselves and their offspring, not a data frame of gene
   annotations.
@@ -290,11 +381,16 @@
 - `richDot()` now honours `short = TRUE` and shortens long term labels like
   the other dot and bar plots; in 0.1.x both of its methods accepted `short`
   but ignored it.
+- `group_by()` on `richResult`, `GSEAResult` and `Annot` objects works again.
+  With dplyr 1.2 it failed with "The `add` argument of `group_by()` was
+  deprecated in dplyr 1.0.0 and is now defunct"; the methods now pass `.add`
+  to dplyr and keep their own `add` argument.
 
 ### Internal changes
 
-These changes do not alter results: the set of exported functions is
-unchanged from 0.1.5, and the only characterization snapshot they changed is
+These changes do not alter results or the set of exported functions (the
+four new exports of 0.2.0 are described under "Tested terms, comparing and
+storing results"), and the only characterization snapshot they changed is
 the `detail()` bug fix above. (The GSEA, `compareGSEA()`, `enrich()` and
 `compareResult()` snapshots were later re-pinned for the behaviour changes
 described in the sections above.)

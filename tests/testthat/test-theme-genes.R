@@ -98,7 +98,13 @@ test_that("a statistic column whose class or factor levels differ between stats 
     factor_levels = list(q1 = frame(factor(dir1, levels = lev)),
                          q2 = frame(factor(rep("c", 7), levels = c("c", "d")))),
     numeric_character = list(q1 = frame((1:7) / 2), q2 = frame(as.character(1:7))),
-    character_numeric = list(q1 = frame(as.character(1:7)), q2 = frame((1:7) / 2)))
+    character_numeric = list(q1 = frame(as.character(1:7)), q2 = frame((1:7) / 2)),
+    # A Date and a double share typeof "double" and have no levels; only the
+    # class tells them apart.
+    date_double = list(q1 = frame(as.Date("2026-01-01") + 0:6), q2 = frame((1:7) / 2)),
+    # The mismatch sits in a later statistic column, not the first one.
+    second_column = list(q1 = data.frame(gene = genes, lfc = (1:7) / 2, direction = dir1),
+                         q2 = data.frame(gene = genes, lfc = (1:7) / 4, direction = 1:7)))
   for (k in names(bad)) {
     e <- tryCatch({
       suppressWarnings(themeGenes(th, "theme_001", bad[[k]]))

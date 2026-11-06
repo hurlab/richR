@@ -241,7 +241,7 @@ setMethod("richNetwork", signature(object = "richResult"),definition = function(
                      writeCyt=writeCyt,cytoscapeFile=cytoscapeFile,cytoscapeFormat=cytoscapeFormat,
                      label.color=label.color,label.size=label.size,node.shape=node.shape,
                      layout=layout,savefig=savefig,width=width,height=height,
-                     visNet=visNet,smooth=smooth,nodeselect=nodeselect,edit=edit,
+                     visNet=visNet,smooth=smooth,nodeselect=nodeselect,edit=edit,savehtml=savehtml,
                      filename=filename,node.alpha=node.alpha,sep=object@sep,...)
 })
 ##' network for Enrichment results
@@ -287,7 +287,7 @@ setMethod("richNetwork", signature(object = "data.frame"),definition = function(
                      cytoscapeFormat=cytoscapeFormat,
                      label.color=label.color,label.size=label.size,node.shape=node.shape,
                      layout=layout,savefig=savefig,width=width,height=height,
-                     visNet=visNet,smooth=smooth,nodeselect=nodeselect,edit=edit,
+                     visNet=visNet,smooth=smooth,nodeselect=nodeselect,edit=edit,savehtml=savehtml,
                      filename=filename,node.alpha=node.alpha,sep=sep,...)
 })
 #
@@ -335,7 +335,7 @@ setMethod("richNetwork", signature(object = "GSEAResult"),definition = function(
                      writeCyt=writeCyt,cytoscapeFile=cytoscapeFile,cytoscapeFormat=cytoscapeFormat,
                      label.color=label.color,label.size=label.size,node.shape=node.shape,
                      layout=layout,savefig=savefig,width=width,height=height,
-                     visNet=visNet,smooth=smooth,nodeselect=nodeselect,edit=edit,
+                     visNet=visNet,smooth=smooth,nodeselect=nodeselect,edit=edit,savehtml=savehtml,
                      filename=filename,node.alpha=node.alpha,sep=sep,...)
 })
 

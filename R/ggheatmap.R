@@ -24,6 +24,10 @@
 #' one \code{\link{richR_plot_selection}} message counted in identifiers over
 #' all results (\code{suppressMessages()} silences it). To draw every
 #' identifier: \code{richHeatmap(x, top = Inf)}.
+#' @section Clustering:
+#' Correlation clustering retains the original term order when fewer than
+#' two terms or groups are available or any distance is undefined. Raw data
+#' requested with \code{returnData = TRUE} does not require clustering.
 #' @section Absent terms:
 #' An identifier absent from one result has no p-value there: its cell is
 #' \code{NA} in the drawn data and in the \code{returnData = TRUE} table and is
@@ -79,12 +83,19 @@ richHeatmap<-function(richRes, top = 50, colnames = NULL, xsize = 6, ysize = 6,u
     colnames(res)[1] <- "Term"
   }
   rownames(res)<-res$Term
+  if (isTRUE(returnData)) return(res)
   ord_values <- res[, 2:ncol(res), drop = FALSE]
   ord_values[is.na(ord_values)] <- 1
-  cor_mat<-cor(t(ord_values))
-  dd <- as.dist((1-cor_mat)/2);
-  hc <- hclust(dd);
-  res_ord <- res[hc$order, ]
+  # Correlation clustering needs two terms and varying profiles over groups.
+  # Undefined distances retain the input order; cell evidence stays untouched.
+  row_order <- seq_len(nrow(res))
+  if (nrow(ord_values) >= 2L && ncol(ord_values) >= 2L &&
+      all(apply(ord_values, 1, function(x) is.finite(sd(x)) && sd(x) > 0))) {
+    cor_mat <- cor(t(ord_values))
+    dd <- as.dist((1-cor_mat)/2)
+    if (all(is.finite(dd))) row_order <- hclust(dd)$order
+  }
+  res_ord <- res[row_order, , drop = FALSE]
   value_cols <- setdiff(colnames(res_ord), "Term")
   melted <- data.frame(
     Term = rep(res_ord$Term, times = length(value_cols)),

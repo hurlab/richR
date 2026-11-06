@@ -69,6 +69,7 @@ ggdot_internal<-function(object,top=50,pvalue=0.05,order=FALSE,
         xlab("Rich factor")+labs(size="Gene number")+guides(color=guide_colourbar(order = 1),size=guide_legend(order = 2))
     }}else{
       cat("No Pathway enrichment results were found!\n")
+      return(invisible(NULL))
     }
   if(!is.null(filename)){
     ggsave(p,filename=paste(filename,"dot.pdf",sep="_"),width=width,height=height)

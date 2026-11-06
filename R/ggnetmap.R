@@ -42,6 +42,10 @@
 ##' at least the total row count:
 ##' \code{richNetmap(x, pvalue = 1, padj = NULL, top = sum(vapply(x, function(r) nrow(r@result), 1L)))};
 ##' \code{top = Inf} and \code{top = NULL} are not supported.
+##' @section Source identifiers:
+##' Colliding identifiers are qualified by source result ordinal, with further
+##' suffixes when needed to keep identities unique. Each row retains its own
+##' statistics; supplied result objects are unchanged.
 ##' @examples
 #' \dontrun{
 #' hsako <- buildAnnot(species="human",keytype="SYMBOL",anntype = "KEGG")
@@ -58,10 +62,18 @@ richNetmap<-function(richRes,gene=NULL,top=50,top.display=NULL,pvalue = 0.05, pa
                    label.color = "black", label.size = 2,node.shape=NULL, layout = "fruchtermanreingold",savefig=FALSE,
                    visNet=FALSE,smooth=TRUE,nodeselect=FALSE,edit=FALSE,savehtml=FALSE,filename="network",
                    width=7,height=7,segment.size=0.2,node.alpha=0.7,...){
-  if(!is.null(top)){
-    object<-Reduce(function(x, y) rbind(x, y), lapply(richRes, function(x)x@result[1:top,]))
-  }else{
-    object<-Reduce(function(x, y) rbind(x, y), lapply(richRes, function(x)x@result))
+  frames <- lapply(richRes, function(x) {
+    if (!is.null(top)) x@result[1:top, , drop = FALSE] else x@result
+  })
+  object <- do.call(rbind, frames)
+  source <- rep(seq_along(frames), vapply(frames, nrow, integer(1)))
+  ids <- as.character(object$Annot)
+  dup <- !is.na(ids) & (duplicated(ids) | duplicated(ids, fromLast = TRUE))
+  if (any(dup)) {
+    # Reserve every original ID, including source-looking IDs, before qualification.
+    candidates <- paste0(ids[dup], " [result ", source[dup], "]")
+    object$Annot <- ids
+    object$Annot[dup] <- tail(make.unique(c(ids, candidates)), sum(dup))
   }
   object <- object[order(object$Pvalue),]
   if(is.null(gene)){
@@ -80,7 +92,7 @@ richNetmap<-function(richRes,gene=NULL,top=50,top.display=NULL,pvalue = 0.05, pa
               cytoscapeFile = cytoscapeFile,cytoscapeFormat=cytoscapeFormat,
               label.color=label.color,label.size=label.size,node.shape=node.shape,
               layout=layout,savefig=savefig,width=width,height=height,
-              visNet=visNet,smooth=smooth,nodeselect=nodeselect,edit=edit,
+              visNet=visNet,smooth=smooth,nodeselect=nodeselect,edit=edit,savehtml=savehtml,
               filename=filename,node.alpha=node.alpha,...),
     richR_plot_selection = function(cond) {
       k <<- cond$k

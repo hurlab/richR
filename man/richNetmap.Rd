@@ -150,6 +150,13 @@ at least the total row count:
 \code{top = Inf} and \code{top = NULL} are not supported.
 }
 
+\section{Source identifiers}{
+
+Colliding identifiers are qualified by source result ordinal, with further
+suffixes when needed to keep identities unique. Each row retains its own
+statistics; supplied result objects are unchanged.
+}
+
 \examples{
 \dontrun{
 hsako <- buildAnnot(species="human",keytype="SYMBOL",anntype = "KEGG")

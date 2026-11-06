@@ -61,6 +61,13 @@ all results (\code{suppressMessages()} silences it). To draw every
 identifier: \code{richHeatmap(x, top = Inf)}.
 }
 
+\section{Clustering}{
+
+Correlation clustering retains the original term order when fewer than
+two terms or groups are available or any distance is undefined. Raw data
+requested with \code{returnData = TRUE} does not require clustering.
+}
+
 \section{Absent terms}{
 
 An identifier absent from one result has no p-value there: its cell is

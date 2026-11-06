@@ -67,7 +67,7 @@ setMethod("richLollipop", signature(object = "GSEAResult"), function(object, top
                                      usePadj = TRUE, low = "lightpink", high = "red",
                                      point.size = 4,
                                      short = FALSE, filename = NULL, width = 10, height = 8, ...) {
-  df <- .gsea_to_ora_frame(object)
+  df <- .gsea_to_ora_frame(object, ora_columns = FALSE)
   gglollipop_internal(df, top = top, pvalue = pvalue, padj = padj,
                       usePadj = usePadj, low = low, high = high, point.size = point.size,
                       short = short, filename = filename, width = width, height = height)
@@ -331,7 +331,7 @@ setMethod("richScatter", signature(object = "GSEAResult"), function(object, top 
                                     usePadj = TRUE, low = "#fee0d2", high = "#b2182b",
                                     point.size = 3, label.size = 3, label.top = 5,
                                     short = FALSE, filename = NULL, width = 10, height = 8, ...) {
-  df <- .gsea_to_ora_frame(object)
+  df <- .gsea_to_ora_frame(object, ora_columns = FALSE)
   ggscatter_internal(df, top = top, pvalue = pvalue, padj = padj,
                      usePadj = usePadj, low = low, high = high, point.size = point.size,
                      label.size = label.size, label.top = label.top, short = short,
@@ -709,7 +709,7 @@ setMethod("richGeneBar", signature(object = "GSEAResult"), function(object, top 
                                     max.genes = 5, bar.color = "#b2182b", bar.alpha = 0.85,
                                     text.size = 3, short = FALSE, sep = ",",
                                     filename = NULL, width = 10, height = 8, ...) {
-  df <- .gsea_to_ora_frame(object)
+  df <- .gsea_to_ora_frame(object, ora_columns = FALSE)
   gggenebar_internal(df, top = top, pvalue = pvalue, padj = padj, usePadj = usePadj,
                      low = low, high = high,
                      max.genes = max.genes, bar.color = bar.color, bar.alpha = bar.alpha,
@@ -721,8 +721,17 @@ setMethod("richGeneBar", signature(object = "GSEAResult"), function(object, top 
 #  Helper: convert GSEAResult to ORA-like data.frame
 # ============================================================
 
+#' Convert a GSEAResult to an ORA-shaped frame for the shared plot code
+#'
+#' Renames `pval` / `padj` / `size` to `Pvalue` / `Padj` / `Significant` and
+#' builds `Annot`, `Term` and `GeneID`. With `ora_columns = TRUE` it also adds
+#' `Annotated = Significant` and `RichFactor = 1`, which a GSEA result does not
+#' carry; plots that draw a value (richLollipop, richGeneBar, richScatter) call
+#' it with `ora_columns = FALSE` and draw NES instead (SPEC-RICHR-006 REQ-002).
+#' @param object GSEAResult
+#' @param ora_columns add the ORA-only columns `Annotated` and `RichFactor`
 #' @noRd
-.gsea_to_ora_frame <- function(object) {
+.gsea_to_ora_frame <- function(object, ora_columns = TRUE) {
   df <- object@result
   sep <- if (length(object@sep) && nchar(object@sep)) object@sep else ","
   if ("pval"    %in% names(df) && !"Pvalue" %in% names(df)) names(df)[names(df) == "pval"]    <- "Pvalue"
@@ -736,8 +745,10 @@ setMethod("richGeneBar", signature(object = "GSEAResult"), function(object, top 
     df$Term <- .gsea_display_labels(df$pathway, df$pathway, .gsea_result_terms(df))
   }
   if ("size"    %in% names(df) && !"Significant" %in% names(df)) names(df)[names(df) == "size"] <- "Significant"
-  if (!"Annotated" %in% names(df) && "Significant" %in% names(df)) df$Annotated <- df$Significant
-  if (!"RichFactor" %in% names(df) && "Significant" %in% names(df)) df$RichFactor <- 1
+  if (isTRUE(ora_columns)) {
+    if (!"Annotated" %in% names(df) && "Significant" %in% names(df)) df$Annotated <- df$Significant
+    if (!"RichFactor" %in% names(df) && "Significant" %in% names(df)) df$RichFactor <- 1
+  }
   if ("leadingEdge" %in% names(df)) {
     df$GeneID <- vapply(df$leadingEdge, function(x) {
       if (is.list(x)) paste(unlist(x), collapse = sep)

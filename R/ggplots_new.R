@@ -56,14 +56,26 @@ gglollipop_internal <- function(resultFis,
 
   color_label <- if (isTRUE(usePadj)) "-log10(Padj)" else "-log10(Pvalue)"
 
-  p <- ggplot2::ggplot(resultFis, ggplot2::aes(x = stats::reorder(Term, RichFactor), y = RichFactor)) +
-    ggplot2::geom_segment(ggplot2::aes(xend = Term, yend = 0), color = "grey50") +
-    ggplot2::geom_point(ggplot2::aes(color = neg_log_p), size = point.size) +
-    ggplot2::scale_color_gradient(low = low, high = high, name = color_label) +
-    ggplot2::coord_flip() +
-    ggplot2::labs(title = "Lollipop Plot of Enrichment Significance", x = NULL,
-                  y = "RichFactor") +
-    ggplot2::theme_minimal()
+  if ("NES" %in% names(resultFis)) {
+    # GSEA result: draw the NES it carries (no RichFactor exists; REQ-002).
+    p <- ggplot2::ggplot(resultFis, ggplot2::aes(x = stats::reorder(Term, NES), y = NES)) +
+      ggplot2::geom_segment(ggplot2::aes(xend = Term, yend = 0), color = "grey50") +
+      ggplot2::geom_point(ggplot2::aes(color = neg_log_p), size = point.size) +
+      ggplot2::scale_color_gradient(low = low, high = high, name = color_label) +
+      ggplot2::coord_flip() +
+      ggplot2::labs(title = "Lollipop Plot of Enrichment Significance", x = NULL,
+                    y = "NES") +
+      ggplot2::theme_minimal()
+  } else {
+    p <- ggplot2::ggplot(resultFis, ggplot2::aes(x = stats::reorder(Term, RichFactor), y = RichFactor)) +
+      ggplot2::geom_segment(ggplot2::aes(xend = Term, yend = 0), color = "grey50") +
+      ggplot2::geom_point(ggplot2::aes(color = neg_log_p), size = point.size) +
+      ggplot2::scale_color_gradient(low = low, high = high, name = color_label) +
+      ggplot2::coord_flip() +
+      ggplot2::labs(title = "Lollipop Plot of Enrichment Significance", x = NULL,
+                    y = "RichFactor") +
+      ggplot2::theme_minimal()
+  }
 
   if (!is.null(filename)) ggplot2::ggsave(filename, p, width = width, height = height)
   p
@@ -333,18 +345,29 @@ ggscatter_internal <- function(resultFis,
   if (nrow(resultFis) == 0) { message("No significant terms to plot."); return(invisible(NULL)) }
   resultFis <- .ora_display_terms(resultFis, short = short)
 
-  # x-axis: log10(Annotated) — pathway size
-  resultFis$log_annotated <- log10(resultFis$Annotated)
+  is_gsea <- "NES" %in% names(resultFis)
+  if (is_gsea) {
+    # GSEA result: gene-set size against the NES it carries (REQ-002); a GSEA
+    # result has no annotated count and no fold enrichment.
+    resultFis$log_size <- log10(resultFis$Significant)
+    x_label <- "log10(Gene-set size)"
+    y_label <- "NES"
+  } else {
+    # x-axis: log10(Annotated) — pathway size
+    resultFis$log_annotated <- log10(resultFis$Annotated)
 
-  # y-axis: log2(FoldEnrichment) — effect size
-  if (!"FoldEnrichment" %in% names(resultFis)) {
-    if ("Significant" %in% names(resultFis) && "Annotated" %in% names(resultFis)) {
-      resultFis$FoldEnrichment <- resultFis$Significant / resultFis$Annotated
-    } else {
-      resultFis$FoldEnrichment <- 1
+    # y-axis: log2(FoldEnrichment) — effect size
+    if (!"FoldEnrichment" %in% names(resultFis)) {
+      if ("Significant" %in% names(resultFis) && "Annotated" %in% names(resultFis)) {
+        resultFis$FoldEnrichment <- resultFis$Significant / resultFis$Annotated
+      } else {
+        resultFis$FoldEnrichment <- 1
+      }
     }
+    resultFis$log2_fe <- log2(pmax(resultFis$FoldEnrichment, 0.001))
+    x_label <- "log10(Pathway Size)"
+    y_label <- "log2(Fold Enrichment)"
   }
-  resultFis$log2_fe <- log2(pmax(resultFis$FoldEnrichment, 0.001))
 
   # color: -log10(p)
   sig_col <- if (isTRUE(usePadj) && "Padj" %in% names(resultFis)) "Padj" else "Pvalue"
@@ -357,13 +380,17 @@ ggscatter_internal <- function(resultFis,
   n_label <- min(label.top, nrow(resultFis))
   resultFis$label[seq_len(n_label)] <- resultFis$Term[seq_len(n_label)]
 
-  p <- ggplot2::ggplot(resultFis, ggplot2::aes(x = log_annotated, y = log2_fe,
-                                                color = neg_log_p)) +
+  mapping <- if (is_gsea) {
+    ggplot2::aes(x = log_size, y = NES, color = neg_log_p)
+  } else {
+    ggplot2::aes(x = log_annotated, y = log2_fe, color = neg_log_p)
+  }
+  p <- ggplot2::ggplot(resultFis, mapping) +
     ggplot2::geom_point(size = point.size, alpha = 0.8) +
     ggplot2::scale_color_gradient(low = low, high = high, name = color_label) +
     ggplot2::geom_hline(yintercept = 0, linetype = "dashed", color = "grey60") +
-    ggplot2::labs(x = "log10(Pathway Size)",
-                  y = "log2(Fold Enrichment)") +
+    ggplot2::labs(x = x_label,
+                  y = y_label) +
     ggplot2::theme_minimal(base_size = 12) +
     ggplot2::theme(plot.title = ggplot2::element_text(hjust = 0.5, face = "bold"))
 
@@ -771,6 +798,21 @@ gggenebar_internal <- function(resultFis,
   if (!"RichFactor" %in% names(resultFis) && "Significant" %in% names(resultFis) && "Annotated" %in% names(resultFis))
     resultFis$RichFactor <- resultFis$Significant / resultFis$Annotated
   color_label <- if (isTRUE(usePadj)) "-log10(Padj)" else "-log10(Pvalue)"
+
+  if ("NES" %in% names(resultFis)) {
+    # GSEA result: draw the NES it carries (no RichFactor exists; REQ-002).
+    p <- ggplot2::ggplot(resultFis, ggplot2::aes(x = stats::reorder(Term, NES), y = NES)) +
+      ggplot2::geom_bar(stat = "identity", ggplot2::aes(fill = neg_log_p), alpha = bar.alpha) +
+      ggplot2::scale_fill_gradient(low = low, high = high, name = color_label) +
+      ggplot2::geom_text(ggplot2::aes(label = gene_label, y = 0),
+                         hjust = 0, nudge_y = 0.005, size = text.size, color = "black", fontface = "italic") +
+      ggplot2::coord_flip() +
+      ggplot2::labs(title = "Enriched Terms with Key Genes", x = NULL, y = "NES") +
+      ggplot2::theme_minimal(base_size = 12) +
+      ggplot2::theme(plot.title = ggplot2::element_text(hjust = 0.5, face = "bold"))
+    if (!is.null(filename)) ggplot2::ggsave(filename, p, width = width, height = height)
+    return(p)
+  }
 
   p <- ggplot2::ggplot(resultFis, ggplot2::aes(x = stats::reorder(Term, RichFactor), y = RichFactor)) +
     ggplot2::geom_bar(stat = "identity", ggplot2::aes(fill = neg_log_p), alpha = bar.alpha) +

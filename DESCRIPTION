@@ -1,6 +1,6 @@
 Package: richR
 Type: Package
-Title: Function Enrichment analysis and Network construction
+Title: Function Enrichment Analysis and Network Construction
 Version: 0.2.0.9000
 Authors@R: c(
     person("Kai", "Guo", email = "guokai8@gmail.com", role = c("aut")),

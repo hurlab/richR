@@ -1,8 +1,7 @@
 # richR <img src="man/figures/logo.png" align="right" height="120" />
 
-[![Project Status:](http://www.repostatus.org/badges/latest/active.svg)](http://www.repostatus.org/#active)
+[![Project Status:](https://www.repostatus.org/badges/latest/active.svg)](https://www.repostatus.org/#active)
 [![](https://img.shields.io/badge/version-0.2.0-green.svg)](https://github.com/hurlab/richR)
-[![R-CMD-check](https://github.com/hurlab/richR/actions/workflows/R-CMD-check.yaml/badge.svg)](https://github.com/hurlab/richR/actions/workflows/R-CMD-check.yaml)
 ![](https://img.shields.io/github/languages/code-size/hurlab/richR)
 [![DOI](https://zenodo.org/badge/243827597.svg)](https://zenodo.org/badge/latestdoi/243827597)
 

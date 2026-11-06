@@ -517,7 +517,7 @@ ggtermsim_internal <- function(resultFis,
   resultFis <- .ora_display_terms(resultFis, short = short)
 
   # Jaccard similarity matrix
-  gene_lists <- strsplit(as.character(resultFis$GeneID), split = sep)
+  gene_lists <- strsplit(as.character(resultFis$GeneID), split = sep, fixed = TRUE)
   n <- length(gene_lists)
   sim <- matrix(0, n, n)
   for (i in seq_len(n)) {
@@ -825,7 +825,7 @@ gggenebar_internal <- function(resultFis,
 
   # build gene label per term (first max.genes genes)
   resultFis$gene_label <- vapply(resultFis$GeneID, function(gid) {
-    genes <- unlist(strsplit(as.character(gid), split = sep))
+    genes <- unlist(strsplit(as.character(gid), split = sep, fixed = TRUE))
     paste(utils::head(genes, max.genes), collapse = ", ")
   }, character(1))
 
@@ -1059,7 +1059,7 @@ NULL
 #' @noRd
 .melt_gene_term <- function(resultFis, fc = NULL, sep = ",", max.genes = 30) {
   rows <- lapply(seq_len(nrow(resultFis)), function(i) {
-    genes <- unlist(strsplit(as.character(resultFis$GeneID[i]), split = sep))
+    genes <- unlist(strsplit(as.character(resultFis$GeneID[i]), split = sep, fixed = TRUE))
     genes <- utils::head(genes, max.genes)
     data.frame(Term = resultFis$Term[i], Gene = genes, .row = rep(i, length(genes)),
                stringsAsFactors = FALSE)

@@ -372,10 +372,10 @@ richUpset <- function(x,
     }
     if (is.data.frame(item)) {
       if ("GeneID" %in% colnames(item)) {
-        return(unique(unlist(strsplit(as.character(item$GeneID), sep))))
+        return(unique(unlist(strsplit(as.character(item$GeneID), sep, fixed = TRUE))))
       }
       if ("leadingEdge" %in% colnames(item)) {
-        return(unique(unlist(strsplit(as.character(item$leadingEdge), sep))))
+        return(unique(unlist(strsplit(as.character(item$leadingEdge), sep, fixed = TRUE))))
       }
     }
     stop("Unsupported input type. Provide character vectors, richResult, GSEAResult, or data.frames with GeneID column.")

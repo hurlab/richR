@@ -71,7 +71,7 @@ ggnetwork_internal<-function (object=object,gene=gene,top = 50, pvalue = 0.05, p
     pvalue <- -log10(object$Pvalue)
   }
   names(pvalue) <- rownames(object)
-  go2gen <- strsplit(x = as.vector(object$GeneID), split = sep)
+  go2gen <- strsplit(x = as.vector(object$GeneID), split = sep, fixed = TRUE)
   names(go2gen) <- rownames(object)
   gen2go <- reverseList(go2gen)
   golen <- object$Significant

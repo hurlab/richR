@@ -440,7 +440,8 @@ test_that("readRich refuses a folder it cannot read exactly", {
   # A double cell is read only in the forms writeRich() writes: text that
   # as.numeric() would also accept (spaces, hex, other spellings) is refused.
   for (cell in c(" 0x1p-3 ", "0x10", "1e5 ", "+1", "1E5", ".5", "Infinity",
-                 "nan", "inf")) {
+                 "nan", "inf", "1e+999", "-1e+999", "1e-999", "-2.5e-400",
+                 paste0("0.", strrep("0", 400), "1"))) {
     expect_error(readRich(set_cell(1L, "Pvalue", cell)),
                  "result.tsv.*column 'Pvalue', row 1.*does not parse as double",
                  info = cell)
@@ -513,4 +514,129 @@ test_that("readRich decodes only plain data from the manifest", {
   expect_identical(setdiff(loadedNamespaces(), before), character(0))
   # The plain manifest the edits started from still reads exactly.
   expect_round_trip(readRich(base), x)
+})
+
+# SPEC-RICHR-009: the collection itself must not bypass the typed-data guard.
+test_that("manifest attributes need unique names and every value is checked", {
+  x <- .fora_reference()
+  base <- io_dir(); writeRich(x, base)
+  nm <- read_manifest(base)$metadata$attributes$names
+  for (attrs in list(unname(list(nm)), stats::setNames(list(nm), ""),
+                    stats::setNames(list(nm, nm), c("names", "names")))) {
+    p <- copy_folder(base)
+    edit_manifest(p, function(m) { m$metadata$attributes <- attrs; m })
+    expect_error(readRich(p), "manifest.json of .*plain data")
+  }
+  expect_round_trip(readRich(base), x)
+})
+
+test_that("namespace nodes hidden in unnamed or duplicate attributes never load a package", {
+  # Fresh child processes keep this assertion meaningful regardless of the
+  # namespaces loaded by earlier tests in the suite.
+  x <- .fora_reference()
+  base <- io_dir(); writeRich(x, base)
+  script <- tempfile(fileext = ".R")
+  writeLines(c(
+    'library(richR)',
+    'args <- commandArgs(TRUE); p <- args[1]; mode <- args[2]',
+    'ns <- setdiff(c("splines", "tcltk", "stats4", "compiler"), loadedNamespaces())[1]',
+    'stopifnot(!is.na(ns))',
+    'm <- jsonlite::fromJSON(file.path(p,"manifest.json"), simplifyVector=FALSE)',
+    'evil <- list(type="namespace",attributes=structure(list(),names=character()),value=list(name=ns,version="0"))',
+    'done <- FALSE',
+    'inject <- function(n) {',
+    ' if (done || !is.list(n)) return(n)',
+    ' if (identical(n$type,"character")) {',
+    '  plain <- list(type="character",attributes=structure(list(),names=character()),value=list("x"))',
+    '  n$attributes <- if (mode=="unnamed") list(evil) else setNames(list(plain,evil),c("names","names"))',
+    '  done <<- TRUE; return(n)',
+    ' }',
+    ' if (is.list(n$value)) n$value <- lapply(n$value,inject)',
+    ' n',
+    '}',
+    'm$metadata <- inject(m$metadata); stopifnot(done)',
+    'writeLines(jsonlite::toJSON(m,auto_unbox=TRUE,null="null",digits=I(17)),file.path(p,"manifest.json"))',
+    'e <- tryCatch({readRich(p); "NO ERROR"},error=conditionMessage)',
+    'stopifnot(grepl("manifest.json of .*plain data",e), !ns %in% loadedNamespaces())'
+  ), script)
+  for (mode in c("unnamed", "duplicate")) {
+    p <- copy_folder(base)
+    out <- suppressWarnings(system2(file.path(R.home("bin"), "Rscript"),
+      c("--vanilla", shQuote(script), shQuote(p), mode), stdout = TRUE, stderr = TRUE,
+      env = paste0("R_LIBS=", shQuote(paste(.libPaths(), collapse = .Platform$path.sep)))))
+    expect_null(attr(out, "status"), info = paste(mode, paste(out, collapse = "\n")))
+  }
+})
+
+test_that("manifest text is JSON itself, never a file or URL to follow", {
+  x <- .fora_reference()
+  a <- io_dir(); b <- io_dir()
+  writeRich(x, a); writeRich(x, b)
+  for (text in c(normalizePath(file.path(b, "manifest.json")), "http://127.0.0.1:9/private")) {
+    writeLines(text, file.path(a, "manifest.json"))
+    expect_warning(expect_error(readRich(a), "manifest.json"), NA)
+  }
+  writeLines(normalizePath(file.path(b, "manifest.json")), file.path(a, "manifest.json"))
+  writeLines("user data", file.path(a, "result.tsv"))
+  before <- dir_state(a)
+  expect_error(writeRich(x, a, overwrite = TRUE), "not written by writeRich")
+  expect_identical(dir_state(a), before)
+})
+
+test_that("extreme doubles retain their bits including negative zero", {
+  x <- fs22()
+  vals <- c(5e-324, -5e-324, .Machine$double.xmax, -.Machine$double.xmax,
+            .Machine$double.xmin, 0, -0, Inf, -Inf, NaN, NA, 1e-300)
+  x@result$Pvalue <- rep_len(vals, nrow(x@result))
+  y <- round_trip(x)
+  expect_identical(y@result$Pvalue, x@result$Pvalue)
+  expect_identical(1 / y@result$Pvalue[7], -Inf)
+})
+
+test_that("overwrite treats wildcard characters literally and removes stale tested tables", {
+  x <- .fora_reference()
+  bare <- methods::as(x@result, "richResult")
+  base <- io_dir(); dir.create(base)
+  for (pair in list(c("out[1]", "out1"), c("star*", "starX"))) {
+    target <- file.path(base, pair[1]); sibling <- file.path(base, pair[2])
+    dir.create(sibling)
+    for (f in c("manifest.json", "result.tsv", "tested.tsv"))
+      writeLines("precious", file.path(sibling, f))
+    before <- dir_state(sibling)
+    writeRich(x, target)
+    writeRich(bare, target, overwrite = TRUE)
+    expect_identical(dir_state(sibling), before)
+    expect_false(file.exists(file.path(target, "tested.tsv")))
+    expect_round_trip(readRich(target), bare)
+  }
+})
+
+test_that("overwrite checks folder writability before deleting the old result", {
+  x <- .fora_reference()
+  p <- io_dir(); writeRich(x, p)
+  before <- dir_state(p)
+  Sys.chmod(p, "0555")
+  on.exit(Sys.chmod(p, "0755"), add = TRUE)
+  if (file.access(p, 2) == 0L) skip("folder remains writable on this filesystem/user")
+  expect_error(writeRich(methods::as(x@result, "richResult"), p, overwrite = TRUE),
+               "writeRich.*(writable|remove)")
+  expect_identical(dir_state(p), before)
+  expect_round_trip(readRich(p), x)
+})
+
+test_that("a list cell must itself be JSON even when a matching local file exists", {
+  d <- data.frame(pathway = "P", Term = "term", Pvalue = 0.1)
+  d$leadingEdge <- list("safe")
+  x <- methods::new("GSEAResult", result = d, input = c(gene = 1))
+  p <- io_dir(); writeRich(x, p)
+  edit_lines(p, "result.tsv", function(l) {
+    cells <- strsplit(l[2], "\t", fixed = TRUE)[[1]]
+    cells[match("leadingEdge", names(d))] <- "[x"
+    l[2] <- paste(cells, collapse = "\t")
+    l
+  })
+  cwd <- io_dir(); dir.create(cwd)
+  old <- setwd(cwd); on.exit(setwd(old), add = TRUE)
+  writeLines('["LEAK"]', "[x")
+  expect_error(readRich(p), "result.tsv.*column 'leadingEdge', row 1.*does not parse as list")
 })

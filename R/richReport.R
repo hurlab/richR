@@ -95,7 +95,10 @@
 #' reported rows instead of re-thresholding them, under a local
 #' \code{LC_COLLATE = "C"}; the caption states how many of the reported rows
 #' are drawn. A group without a reported row that has a p-value gets no
-#' figure, and the report says why.
+#' figure, and the report says why. A group missing required plotting
+#' columns (\code{Significant} or \code{Annotated} for ORA, \code{NES}
+#' for GSEA) also gets no figure; the caption names those columns. Its
+#' result table is kept unchanged, with no counts or scores filled in.
 #'
 #' @section Interpretation:
 #' A term significant in one group and not in another is not evidence of a difference between the groups.
@@ -633,6 +636,11 @@ richReport <- function(x, path, themes = NULL, stats = NULL, sensitivity = NULL,
   n <- nrow(r)
   if (!n || !pcol %in% names(r) || all(is.na(r[[pcol]]))) {
     return(none("no reported term has a p-value."))
+  }
+  required <- if (gsea) "NES" else c("Significant", "Annotated")
+  absent <- setdiff(required, names(r))
+  if (length(absent)) {
+    return(none(paste0("required plotting columns missing: ", paste(absent, collapse = ", "), ".")))
   }
   fun <- if (gsea) "richNES" else "richDot"
   rule <- if (gsea) sprintf("pval <= 1; first %s by NES, descending", .report_num(top))

@@ -753,3 +753,51 @@ test_that("report overwrite expands a tilde path once and returns the supplied p
   expect_identical(readLines(keep), "precious")
   expect_identical(readRich(file.path(disk, "results/group_1")), x)
 })
+
+# Accepted legacy tables need not contain every statistic a figure requires.
+for (removed in list("Significant", "Annotated", c("Significant", "Annotated"))) local({
+  columns <- removed
+  test_that(paste("ORA report keeps legacy data without plotting columns", paste(columns, collapse = ", ")), {
+    base <- .rp_tmp()
+    obj <- .rp_fleg(.rp_fq()$q1)
+    obj@result[columns] <- NULL
+    input <- file.path(base, "input")
+    writeRich(obj, input)
+    expect_identical(readRich(input), obj)
+    p <- file.path(base, "p"); q <- file.path(base, "q")
+    richReport(obj, p)
+    expect_identical(readRich(file.path(p, "results/group_1")), obj)
+    expect_identical(.rp_decode(p, "comparison"), bindRich(list(obj)))
+    expected <- if (!isTRUE(unname(capabilities("png")))) {
+      "No figure: the png device is unavailable."
+    } else paste0("No figure: required plotting columns missing: ", paste(columns, collapse = ", "), ".")
+    expect_identical(.rp_captions(.rp_html(p)), expected)
+    expect_length(.rp_match_all(.rp_html(p), "<img "), 0L)
+    richReport(p, q)
+    expect_identical(.rp_captions(.rp_html(q)), expected)
+    expect_identical(readRich(file.path(q, "results/group_1")), obj)
+    expect_identical(.rp_decode(q, "comparison"), bindRich(list(obj)))
+  })
+})
+
+test_that("GSEA report keeps accepted results without an NES column and omits the figure", {
+  base <- .rp_tmp()
+  obj <- .th_fgsea(FALSE)$a
+  obj@result$NES <- NULL
+  input <- file.path(base, "input")
+  writeRich(obj, input)
+  expect_identical(readRich(input), obj)
+  p <- file.path(base, "p"); q <- file.path(base, "q")
+  richReport(obj, p)
+  expect_identical(readRich(file.path(p, "results/group_1")), obj)
+  expect_identical(.rp_decode(p, "comparison"), bindRich(list(obj)))
+  expected <- if (!isTRUE(unname(capabilities("png")))) {
+    "No figure: the png device is unavailable."
+  } else "No figure: required plotting columns missing: NES."
+  expect_identical(.rp_captions(.rp_html(p)), expected)
+  expect_length(.rp_match_all(.rp_html(p), "<img "), 0L)
+  richReport(p, q)
+  expect_identical(.rp_captions(.rp_html(q)), expected)
+  expect_identical(readRich(file.path(q, "results/group_1")), obj)
+  expect_identical(.rp_decode(q, "comparison"), bindRich(list(obj)))
+})

@@ -142,7 +142,10 @@ with \code{pvalue = 1, padj = NULL, top = figure.top}, so they show the
 reported rows instead of re-thresholding them, under a local
 \code{LC_COLLATE = "C"}; the caption states how many of the reported rows
 are drawn. A group without a reported row that has a p-value gets no
-figure, and the report says why.
+figure, and the report says why. A group missing required plotting
+columns (\code{Significant} or \code{Annotated} for ORA, \code{NES}
+for GSEA) also gets no figure; the caption names those columns. Its
+result table is kept unchanged, with no counts or scores filled in.
 }
 
 \section{Interpretation}{

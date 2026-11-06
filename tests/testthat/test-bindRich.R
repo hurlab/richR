@@ -178,6 +178,35 @@ test_that("bindRich() keeps identifiers whose label is blank or missing", {
                    c(X1 = "not_tested", X2 = "not_tested"))
 })
 
+test_that("bindRich() fills list and factor columns from each group's own record", {
+  # Catches leading edges (a list column, table = FALSE) or factor values
+  # shifted between rows or groups, filled for untested rows, or factor levels
+  # of the later groups dropped.
+  skip_if_not_installed("fgsea")
+  a <- .fgsea_run(minSize = 3, maxSize = 20, table = FALSE)
+  bb <- .fgsea_run("gsea_ranked_b.csv", minSize = 6, maxSize = 20, table = FALSE)
+  expect_type(a@result$leadingEdge, "list")
+  objs <- list(a = a, b = bb)
+  out <- bindRich(objs)
+  expect_type(out$leadingEdge, "list")
+  expect_identical(out$leadingEdge[out$group == "b" & out$pathway == "T4"],
+                   list(NA_character_))
+  check_bound_values(out, objs, id = "pathway")
+
+  r1 <- .fora_reference()
+  r2 <- .fora_reference(pvalue = 1)
+  r1@result$kind <- factor("x", levels = c("x", "y"))
+  r1@tested$kind <- factor(rep("y", nrow(r1@tested)), levels = c("x", "y"))
+  r2@result$kind <- factor(rep("z", nrow(r2@result)), levels = "z")
+  out <- bindRich(list(a = r1, b = r2))
+  expect_s3_class(out$kind, "factor")
+  expect_identical(levels(out$kind), c("x", "y", "z"))
+  st <- paste(out$group, out$state)
+  want <- c("a reported" = "x", "a tested_not_reported" = "y",
+            "b reported" = "z")[st]
+  expect_identical(as.character(out$kind), unname(want))
+})
+
 # ---- Input validation (AC-009) ------------------------------------------------
 
 test_that("bindRich() names groups exactly as compareResult() does", {

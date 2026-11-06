@@ -196,3 +196,21 @@ test_that("dplyr verbs on a GSEAResult change @result only and keep the analysis
     expect_identical(enrichmentInfo(v), info)
   }
 })
+
+# ---- compareResult() (AC-006) ------------------------------------------------
+
+test_that("compareResult() of M4 results compares @result, never the tested table", {
+  # Catches compareResult() starting to read the tested table (proposal A5):
+  # its output for two results must stay what it is for their @result tables.
+  r1 <- .fora_reference()
+  r2 <- .fora_reference(pvalue = 1)
+  for (r in list(r1, r2)) {
+    expect_gt(nrow(testedTerms(r)), nrow(r@result))
+  }
+  objs <- list(a = r1, b = r2)
+  tables <- list(a = r1@result, b = r2@result)
+  expect_identical(compareResult(objs), compareResult(tables))
+  open <- compareResult(objs, pvalue = 1, padj = NULL)
+  expect_identical(open, compareResult(tables, pvalue = 1, padj = NULL))
+  expect_setequal(open$Annot[open$group == "b"], r2@result$Annot)
+})

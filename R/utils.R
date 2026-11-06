@@ -470,6 +470,8 @@
   .validate_enrichment_input(x, annot = annot, pvalue = pvalue,
                              padj.method = padj.method, minSize = minSize, maxSize = maxSize)
   .check_cutoff(padj, "padj", allow_null = TRUE)
+  # Read before any coercion drops it (SPEC-RICHR-005 REQ-006).
+  mapping_record <- .mapping_for_input(x)
   raw_input <- if (is.data.frame(x)) rownames(x) else as.vector(x)
   raw_input <- as.character(raw_input)
   valid_input <- raw_input[!is.na(raw_input) & nzchar(trimws(raw_input))]
@@ -593,8 +595,10 @@
     unmapped_count = as.integer(sum(!input %in% annotation_genes)),
     effective_ids = effective_input,
     effective_count = as.integer(length(effective_input)),
-    excluded_by_universe_ids = setdiff(input[input %in% annotation_genes], effective_universe)
+    excluded_by_universe_ids = setdiff(input[input %in% annotation_genes], effective_universe),
+    occurrences = as.integer(tabulate(match(valid_input, input), nbins = length(input)))
   )
+  input_metadata$mapping <- mapping_record
   family_policy <- if (padj.family == "all") {
     "size_bounded_all_eligible"
   } else {

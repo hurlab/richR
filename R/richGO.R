@@ -136,7 +136,7 @@ richGO_internal<-function(x,godata,ontology="BP",pvalue=0.05,padj=0.05,
 #'   unique valid universe genes, \code{n} = the unique valid query genes in the
 #'   universe. Term sizes, overlaps and the tested family are the same under both;
 #'   \code{"measured"} requires \code{universe}. Recorded as
-#'   \code{options$universe_policy} in \code{\link{enrichmentInfo}()}.
+#'   \code{options$universe_policy} in \code{\link{enrichmentInfo}()}. Pass it by name.
 setMethod("richGO", signature(godata = "data.frame"),definition = function(x,godata,ontology="BP",pvalue=0.05,padj=0.05,
                                                                            organism=NULL,keytype=NULL,minSize=2,maxSize=500,
                                                                            minGSSize = 10, maxGSSize = 500,
@@ -192,7 +192,7 @@ setMethod("richGO", signature(godata = "data.frame"),definition = function(x,god
 #'   unique valid universe genes, \code{n} = the unique valid query genes in the
 #'   universe. Term sizes, overlaps and the tested family are the same under both;
 #'   \code{"measured"} requires \code{universe}. Recorded as
-#'   \code{options$universe_policy} in \code{\link{enrichmentInfo}()}.
+#'   \code{options$universe_policy} in \code{\link{enrichmentInfo}()}. Pass it by name.
 setMethod("richGO", signature(godata = "Annot"),definition = function(x,godata,ontology="BP",pvalue=0.05,padj=0.05,minSize=2,maxSize=500,
                                                                       minGSSize = 10, maxGSSize = 500,
                                                                       keepRich=TRUE,filename=NULL,padj.method="BH",sep=",",universe=NULL,padj.family=c("overlap","all"),universe_policy=c("annotated","measured")) {

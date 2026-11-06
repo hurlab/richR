@@ -70,7 +70,8 @@ test_that("AC-011: invalid calls error early; failed cells are kept and warnings
   # Catches: a failed setting silently dropped, one bad level aborting the
   # grid, an all-failed grid returned as success, warnings swallowed or
   # repeated per cell, ambiguous cell ids, a measured-N request with no
-  # measured set, and a GSEA ranking run as if it were a gene list.
+  # measured set, a GSEA ranking run as if it were a gene list, and numeric
+  # identifiers refused as if they were a ranking.
   f <- fgrid()
   rs <- function(...) richSensitivity(f$q, f$an, ...)
   expect_error(rs(backgrounds = unname(f$bk)), "`backgrounds`")
@@ -86,6 +87,10 @@ test_that("AC-011: invalid calls error early; failed cells are kept and warnings
   expect_error(rs(backgrounds = f$bk, universe_policy = "measured"),
                "universe_policy.*annotation")
   expect_error(richSensitivity(c(A = 1, B = 2), f$an, backgrounds = f$bk), "`x`.*ranking")
+  # Unnamed numbers are identifiers (e.g. integer Entrez IDs), not a ranking.
+  ids_err <- tryCatch(richSensitivity(1:5, f$an, backgrounds = f$bk), error = conditionMessage)
+  expect_match(ids_err, "`x`.*identifiers.*character")
+  expect_no_match(ids_err, "ranking")
 
   bk3 <- c(f$bk, list(none = c("NOPE1", "NOPE2")))
   g <- rs(backgrounds = bk3)
@@ -119,8 +124,9 @@ test_that("AC-011: invalid calls error early; failed cells are kept and warnings
 test_that("AC-012: the summary counts every state from the cells' own records", {
   # Catches: a stability fraction over the wrong denominator, untested settings
   # counted as tested and absent, a possibly-tested zero-overlap term counted
-  # as untested (or the reverse), failed cells counted as ran, missing values
-  # written as 0, and score ranges taken from anything but the cells' records.
+  # as untested (or the reverse), failed cells counted as ran, identifiers no
+  # cell tested listed with zero counts or zero-filled ranges, and score ranges
+  # taken from anything but the cells' records.
   f <- fgrid()
   check_summary <- function(g, bk, ...) {
     gc <- grid_cells(bk)
@@ -175,10 +181,16 @@ test_that("AC-012: the summary counts every state from the cells' own records", 
   zero <- s[s$tested > 0 & s$reported == 0, ]
   expect_gt(nrow(zero), 0L)
   expect_true(all(zero$support == 0))
-  untested <- s[s$tested == 0, ]
-  for (col in c("padj_min", "padj_max", "fold_min", "fold_max", "rank_best", "rank_worst")) {
-    expect_true(all(is.na(untested[[col]])), info = col)
-  }
+  # An identifier no cell tests is absent from the summary, not listed with
+  # zero counts or zero-filled ranges: with maxGSSize = 500 alone no cell tests
+  # the 600-gene B sets, and the summary holds exactly the tested identifiers.
+  g5 <- richSensitivity(f$q, f$an, backgrounds = f$bk, maxGSSize = 500)
+  tested5 <- unique(unlist(lapply(g5$results, function(r) testedTerms(r)$Annot)))
+  expect_false(any(grepl("^B", tested5)))
+  expect_setequal(g5$summary$Annot, tested5)
+  expect_true(all(g5$summary$tested >= 1L))
+  expect_false(anyNA(g5$summary[c("padj_min", "padj_max", "fold_min", "fold_max",
+                                  "rank_best", "rank_worst", "support")]))
 
   # padj.family = "all": the absent-identifier state follows each cell's own
   # zero_overlap_count (0 in the annotation cells, > 0 in the measured cells).

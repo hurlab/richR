@@ -25,7 +25,9 @@
 #' columns after \code{group}.
 #'
 #' @section Summary:
-#' One row per identifier of \code{states}: \code{Annot}; \code{Term} (first
+#' One row per identifier of \code{states}, that is per identifier at least one
+#' cell tested (an identifier no cell tests does not appear): \code{Annot};
+#' \code{Term} (first
 #' non-missing label in cell order); \code{cells}; \code{ran} (cells whose
 #' execution is \code{success} or \code{empty}); \code{tested} (state
 #' \code{reported} or \code{tested_not_reported}); \code{reported};
@@ -47,7 +49,8 @@
 #' p-value or combined statistic.
 #'
 #' @param x a gene vector (or a data frame of genes) as for \code{enrich()}; a
-#'   numeric ranking is an error (the grid is ORA only).
+#'   numeric ranking is an error (the grid is ORA only), and so are unnamed
+#'   numeric identifiers: pass them as character.
 #' @param object the annotation passed to \code{enrich()}.
 #' @param backgrounds a non-empty named list of background levels: \code{NULL}
 #'   for the annotation-derived background or a character vector used as
@@ -79,6 +82,10 @@
 richSensitivity <- function(x, object, backgrounds, maxGSSize = c(500, 1000), ...) {
   args <- list(...)
   if (is.numeric(x)) {
+    if (is.null(names(x))) {
+      stop("richSensitivity(): `x` holds numeric identifiers; pass gene identifiers as ",
+           "character (for example as.character(x)).", call. = FALSE)
+    }
     stop("richSensitivity(): `x` is a numeric ranking; the sensitivity grid is ORA only ",
          "and takes a gene vector.", call. = FALSE)
   }

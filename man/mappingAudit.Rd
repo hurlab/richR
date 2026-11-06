@@ -81,7 +81,8 @@ Metadata without occurrence counts gives the plain layout with
 \code{occurrences} \code{NA} on identifier rows; metadata without
 \code{options$universe_policy} is read as \code{"annotated"}. An object
 without metadata, with the unavailable record, or a vector without a mapping
-record gives \code{NULL} with a warning stating why. A result whose mapping
+record (or whose \code{richR_mapping} attribute is not a \code{mapGenes()}
+record) gives \code{NULL} with a warning stating why. A result whose mapping
 record did not match its input gives the plain layout with a warning.
 }
 

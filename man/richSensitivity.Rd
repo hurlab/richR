@@ -8,7 +8,8 @@ richSensitivity(x, object, backgrounds, maxGSSize = c(500, 1000), ...)
 }
 \arguments{
 \item{x}{a gene vector (or a data frame of genes) as for \code{enrich()}; a
-numeric ranking is an error (the grid is ORA only).}
+numeric ranking is an error (the grid is ORA only), and so are unnamed
+numeric identifiers: pass them as character.}
 
 \item{object}{the annotation passed to \code{enrich()}.}
 
@@ -60,7 +61,9 @@ columns after \code{group}.
 
 \section{Summary}{
 
-One row per identifier of \code{states}: \code{Annot}; \code{Term} (first
+One row per identifier of \code{states}, that is per identifier at least one
+cell tested (an identifier no cell tests does not appear): \code{Annot};
+\code{Term} (first
 non-missing label in cell order); \code{cells}; \code{ran} (cells whose
 execution is \code{success} or \code{empty}); \code{tested} (state
 \code{reported} or \code{tested_not_reported}); \code{reported};

@@ -417,7 +417,8 @@ are unchanged.
   score. Results recorded before this version give the plain layout with
   `occurrences` `NA` and are read as `universe_policy = "annotated"`; objects
   without metadata, with the unavailable record, or vectors without a mapping
-  record give `NULL` with a warning "mapping audit unavailable".
+  record (or with a `richR_mapping` attribute that is not a `mapGenes()`
+  record) give `NULL` with a warning "mapping audit unavailable".
 - New argument `universe_policy = c("annotated", "measured")` on the `enrich()`,
   `richGO()` and `richKEGG()` methods (and through `batchEnrich()`'s `...`).
   The default, `"annotated"`, keeps `N` = the unique valid universe genes that
@@ -446,7 +447,8 @@ are unchanged.
   `background_size`, `effective_N`, `effective_n`, `tested_count`),
   `results` (the per-cell results, `NULL` when failed), `states`
   (`bindRich()` of the results with `background` and `maxGSSize` columns),
-  `summary` and `design`. The summary has one row per term: `cells`, `ran`
+  `summary` and `design`. The summary has one row per term that at least one
+  cell tested (a term no cell tests does not appear): `cells`, `ran`
   (success or empty), `tested` (reported or tested-not-reported), `reported`,
   `not_tested`, `undetermined` (untested-or-zero-overlap or unavailable),
   `support = reported / tested` (`NA` when untested), the ranges of the tested
@@ -461,8 +463,8 @@ are unchanged.
   interval, an independent replication or a combined test; no statistic is
   combined across cells. Invalid backgrounds or bounds, `universe` or
   `maxGSSize` in `...`, `universe_policy = "measured"` with a `NULL` level, a
-  numeric ranking, or a grid whose every cell fails are errors. The grid is
-  ORA only.
+  numeric ranking or unnamed numeric identifiers (pass them as character), or
+  a grid whose every cell fails are errors. The grid is ORA only.
 - Known residual: `idconvert()` and the conversions inside `buildAnnot()` and
   `buildMSIGDB()` keep their first-candidate behaviour
   (`AnnotationDbi::mapIds(multiVals = "first")`); use `mapGenes()` for a

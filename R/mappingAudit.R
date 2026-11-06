@@ -59,7 +59,8 @@
 #' \code{occurrences} \code{NA} on identifier rows; metadata without
 #' \code{options$universe_policy} is read as \code{"annotated"}. An object
 #' without metadata, with the unavailable record, or a vector without a mapping
-#' record gives \code{NULL} with a warning stating why. A result whose mapping
+#' record (or whose \code{richR_mapping} attribute is not a \code{mapGenes()}
+#' record) gives \code{NULL} with a warning stating why. A result whose mapping
 #' record did not match its input gives the plain layout with a warning.
 #'
 #' @param x a vector returned by \code{mapGenes()}, a \code{richResult} or a
@@ -78,8 +79,9 @@ mappingAudit <- function(x) {
   is_gsea <- methods::is(x, "GSEAResult")
   if (!is_rich && !is_gsea) {
     record <- if (is.atomic(x)) attr(x, "richR_mapping", exact = TRUE)
-    if (!is.null(record)) return(.mapping_decision_frame(record))
-    return(.audit_unavailable("the object carries no mapping record"))
+    if (is.null(record)) return(.audit_unavailable("the object carries no mapping record"))
+    if (!.mapping_record_ok(record)) return(.audit_unavailable("the mapping record is malformed"))
+    return(.mapping_decision_frame(record))
   }
   m <- attr(x, "richR_metadata", exact = TRUE)
   if (!is.list(m)) return(.audit_unavailable("metadata not recorded"))
@@ -101,6 +103,14 @@ mappingAudit <- function(x) {
 ## names.
 .mapping_decision_frame <- function(record) {
   list2DF(record$decisions)
+}
+
+## TRUE when record carries a decision table of equal-length columns with the
+## character decision and target columns the audit reads.
+.mapping_record_ok <- function(record) {
+  d <- if (is.list(record)) record$decisions
+  is.list(d) && length(d) > 0L && is.character(d$decision) && is.character(d$target) &&
+    length(unique(lengths(d))) == 1L
 }
 
 .audit_unavailable <- function(why) {

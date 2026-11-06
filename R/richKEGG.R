@@ -126,7 +126,7 @@ richKEGG_internal<-function(x,kodata,pvalue=0.05,padj=0.05,ontology="KEGG",
 #'   unique valid universe genes, \code{n} = the unique valid query genes in the
 #'   universe. Term sizes, overlaps and the tested family are the same under both;
 #'   \code{"measured"} requires \code{universe}. Recorded as
-#'   \code{options$universe_policy} in \code{\link{enrichmentInfo}()}.
+#'   \code{options$universe_policy} in \code{\link{enrichmentInfo}()}. Pass it by name.
 setMethod("richKEGG", signature(kodata = "data.frame"),definition = function(x,kodata,pvalue=0.05,padj=0.05,organism=NULL,ontology="KEGG",
                                                                              keytype=NULL,minSize=2,maxSize=500,minGSSize = 10, maxGSSize = 500,
                                                                              keepRich=TRUE,filename=NULL,padj.method="BH",builtin=TRUE,sep=",",universe=NULL,padj.family=c("overlap","all"),universe_policy=c("annotated","measured")) {
@@ -182,7 +182,7 @@ setMethod("richKEGG", signature(kodata = "data.frame"),definition = function(x,k
 #'   unique valid universe genes, \code{n} = the unique valid query genes in the
 #'   universe. Term sizes, overlaps and the tested family are the same under both;
 #'   \code{"measured"} requires \code{universe}. Recorded as
-#'   \code{options$universe_policy} in \code{\link{enrichmentInfo}()}.
+#'   \code{options$universe_policy} in \code{\link{enrichmentInfo}()}. Pass it by name.
 setMethod("richKEGG", signature(kodata = "Annot"),definition = function(x,kodata,pvalue=0.05,padj=0.05,organism=NULL,ontology="KEGG",
                                                                         keytype=NULL,minSize=2,maxSize=500,minGSSize = 10, maxGSSize = 500,
                                                                         keepRich=TRUE,filename=NULL,padj.method="BH",builtin=TRUE,sep=",",universe=NULL,padj.family=c("overlap","all"),universe_policy=c("annotated","measured")) {

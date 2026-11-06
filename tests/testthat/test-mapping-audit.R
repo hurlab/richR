@@ -236,8 +236,8 @@ test_that("AC-008: the GSEA audit lists every ranked gene, its score and ties", 
 
 test_that("AC-009: legacy metadata gives a plain audit; missing metadata gives none", {
   # Catches: an audit reconstructed from @gene or @result (fabricated
-  # provenance), an error on pre-0.2.0 objects, and a missing occurrence count
-  # filled with 1.
+  # provenance), an error on pre-0.2.0 objects or on a malformed mapping
+  # record, and a missing occurrence count filled with 1.
   lr <- readRDS(test_path("fixtures", "legacy_richResult_fca5276.rds"))
   mr <- enrichmentInfo(lr)
   expect_no_warning(a <- mappingAudit(lr))
@@ -261,6 +261,13 @@ test_that("AC-009: legacy metadata gives a plain audit; missing metadata gives n
   attr(stripped, "richR_metadata") <- NULL
   for (obj in list(coerced, stripped, c("G1", "G2"))) {
     expect_warning(out <- mappingAudit(obj), "mapping audit unavailable: .+")
+    expect_null(out)
+  }
+  # A vector whose richR_mapping attribute is not a mapGenes() record gets the
+  # same unavailable result, not an internal error.
+  for (rec in list(list(foo = 1), "x", list(decisions = list(decision = 1)))) {
+    expect_warning(out <- mappingAudit(structure("a", richR_mapping = rec)),
+                   "mapping audit unavailable: the mapping record is malformed")
     expect_null(out)
   }
 })

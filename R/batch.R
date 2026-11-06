@@ -9,7 +9,8 @@
 #'   (default: "enrich")
 #' @param verbose Logical, print progress messages (default: TRUE)
 #' @param ... Additional arguments passed to the enrichment function
-#'   (e.g., ontology, pvalue, padj, padj.family, minSize, maxSize). The
+#'   by name (e.g., ontology, pvalue, padj, padj.family, universe,
+#'   universe_policy, minSize, maxSize). The
 #'   enrichment defaults apply to every group: \code{pvalue = 0.05} and
 #'   \code{padj = 0.05}, compared with \code{<=}; pass \code{padj = NULL} for
 #'   raw-p-only filtering or \code{pvalue = 1, padj = 1} to disable

@@ -73,7 +73,7 @@ tested-but-unannotated genes of an explicit \code{universe}: \code{N} = the
 unique valid universe genes, \code{n} = the unique valid query genes in the
 universe. Term sizes, overlaps and the tested family are the same under both;
 \code{"measured"} requires \code{universe}. Recorded as
-\code{options$universe_policy} in \code{\link{enrichmentInfo}()}.}
+\code{options$universe_policy} in \code{\link{enrichmentInfo}()}. Pass it by name.}
 }
 \description{
 GO Enrichment analysis function

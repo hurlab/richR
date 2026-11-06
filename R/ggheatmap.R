@@ -90,7 +90,7 @@ richHeatmap<-function(richRes, top = 50, colnames = NULL, xsize = 6, ysize = 6,u
   # Undefined distances retain the input order; cell evidence stays untouched.
   row_order <- seq_len(nrow(res))
   if (nrow(ord_values) >= 2L && ncol(ord_values) >= 2L &&
-      all(apply(ord_values, 1, function(x) is.finite(sd(x)) && sd(x) > 0))) {
+      all(apply(ord_values, 1, function(x) is.finite(stats::sd(x)) && stats::sd(x) > 0))) {
     cor_mat <- cor(t(ord_values))
     dd <- as.dist((1-cor_mat)/2)
     if (all(is.finite(dd))) row_order <- hclust(dd)$order

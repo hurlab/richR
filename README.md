@@ -490,6 +490,41 @@ escaped and missing values are written `\N`, so values, identifiers such as
 accepts folder format version 1 with metadata `schema_version` 1 or 2 and
 stops with an error, rather than guessing, on anything it cannot read exactly.
 
+### Themes of related terms
+
+`richThemes()` groups the terms reported by one result, or by several results
+of one class, into themes of related terms, and `themeGenes()` drills down from
+a theme to its genes in each group:
+
+```r
+th <- richThemes(batch_res$results)   # or richThemes(list(A = res1, B = res2))
+th$themes                             # one row per theme
+th$themes$label[1] <- "cell cycle"    # labels are editable; tables link by theme_id
+themeGenes(th, "theme_001")           # genes x groups, with the members listing each gene
+fc <- list(A = data.frame(gene = names(fcA), log2FC = fcA),
+           B = data.frame(gene = names(fcB), log2FC = fcB))
+themeGenes(th, "theme_001", stats = fc)  # joins your statistics by gene
+```
+
+Only terms reported in at least one group are grouped. Two terms are compared
+by Cohen's kappa of their evidence genes — ORA overlap genes or GSEA
+leading-edge genes, unioned over the groups that report the term — and joined
+by average-linkage clustering when their average kappa is at least `cutoff`
+(default 0.5). Every reported term is in exactly one theme; no term is dropped
+and single terms stay as their own theme. The representative is the member most
+similar to the others, not the most significant one, and the default label is
+its `Term`. `th$members` holds the original `bindRich()` rows, `th$genes` the
+evidence genes per group, `th$similarity` the kappas, and `th$settings` the
+method, cutoff and each group's `enrichmentInfo()` record. In `themeGenes()`, a
+missing statistic is `NA` with a reason in `stat_status`, never `0`.
+
+A theme summarizes the listed terms; it is not a statistical test and has no
+p-value of its own (a representative's p-value is not the theme's). Related or
+overlapping gene sets are not independent replications, so the number of terms
+in a theme is not a measure of evidence, and evidence genes are not shown to be
+causal drivers. Themes can change when a group is added or removed, because the
+evidence genes pool the supplied groups.
+
 ## Function name aliases
 
 All plotting functions use the `rich*` prefix as the primary name.

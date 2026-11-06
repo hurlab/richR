@@ -281,6 +281,8 @@ richGSEA_internal<-function(x,object,keytype="",pvalue=0.05,padj=0.05,KEGG=FALSE
   }
   metadata_padj <- padj
   original_input_ids <- names(x)
+  # Read before sort() drops it (SPEC-RICHR-005 REQ-006).
+  mapping_record <- .mapping_for_input(x)
   x<-sort(x)
   # Memberships come from gene-identifier pairs; labels are attached afterwards.
   identity_frame <- .annotation_identity_frame(object)
@@ -372,8 +374,10 @@ richGSEA_internal<-function(x,object,keytype="",pvalue=0.05,padj=0.05,KEGG=FALSE
     unmapped_count = as.integer(sum(!ranked_ids %in% annotation_genes)),
     effective_ids = ranked_ids[ranked_ids %in% annotation_genes],
     effective_count = as.integer(sum(ranked_ids %in% annotation_genes)),
-    excluded_by_universe_ids = character()
+    excluded_by_universe_ids = character(),
+    occurrences = rep(1L, length(ranked_ids))
   )
+  input_info$mapping <- mapping_record
   background <- list(mode = "ranked_input", original_count = NA_integer_,
                      valid_count = NA_integer_, unique_count = NA_integer_,
                      invalid_count = NA_integer_, duplicate_count = NA_integer_,

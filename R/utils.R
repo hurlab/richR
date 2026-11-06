@@ -445,6 +445,9 @@
 #' @param annotation_provenance optional annotation provenance captured from an Annot object
 #' @param metadata_ontology ontology label retained for diagnostics
 #' @param label_provenance optional record of the label source used (richKEGG)
+#' @param universe_policy \code{"annotated"} (N and n count annotated genes only)
+#'   or \code{"measured"} (N and n also count the tested-but-unannotated genes of
+#'   an explicit universe)
 #' @return richResult S4 object
 #' @keywords internal
 .run_ora <- function(x, annot, term_names = NULL, extra_cols = NULL,
@@ -453,8 +456,10 @@
                      keepRich = TRUE, organism = NULL, ontology = "",
                      keytype = "", filename = NULL, sep = ",", universe = NULL,
                      annotation_provenance = NULL, metadata_ontology = ontology,
-                     padj.family = c("overlap", "all"), label_provenance = NULL) {
+                     padj.family = c("overlap", "all"), label_provenance = NULL,
+                     universe_policy = c("annotated", "measured")) {
   padj.family <- match.arg(padj.family)
+  universe_policy <- .check_universe_policy(universe_policy, universe)
   normalization <- if (!is.data.frame(annot) && is.list(annot) &&
                        all(c("data", "counts") %in% names(annot))) {
     annot
@@ -470,6 +475,8 @@
   .validate_enrichment_input(x, annot = annot, pvalue = pvalue,
                              padj.method = padj.method, minSize = minSize, maxSize = maxSize)
   .check_cutoff(padj, "padj", allow_null = TRUE)
+  # Read before any coercion drops it (SPEC-RICHR-005 REQ-006).
+  mapping_record <- .mapping_for_input(x)
   raw_input <- if (is.data.frame(x)) rownames(x) else as.vector(x)
   raw_input <- as.character(raw_input)
   valid_input <- raw_input[!is.na(raw_input) & nzchar(trimws(raw_input))]
@@ -506,6 +513,9 @@
     if (length(effective_universe) == 0) {
       stop("ORA: universe has no annotated genes after intersecting with the eligible annotation.", call. = FALSE)
     }
+    # universe_policy = "measured": the unannotated universe genes are counted
+    # in N (and, when queried, in n); they belong to no term (REQ-017).
+    measured_universe <- clean_universe
     valid_universe <- universe[!is.na(universe) & nzchar(trimws(universe))]
     background_counts <- list(
       mode = "explicit", original_count = as.integer(length(universe)),
@@ -523,6 +533,16 @@
   if (length(effective_input) == 0) {
     stop("ORA: no query genes remain in the effective universe.", call. = FALSE)
   }
+  # Background and query as counted in N and n; the annotated sets above still
+  # define memberships, overlaps and term sizes.
+  counted_universe <- effective_universe
+  counted_input <- effective_input
+  if (universe_policy == "measured") {
+    counted_universe <- measured_universe
+    counted_input <- input[input %in% measured_universe]
+    background_counts$effective_count <- as.integer(length(counted_universe))
+    background_counts$effective_ids <- counted_universe
+  }
   annot <- annot[as.character(annot[, 1]) %in% effective_universe, , drop = FALSE]
   annotation_counts$effective_rows <- as.integer(nrow(annot))
   ao2gene <- sf(annot)
@@ -532,8 +552,8 @@
   fao2gene <- reverseList(fgene2ao)
   overlap_k <- name_table(fao2gene)
   # N and n are fixed here, before any term-size filtering, and never recomputed.
-  n <- length(effective_input)
-  N <- length(effective_universe)
+  n <- length(counted_input)
+  N <- length(counted_universe)
   # Tested family (D2): universe-intersected term size in [minGSSize, maxGSSize];
   # "overlap" keeps terms the query touches, "all" adds zero-overlap terms (p = 1).
   eligible <- names(ao2gene_num)[ao2gene_num >= minGSSize & ao2gene_num <= maxGSSize]
@@ -591,10 +611,12 @@
     unmapped_ids = input[!input %in% annotation_genes],
     mapped_count = as.integer(sum(input %in% annotation_genes)),
     unmapped_count = as.integer(sum(!input %in% annotation_genes)),
-    effective_ids = effective_input,
-    effective_count = as.integer(length(effective_input)),
-    excluded_by_universe_ids = setdiff(input[input %in% annotation_genes], effective_universe)
+    effective_ids = counted_input,
+    effective_count = as.integer(length(counted_input)),
+    excluded_by_universe_ids = setdiff(input[input %in% annotation_genes], effective_universe),
+    occurrences = as.integer(tabulate(match(valid_input, input), nbins = length(input)))
   )
+  input_metadata$mapping <- mapping_record
   family_policy <- if (padj.family == "all") {
     "size_bounded_all_eligible"
   } else {
@@ -611,7 +633,8 @@
                   maxGSSize = maxGSSize, keepRich = keepRich,
                   padj.family = padj.family,
                   padj.method = padj.method, ontology = metadata_ontology,
-                  keytype = keytype, universe = if (is.null(universe)) NULL else universe)
+                  keytype = keytype, universe = if (is.null(universe)) NULL else universe,
+                  universe_policy = universe_policy)
   if (is.null(annotation_provenance)) {
     annotation_provenance <- .annotation_provenance(
       species = organism, keytype = keytype, anntype = metadata_ontology,
@@ -625,6 +648,23 @@
     options, annotation_provenance, labels = label_provenance
   )
   result
+}
+
+## The universe_policy argument of the ORA entry points (SPEC-RICHR-005
+## REQ-017): "annotated" (default) or "measured", which needs an explicit universe.
+.check_universe_policy <- function(universe_policy, universe) {
+  if (identical(universe_policy, c("annotated", "measured"))) universe_policy <- "annotated"
+  if (!is.character(universe_policy) || length(universe_policy) != 1L ||
+      is.na(universe_policy) || !universe_policy %in% c("annotated", "measured")) {
+    stop(sprintf("ORA: universe_policy must be \"annotated\" or \"measured\", not %s.",
+                 paste(deparse(universe_policy), collapse = " ")), call. = FALSE)
+  }
+  if (universe_policy == "measured" && is.null(universe)) {
+    stop(paste("ORA: universe_policy = \"measured\" counts the genes of an explicit",
+               "universe; supply `universe` or use universe_policy = \"annotated\"."),
+         call. = FALSE)
+  }
+  universe_policy
 }
 
 ## ----------------------------------------------------------------

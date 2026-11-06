@@ -27,12 +27,21 @@
 #' @param padj.method pvalue adjust method(default:"BH")
 #' @param sep character string used to separate the genes when concatenating
 #' @param universe optional character vector defining the ORA background
+#' @param universe_policy how \code{N} and \code{n} are counted: \code{"annotated"}
+#'   (default) counts only universe genes annotated in the tested annotation (for
+#'   \code{richGO}, the selected ontology); \code{"measured"} also counts the
+#'   tested-but-unannotated genes of an explicit \code{universe}: \code{N} = the
+#'   unique valid universe genes, \code{n} = the unique valid query genes in the
+#'   universe. Term sizes, overlaps and the tested family are the same under both;
+#'   \code{"measured"} requires \code{universe}. Recorded as
+#'   \code{options$universe_policy} in \code{\link{enrichmentInfo}()}.
 #' @param annotation_provenance optional annotation provenance captured from an Annot object
 #' @author Kai Guo
 enrich_internal<-function(x,object,ontology= "",pvalue=0.05,padj=0.05,organism=NULL,minSize=1,maxSize=500,
                           minGSSize = 10, maxGSSize = 500,
                           keepRich=TRUE,keytype="",filename=NULL,padj.method="BH",sep = ",",universe=NULL,
-                          annotation_provenance=NULL,padj.family=c("overlap","all")){
+                          annotation_provenance=NULL,padj.family=c("overlap","all"),
+                          universe_policy=c("annotated","measured")){
   .validateParams(pvalue=pvalue, minSize=minSize, maxSize=maxSize,
                   minGSSize=minGSSize, maxGSSize=maxGSSize, func_name="enrich")
   .check_cutoff(padj, "padj", allow_null = TRUE)
@@ -48,7 +57,7 @@ enrich_internal<-function(x,object,ontology= "",pvalue=0.05,padj=0.05,organism=N
            keytype = keytype, filename = filename, sep = sep, universe = universe,
            annotation_provenance = annotation_provenance,
            metadata_ontology = ontology,
-           padj.family = padj.family)
+           padj.family = padj.family, universe_policy = universe_policy)
 }
 #' Enrichment analysis function
 #' @param x vector contains gene names or dataframe with DEGs information
@@ -94,18 +103,29 @@ enrich_internal<-function(x,object,ontology= "",pvalue=0.05,padj=0.05,organism=N
 #' @export
 #' @author Kai Guo
 #' @param universe optional character vector intersected with annotated genes to define the ORA background
+#' @param universe_policy how \code{N} and \code{n} are counted: \code{"annotated"}
+#'   (default) counts only universe genes annotated in the tested annotation (for
+#'   \code{richGO}, the selected ontology); \code{"measured"} also counts the
+#'   tested-but-unannotated genes of an explicit \code{universe}: \code{N} = the
+#'   unique valid universe genes, \code{n} = the unique valid query genes in the
+#'   universe. Term sizes, overlaps and the tested family are the same under both;
+#'   \code{"measured"} requires \code{universe}. Recorded as
+#'   \code{options$universe_policy} in \code{\link{enrichmentInfo}()}. Pass it
+#'   by name.
 setMethod("enrich", signature(object = "data.frame"),definition = function(x,object,ontology="",pvalue=0.05,padj=0.05,organism=NULL,
                                                                              keytype="",filename=NULL,minSize=2,maxSize=500,
                                                                            minGSSize = 10, maxGSSize = 500,
-                                                                             keepRich=TRUE,padj.method="BH",sep=",",universe=NULL,padj.family=c("overlap","all")) {
+                                                                             keepRich=TRUE,padj.method="BH",sep=",",universe=NULL,padj.family=c("overlap","all"),universe_policy=c("annotated","measured")) {
   enrich_internal(x,object=object,ontology=ontology,pvalue=pvalue,padj=padj,
                     organism=organism,keytype=keytype,minSize=minSize,maxSize=maxSize,minGSSize = minGSSize, maxGSSize = maxGSSize,keepRich=keepRich,
-                    filename=filename,padj.method=padj.method,sep=sep,universe=universe,padj.family=padj.family)
+                    filename=filename,padj.method=padj.method,sep=sep,universe=universe,padj.family=padj.family,
+                    universe_policy=universe_policy)
 })
 
 #' Enrichment analysis function
 #' @param x vector contains gene names or dataframe with DEGs information
 #' @param object annotation data
+#' @param ontology not used: the ontology is read from \code{object}
 #' @param pvalue cutoff pvalue
 #' @param padj cutoff p adjust value
 #' @param organism organism
@@ -140,15 +160,27 @@ setMethod("enrich", signature(object = "data.frame"),definition = function(x,obj
 #' @export
 #' @author Kai Guo
 #' @param universe optional character vector intersected with annotated genes to define the ORA background
-setMethod("enrich", signature(object = "Annot"),definition = function(x,object,pvalue=0.05,padj=0.05,organism=NULL,
+#' @param universe_policy how \code{N} and \code{n} are counted: \code{"annotated"}
+#'   (default) counts only universe genes annotated in the tested annotation (for
+#'   \code{richGO}, the selected ontology); \code{"measured"} also counts the
+#'   tested-but-unannotated genes of an explicit \code{universe}: \code{N} = the
+#'   unique valid universe genes, \code{n} = the unique valid query genes in the
+#'   universe. Term sizes, overlaps and the tested family are the same under both;
+#'   \code{"measured"} requires \code{universe}. Recorded as
+#'   \code{options$universe_policy} in \code{\link{enrichmentInfo}()}. Pass it
+#'   by name.
+## The formals follow the generic's order (method-only arguments last): S4
+## calls this definition positionally in the generic's order, so a formal out
+## of place receives another argument's value.
+setMethod("enrich", signature(object = "Annot"),definition = function(x,object,ontology="",pvalue=0.05,padj=0.05,organism=NULL,
                                                                         keytype="",filename=NULL,minSize=2,maxSize=500,
                                                                       minGSSize = 10, maxGSSize = 500,
-                                                                        keepRich=TRUE,padj.method="BH",sep=",",universe=NULL,builtin=TRUE,padj.family=c("overlap","all")) {
+                                                                        keepRich=TRUE,padj.method="BH",sep=",",universe=NULL,padj.family=c("overlap","all"),builtin=TRUE,universe_policy=c("annotated","measured")) {
   provenance <- .annotation_provenance(object)
   enrich_internal(x=x,object=object@annot,ontology=object@anntype,pvalue=pvalue,padj=padj,
                     organism=object@species,keytype=object@keytype,minSize=minSize,maxSize=maxSize,minGSSize = minGSSize, maxGSSize = maxGSSize,keepRich=keepRich,
                     filename=filename,padj.method=padj.method,sep=sep,universe=universe,padj.family=padj.family,
-                    annotation_provenance=provenance)
+                    annotation_provenance=provenance,universe_policy=universe_policy)
 })
 
 

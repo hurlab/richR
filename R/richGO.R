@@ -28,13 +28,22 @@
 #' @param padj.method pvalue adjust method(default:"BH")
 #' @param sep character string used to separate the genes when concatenating
 #' @param universe optional character vector defining the ORA background
+#' @param universe_policy how \code{N} and \code{n} are counted: \code{"annotated"}
+#'   (default) counts only universe genes annotated in the tested annotation (for
+#'   \code{richGO}, the selected ontology); \code{"measured"} also counts the
+#'   tested-but-unannotated genes of an explicit \code{universe}: \code{N} = the
+#'   unique valid universe genes, \code{n} = the unique valid query genes in the
+#'   universe. Term sizes, overlaps and the tested family are the same under both;
+#'   \code{"measured"} requires \code{universe}. Recorded as
+#'   \code{options$universe_policy} in \code{\link{enrichmentInfo}()}.
 #' @param annotation_provenance optional annotation provenance captured from an Annot object
 #' @author Kai Guo
 richGO_internal<-function(x,godata,ontology="BP",pvalue=0.05,padj=0.05,
                  organism=NULL,keytype="SYMBOL",minSize=2,maxSize=500,
                  minGSSize = 10, maxGSSize = 500,
                  keepRich=FALSE, filename=NULL,padj.method="BH",sep=",",universe=NULL,
-                 annotation_provenance=NULL,padj.family=c("overlap","all")){
+                 annotation_provenance=NULL,padj.family=c("overlap","all"),
+                 universe_policy=c("annotated","measured")){
   .validateParams(pvalue=pvalue, minSize=minSize, maxSize=maxSize,
                   minGSSize=minGSSize, maxGSSize=maxGSSize, func_name="richGO")
   .check_cutoff(padj, "padj", allow_null = TRUE)
@@ -79,7 +88,7 @@ richGO_internal<-function(x,godata,ontology="BP",pvalue=0.05,padj=0.05,
            keytype = keytype, filename = filename, sep = sep, universe = universe,
            annotation_provenance = annotation_provenance,
            metadata_ontology = ontology,
-           padj.family = padj.family)
+           padj.family = padj.family, universe_policy = universe_policy)
 }
 #' GO Enrichment analysis function
 #' @param x vector contains gene names or dataframe with DEGs information
@@ -120,15 +129,24 @@ richGO_internal<-function(x,godata,ontology="BP",pvalue=0.05,padj=0.05,
 #' @export
 #' @author Kai Guo
 #' @param universe optional character vector intersected with annotated genes to define the ORA background
+#' @param universe_policy how \code{N} and \code{n} are counted: \code{"annotated"}
+#'   (default) counts only universe genes annotated in the tested annotation (for
+#'   \code{richGO}, the selected ontology); \code{"measured"} also counts the
+#'   tested-but-unannotated genes of an explicit \code{universe}: \code{N} = the
+#'   unique valid universe genes, \code{n} = the unique valid query genes in the
+#'   universe. Term sizes, overlaps and the tested family are the same under both;
+#'   \code{"measured"} requires \code{universe}. Recorded as
+#'   \code{options$universe_policy} in \code{\link{enrichmentInfo}()}. Pass it by name.
 setMethod("richGO", signature(godata = "data.frame"),definition = function(x,godata,ontology="BP",pvalue=0.05,padj=0.05,
                                                                            organism=NULL,keytype=NULL,minSize=2,maxSize=500,
                                                                            minGSSize = 10, maxGSSize = 500,
-                                                                           keepRich=TRUE, filename=NULL,padj.method="BH",sep=",",universe=NULL,padj.family=c("overlap","all")) {
+                                                                           keepRich=TRUE, filename=NULL,padj.method="BH",sep=",",universe=NULL,padj.family=c("overlap","all"),universe_policy=c("annotated","measured")) {
  # godata<-as(godata,"Annot")
   richGO_internal(x,godata,ontology=ontology,pvalue=pvalue,padj=padj,
                   organism=organism,keytype=keytype,minSize=minSize,maxSize=maxSize,
                   minGSSize = minGSSize, maxGSSize = maxGSSize,
-                  keepRich=keepRich,filename=filename,padj.method=padj.method,sep=sep,universe=universe,padj.family=padj.family)
+                  keepRich=keepRich,filename=filename,padj.method=padj.method,sep=sep,universe=universe,padj.family=padj.family,
+                  universe_policy=universe_policy)
 })
 
 #' GO Enrichment analysis function
@@ -167,12 +185,20 @@ setMethod("richGO", signature(godata = "data.frame"),definition = function(x,god
 #' @export
 #' @author Kai Guo
 #' @param universe optional character vector intersected with annotated genes to define the ORA background
+#' @param universe_policy how \code{N} and \code{n} are counted: \code{"annotated"}
+#'   (default) counts only universe genes annotated in the tested annotation (for
+#'   \code{richGO}, the selected ontology); \code{"measured"} also counts the
+#'   tested-but-unannotated genes of an explicit \code{universe}: \code{N} = the
+#'   unique valid universe genes, \code{n} = the unique valid query genes in the
+#'   universe. Term sizes, overlaps and the tested family are the same under both;
+#'   \code{"measured"} requires \code{universe}. Recorded as
+#'   \code{options$universe_policy} in \code{\link{enrichmentInfo}()}. Pass it by name.
 setMethod("richGO", signature(godata = "Annot"),definition = function(x,godata,ontology="BP",pvalue=0.05,padj=0.05,minSize=2,maxSize=500,
                                                                       minGSSize = 10, maxGSSize = 500,
-                                                                      keepRich=TRUE,filename=NULL,padj.method="BH",sep=",",universe=NULL,padj.family=c("overlap","all")) {
+                                                                      keepRich=TRUE,filename=NULL,padj.method="BH",sep=",",universe=NULL,padj.family=c("overlap","all"),universe_policy=c("annotated","measured")) {
   provenance <- .annotation_provenance(godata)
   richGO_internal(x,godata@annot,ontology=ontology,pvalue=pvalue,padj=padj,
                   organism=godata@species,keytype=godata@keytype,minSize=minSize,maxSize=maxSize,minGSSize = minGSSize, maxGSSize = maxGSSize,
                   keepRich=keepRich,filename=filename,padj.method=padj.method,sep=sep,universe=universe,padj.family=padj.family,
-                  annotation_provenance=provenance)
+                  annotation_provenance=provenance,universe_policy=universe_policy)
 })

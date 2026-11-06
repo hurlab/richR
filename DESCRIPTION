@@ -66,8 +66,11 @@ Collate:
     compareResult.R
     batch.R
     enrichmentInfo.R
+    mapGenes.R
+    mappingAudit.R
     tested.R
     bindRich.R
+    richSensitivity.R
     richIO.R
     accessors.R
     dplyr-methods.R

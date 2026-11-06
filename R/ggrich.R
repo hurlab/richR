@@ -44,7 +44,7 @@ ggrich_internal <- function(object,top=50, pvalue=0.05, padj=0.05,
   # Node names are display labels, unique per identifier.
   object <- .ora_display_terms(object)
   object$GeneID<-as.vector(object$GeneID)
-  lhs <- strsplit(object$GeneID,sep)
+  lhs <- strsplit(object$GeneID, sep, fixed = TRUE)
   if(isTRUE(useTerm)){
     rhs <- data.frame(from=unlist(lhs),to=rep(object$Term,lapply(lhs,length)))
     rownames(object) <- object$Term

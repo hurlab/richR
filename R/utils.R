@@ -362,9 +362,11 @@
                       Padj = numeric(), stringsAsFactors = FALSE))
   }
   if (is.data.frame(x)) {
+    # Analysis uses row names as gene IDs; keep that key in the local join copy.
+    x$gene <- rownames(x)
     detail <- getdetail(resultFis, x, sep = sep)
   } else {
-    gene_lists <- strsplit(as.character(resultFis$GeneID), split = sep)
+    gene_lists <- strsplit(as.character(resultFis$GeneID), split = sep, fixed = TRUE)
     names(gene_lists) <- resultFis$Annot
     detail <- data.frame(
       TERM = rep(names(gene_lists), times = vapply(gene_lists, length, integer(1))),
@@ -904,7 +906,7 @@ getdetail <- function(rese, resd, sep) {
   if (!("gene" %in% colnames(resd))) {
     resd$gene <- rownames(resd)
   }
-  gene <- strsplit(as.vector(rese$GeneID), split = sep)
+  gene <- strsplit(as.vector(rese$GeneID), split = sep, fixed = TRUE)
   names(gene) <- rese$Annot
   gened <- data.frame(
     "TERM" = rep(names(gene), times = unlist(lapply(gene, length))),

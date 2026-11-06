@@ -139,6 +139,16 @@ ggplot2 object
 \description{
 richDot
 }
+\section{Row selection}{
+
+Draws the rows passing \code{Pvalue <= pvalue} and, unless \code{padj} is
+\code{NULL}, \code{Padj <= padj}, then the first \code{top} of them in
+input order. When this drops rows it signals one
+\code{\link{richR_plot_selection}} message (\code{suppressMessages()}
+silences it). To draw every row with a p-value:
+\code{richDot(x, pvalue = 1, padj = NULL, top = Inf)}.
+}
+
 \examples{
 \dontrun{
   hsako <- buildAnnot(species="human",keytype="SYMBOL",anntype = "KEGG")

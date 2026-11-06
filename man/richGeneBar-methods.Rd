@@ -170,6 +170,22 @@ ggplot2 object
 \description{
 Barplot with gene names embedded inside bars
 }
+\section{Row selection}{
+
+Draws the terms passing \code{Pvalue <= pvalue} and, unless \code{padj} is
+\code{NULL}, \code{Padj <= padj}, then the first \code{top} of them in
+input order, each listing up to \code{max.genes} genes. When this drops
+terms it signals one \code{\link{richR_plot_selection}} message
+(\code{suppressMessages()} silences it). To draw every term with a p-value:
+\code{richGeneBar(x, pvalue = 1, padj = NULL, top = Inf)}.
+}
+
+\section{GSEA input}{
+
+For a \code{GSEAResult} the bar length is each pathway's \code{NES}, titled
+\code{NES}. Before richR 0.2.0 it drew a constant \code{RichFactor = 1}.
+}
+
 \examples{
 \dontrun{
   res <- richKEGG(gene, kodata = hsako)

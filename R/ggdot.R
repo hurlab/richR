@@ -37,12 +37,14 @@ ggdot_internal<-function(object,top=50,pvalue=0.05,order=FALSE,
                          font.x="bold",font.y="bold",fontsize.x=10,fontsize.y=10,
                          short=FALSE,
                          padj=0.05,usePadj=TRUE,orderp=FALSE,filename=NULL,width=10,height=8){
+  n <- nrow(object)
   object <- .sig_filter(object, pvalue, padj)
   if(nrow(object)>=top){
     dd<-object[1:top,]
   }else{
     dd<-object
   }
+  .plot_selection("richDot", nrow(dd), n, rule = .selection_rule(pvalue, padj, top))
   if(nrow(dd)>=1){
     dd$rich<-dd$Significant/dd$Annotated
     #colnames(dd)[3]<-"rich";

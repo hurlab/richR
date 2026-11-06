@@ -30,6 +30,18 @@
 ##' @param segment.size size for label segment
 ##' @param node.alpha alpha-transparency scales
 ##' @param ... additional arguments
+##' @section Row selection:
+##' Takes the first \code{top} rows of each result, combines them ordered by
+##' \code{Pvalue}, then applies the selection of \code{\link{richNetwork}}
+##' (\code{Pvalue <= pvalue} and, unless \code{padj} is \code{NULL},
+##' \code{Padj <= padj}; the first \code{top}). When this drops rows it signals
+##' one \code{\link{richR_plot_selection}} message counted against the sum of
+##' the results' rows (\code{suppressMessages()} silences it); the count is of
+##' rows, not nodes, and the layout omits a selected term that shares no gene
+##' with another. To select every row with a p-value, give a finite \code{top}
+##' at least the total row count:
+##' \code{richNetmap(x, pvalue = 1, padj = NULL, top = sum(vapply(x, function(r) nrow(r@result), 1L)))};
+##' \code{top = Inf} and \code{top = NULL} are not supported.
 ##' @examples
 #' \dontrun{
 #' hsako <- buildAnnot(species="human",keytype="SYMBOL",anntype = "KEGG")
@@ -58,10 +70,27 @@ richNetmap<-function(richRes,gene=NULL,top=50,top.display=NULL,pvalue = 0.05, pa
   if(is.null(top.display)){
     top.display=nrow(object)
   }
-  ggnetwork(object,gene=gene,top=top,pvalue=pvalue,padj=padj,usePadj=usePadj,weightcut=weightcut,useTerm=useTerm,writeCyt=writeCyt,
-            cytoscapeFile = cytoscapeFile,cytoscapeFormat=cytoscapeFormat,
-            label.color=label.color,label.size=label.size,node.shape=node.shape,
-            layout=layout,savefig=savefig,width=width,height=height,
-            visNet=visNet,smooth=smooth,nodeselect=nodeselect,edit=edit,
-            filename=filename,node.alpha=node.alpha,...)
+  # One selection message per call (REQ-001): the nested richNetwork() call
+  # counts the combined frame, padding rows included, so its message is taken
+  # over and re-stated against the rows the results report.
+  n <- sum(vapply(richRes, function(x) nrow(x@result), integer(1)))
+  k <- NULL
+  p <- withCallingHandlers(
+    ggnetwork(object,gene=gene,top=top,pvalue=pvalue,padj=padj,usePadj=usePadj,weightcut=weightcut,useTerm=useTerm,writeCyt=writeCyt,
+              cytoscapeFile = cytoscapeFile,cytoscapeFormat=cytoscapeFormat,
+              label.color=label.color,label.size=label.size,node.shape=node.shape,
+              layout=layout,savefig=savefig,width=width,height=height,
+              visNet=visNet,smooth=smooth,nodeselect=nodeselect,edit=edit,
+              filename=filename,node.alpha=node.alpha,...),
+    richR_plot_selection = function(cond) {
+      k <<- cond$k
+      invokeRestart("muffleMessage")
+    })
+  # No nested message: the nested call kept every row it received, and the
+  # combined frame then holds no padding row.
+  if (is.null(k)) k <- nrow(object)
+  .plot_selection("richNetmap", k, n,
+                  rule = paste0("first ", format(top), " rows of each result, ordered by Pvalue; ",
+                                .selection_rule(pvalue, padj, top)))
+  p
 }

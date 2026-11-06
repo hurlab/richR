@@ -339,6 +339,78 @@ table.
   an S4 object or a classed value is refused, naming the field, so reading a
   folder never rebuilds code or loads a package.
 
+### Plots show what they draw (changes default plot output)
+
+A plot function now only displays an enrichment result: it reports the rows
+it leaves out and no longer draws invented or mislabelled values. Plot
+defaults, argument names, aliases and layouts are unchanged; every other plot
+output is as before. See `?richR_plot_selection`.
+
+- **Selection message.** The table plots (`richBar()`, `richDot()`,
+  `richNetplot()`, `richNetwork()`, `richNetmap()`, `richLollipop()`,
+  `richCircle()`, `richNES()`, `richScatter()`, `richECDF()`,
+  `richTermSim()`, `richGeneDot()`, `richGeneHeat()`, `richGeneBar()`,
+  `richVolcano()`, `richHeatmap()`, `richCompareDot()` and their aliases)
+  apply their cutoffs and `top` exactly as before, but previously did so
+  silently: a result holding 6 terms could be drawn with 3, and a
+  `compareResult()` table built with `pvalue = 1` was re-filtered by
+  `richCompareDot()`'s defaults. When the selection drops rows, a call now
+  signals one message of class `richR_plot_selection`, for example
+  `richBar: drawing 3 of 6 rows (Pvalue <= 0.05 and Padj <= 0.05; first 50 in
+  input order)`; none is signalled when every row is drawn. `richNES()` and
+  `richECDF()` name their order rule (`by NES, descending` / `ascending`),
+  `richHeatmap()` counts identifiers over all results, and `richNetmap()`
+  signals one message counted against the results' own rows. The drawn rows
+  are unchanged, so the earlier silent output is
+  `suppressMessages(<same call>)`. Each plot's help page gives the call that
+  draws every row: `pvalue = 1, padj = NULL, top = Inf` for most plots,
+  `top = Inf` for `richVolcano()` and `richHeatmap()`, `include.all = TRUE`
+  for `richCompareDot()`, and a finite `top` of at least the total row count
+  for `richNetmap()` (`top = Inf` is not supported there).
+- **GSEA lollipop, gene-bar and scatter plots draw NES.** For a `GSEAResult`,
+  `richLollipop()` and `richGeneBar()` previously drew a constant
+  `RichFactor = 1` for every pathway (axis title `RichFactor`), and
+  `richScatter()` drew every pathway at `log2` fold enrichment 0 under the
+  title `log2(Fold Enrichment)` against `log10(Pathway Size)`. They now draw
+  each pathway's `NES` (axis title `NES`); `richScatter()` draws `NES`
+  against `log10(size)`, titled `log10(Gene-set size)`. The plot data no
+  longer carries the invented `RichFactor` and `Annotated` columns. ORA input
+  is unchanged.
+- **Effect titles without `FoldEnrichment`.** `richVolcano()` and
+  `richScatter()` on ORA input without a `FoldEnrichment` column (results
+  saved before richR 0.1.2) draw the same values as before, but previously
+  titled them `log2(Fold Enrichment)` (volcano colour `log2(FE)`). The
+  titles now say what is drawn: `log2(Rich Factor = Significant/Annotated)`
+  (volcano colour `log2(Rich Factor)`); a frame without `Significant` and
+  `Annotated` as well is drawn by `richVolcano()` with every point at 0,
+  titled `No effect column: all points at 0` (colour `No effect column`).
+  With `FoldEnrichment` present the titles are unchanged.
+- **Missing fold changes in gene plots.** When `fc` holds no value for a
+  member gene of a drawn term, `richGeneDot()` and `richGeneHeat()`
+  previously recorded and drew it as fold change 0, white like a measured
+  zero. The gene's `fc_value` is now `NA` and it is drawn in the fixed colour
+  `grey55` (`#8C8C8C`): a smallest-size point in `richGeneDot()`, a tile in
+  `richGeneHeat()`, whose cells for genes not in a term keep `na.fill`
+  (`grey90` by default). A caption names the encoding. Output is unchanged
+  when every member gene has a fold change or `fc` is `NULL`. To draw the
+  missing genes as 0 again, supply them: `fc[setdiff(genes, names(fc))] <- 0`.
+- **Absent terms in `richHeatmap()`.** A term absent from one of the
+  results was filled with `p = 1` and drawn as a measured non-significant
+  value; its cell is now `NA` in the drawn data and in the
+  `returnData = TRUE` table, and is drawn in the missing-value colour. Code
+  reading the `returnData = TRUE` table must expect `NA` there;
+  `tab[is.na(tab)] <- 1` restores the earlier table. The fill legend
+  previously named the other p-value column (`-log10(Padj)` over p-values
+  with the default `usePadj = FALSE`, and the reverse); it now names the
+  column drawn, `-log10(Pvalue)` or `-log10(Padj)`, and the value column of
+  the plot data carries that name. The row order is unchanged (an absent
+  cell still counts as `p = 1` for ordering).
+- Known limits, unchanged: for a `GSEAResult`, `richGeneDot()` and
+  `richGeneHeat()` stop with an error when a selected pathway has an empty
+  leading edge, and the network plots never draw such a pathway;
+  `richNetwork()` and `richNetmap()` omit a selected term that shares no gene
+  with another selected term.
+
 ### Requirements and packaging
 
 - richR now requires R 4.6 or later (`Depends: R (>= 4.6)`). The package

@@ -38,10 +38,12 @@ richBar_internal<-function(resultFis,top=50,pvalue=0.05,order=FALSE,horiz=TRUE,
                          short=FALSE,
                          fontsize.text=3,angle=75,padj=0.05,usePadj=TRUE,orderp=FALSE,
                          filename=NULL,width=10,height=8){
+  n <- nrow(resultFis)
   resultFis <- .sig_filter(resultFis, pvalue, padj)
   if(nrow(resultFis)>=top){
     resultFis<-resultFis[1:top,]
   }
+  .plot_selection("richBar", nrow(resultFis), n, rule = .selection_rule(pvalue, padj, top))
   if(max(resultFis$Significant/(resultFis$Annotated+0.1))<=1){
     yheight=max(resultFis$Significant/resultFis$Annotated)+0.1
   }else{

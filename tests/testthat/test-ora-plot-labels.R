@@ -134,7 +134,7 @@ test_that("richHeatmap matches rows across results by identifier", {
   expect_equal(unname(unlist(a1)), c(rr$first@result["A1", "Pvalue"],
                                      rr$second@result["A1", "Pvalue"]))
   a2 <- data[data$Term == "Shared [A2]", 2:3]
-  expect_equal(unname(unlist(a2)), c(1, rr$second@result["A2", "Pvalue"]))
+  expect_equal(unname(unlist(a2)), c(NA_real_, rr$second@result["A2", "Pvalue"]))
   grDevices::pdf(NULL)
   on.exit(grDevices::dev.off(), add = TRUE)
   expect_true(inherits(richHeatmap(rr), "ggplot"))

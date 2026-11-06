@@ -110,6 +110,19 @@ ggplot2 object
 \description{
 richNetplot
 }
+\section{Row selection}{
+
+Selects the rows passing \code{Pvalue <= pvalue} and, unless \code{padj}
+is \code{NULL}, \code{Padj <= padj}, then the first \code{top} of them in
+input order. When this drops rows it signals one
+\code{\link{richR_plot_selection}} message (\code{suppressMessages()}
+silences it); the count is of rows, not nodes. A selected term sharing no
+gene with another selected term is still drawn; a term with no genes (a
+\code{GSEAResult} pathway with an empty leading edge) is never a node. To
+select every row with a p-value:
+\code{richNetplot(x, pvalue = 1, padj = NULL, top = Inf)}.
+}
+
 \examples{
 \dontrun{
   hsako<-buildAnnot(species="human",keytype="SYMBOL",anntype = "KEGG")

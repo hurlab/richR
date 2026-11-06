@@ -35,10 +35,12 @@ ggrich_internal <- function(object,top=50, pvalue=0.05, padj=0.05,
                             label.color = "black", label.size = 2, node.shape=NULL,
                             layout = "fruchtermanreingold",savefig=FALSE,filename="network",
                             width=7,height=7,node.alpha=0.7,repel=TRUE,segment.size=0.2,sep=","){
+  n <- nrow(object)
   object <- .sig_filter(object, pvalue, padj)
   if(nrow(object)>=top){
     object<-object[1:top,]
   }
+  .plot_selection("richNetplot", nrow(object), n, rule = .selection_rule(pvalue, padj, top))
   # Node names are display labels, unique per identifier.
   object <- .ora_display_terms(object)
   object$GeneID<-as.vector(object$GeneID)

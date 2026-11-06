@@ -275,6 +275,13 @@ setGeneric("richLevel", function(x,kodata,level="Level2",pvalue =0.05, padj=0.05
 ##' @param height figure height
 ##' @param ... additional arguments
 ##' @return ggplot2 object
+##' @section Row selection:
+##' Draws the rows passing \code{Pvalue <= pvalue} and, unless \code{padj} is
+##' \code{NULL}, \code{Padj <= padj}, then the first \code{top} of them in
+##' input order. When this drops rows it signals one
+##' \code{\link{richR_plot_selection}} message (\code{suppressMessages()}
+##' silences it). To draw every row with a p-value:
+##' \code{richDot(x, pvalue = 1, padj = NULL, top = Inf)}.
 ##' @examples
 #' \dontrun{
 #'   hsako <- buildAnnot(species="human",keytype="SYMBOL",anntype = "KEGG")
@@ -314,6 +321,14 @@ setGeneric("richDot", function(object,top=50,pvalue=0.05,order=FALSE,
 ##' @param horiz horizontal bar plot or not
 ##' @param ... additional arguments
 ##' @return ggplot2 object
+##' @section Row selection:
+##' Draws the rows passing \code{Pvalue <= pvalue} and, unless \code{padj} is
+##' \code{NULL}, \code{Padj <= padj}, then the first \code{top} of them in
+##' input order. When this drops rows it signals one
+##' \code{\link{richR_plot_selection}} message, e.g.
+##' \code{richBar: drawing 3 of 6 rows (Pvalue <= 0.05 and Padj <= 0.05; first 50 in input order)};
+##' \code{suppressMessages()} silences it. To draw every row with a p-value:
+##' \code{richBar(x, pvalue = 1, padj = NULL, top = Inf)}.
 ##' @examples
 #' \dontrun{
 #'   hsako<-buildAnnot(species="human",keytype="SYMBOL",anntype = "KEGG")
@@ -356,6 +371,16 @@ setGeneric("richBar", function(object,top=50,pvalue=0.05,padj=0.05,order=FALSE,
 ##' @param sep character string used to separate the genes when concatenating
 ##' @param ... additional arguments
 ##' @return ggplot2 object
+##' @section Row selection:
+##' Selects the rows passing \code{Pvalue <= pvalue} and, unless \code{padj}
+##' is \code{NULL}, \code{Padj <= padj}, then the first \code{top} of them in
+##' input order. When this drops rows it signals one
+##' \code{\link{richR_plot_selection}} message (\code{suppressMessages()}
+##' silences it); the count is of rows, not nodes. A selected term sharing no
+##' gene with another selected term is still drawn; a term with no genes (a
+##' \code{GSEAResult} pathway with an empty leading edge) is never a node. To
+##' select every row with a p-value:
+##' \code{richNetplot(x, pvalue = 1, padj = NULL, top = Inf)}.
 ##' @examples
 #' \dontrun{
 #'   hsako<-buildAnnot(species="human",keytype="SYMBOL",anntype = "KEGG")
@@ -410,6 +435,17 @@ setGeneric("richNetplot",function(object,top=50, pvalue=0.05, padj=0.05,
 ##' @param sep character string used to separate the genes when concatenating
 ##' @param ... additional arguments
 ##' @return ggplot2 object
+##' @section Row selection:
+##' Selects the rows passing \code{Pvalue <= pvalue} and, unless \code{padj}
+##' is \code{NULL}, \code{Padj <= padj}, then the first \code{top} of them in
+##' input order. When this drops rows it signals one
+##' \code{\link{richR_plot_selection}} message (\code{suppressMessages()}
+##' silences it); the count is of rows, not nodes. The layout omits a selected
+##' term that shares no gene with another selected term, and a term with no
+##' genes (a \code{GSEAResult} pathway with an empty leading edge). To select
+##' every row with a p-value:
+##' \code{richNetwork(x, pvalue = 1, padj = NULL, top = Inf)}; the
+##' \code{data.frame} method also needs \code{gene =}.
 ##' @examples
 #' \dontrun{
 #'   hsako<-buildAnnot(species="human",keytype="SYMBOL",anntype = "KEGG")

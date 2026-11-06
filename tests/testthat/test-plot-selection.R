@@ -77,6 +77,8 @@ test_that("top truncation is reported with its order rule, and top = Inf draws e
   s <- .m61_sel(richVolcano(x, top = 2))
   expect_setequal(as.character(s$value$data$Annot), c("A1", "A2"))
   .m61_expect_one(s, "richVolcano", c("2 of 6 rows", "input order"), "richVolcano top = 2")
+  # richVolcano applies no p-value cutoff, so its message must not claim one.
+  expect_false(grepl("Pvalue <=", conditionMessage(s$conds[[1]]), fixed = TRUE))
   s <- .m61_sel(richVolcano(x, top = Inf))
   expect_identical(nrow(s$value$data), 6L)
   expect_length(s$conds, 0L)

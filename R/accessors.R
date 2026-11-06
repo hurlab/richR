@@ -32,9 +32,11 @@ setMethod("show", signature(object = "richResult"), function(object) {
   cat(.cutoff_text(object@pvalueCutoff, object@padjCutoff), "\n", sep = "")
   if (n_sig > 0) {
     top_n <- min(5, n_sig)
-    top <- object@result[1:top_n, c("Term", "Pvalue", "Padj", "Significant", "Annotated"), drop = FALSE]
-    top$Pvalue <- formatC(top$Pvalue, format = "e", digits = 2)
-    top$Padj <- formatC(as.numeric(top$Padj), format = "e", digits = 2)
+    cols <- intersect(c("Term", "Pvalue", "Padj", "Significant", "Annotated"), colnames(object@result))
+    if (!("Term" %in% cols) && "Annot" %in% colnames(object@result)) cols <- c("Annot", cols)
+    top <- object@result[1:top_n, cols, drop = FALSE]
+    if ("Pvalue" %in% cols) top$Pvalue <- formatC(top$Pvalue, format = "e", digits = 2)
+    if ("Padj" %in% cols) top$Padj <- formatC(as.numeric(top$Padj), format = "e", digits = 2)
     cat("\n  Top", top_n, "terms:\n")
     print(top, row.names = FALSE, right = FALSE)
     if (n_sig > top_n) cat("  ... with", n_sig - top_n, "more terms\n")
@@ -90,11 +92,14 @@ setMethod("show", signature(object = "Annot"), function(object) {
 #'
 #' @param x A richResult or GSEAResult object
 #' @param term Optional term ID (Annot column) or term name to extract genes for.
-#'   If NULL, returns all input genes from the analysis. For a GSEAResult the
+#'   If NULL, returns all input genes from the analysis. For a richResult, an
+#'   exact Annot identifier takes precedence over a unique Term label; a label
+#'   shared by several identifiers is an error. For a GSEAResult the
 #'   term resolves by pathway identifier, KEGG identifier with or without
 #'   organism prefix, then unique \code{Term} label (the leading-edge genes are
 #'   returned); a label shared by several pathways is an error.
-#' @param sep Separator used in GeneID column (default: ",")
+#' @param sep Literal separator used in GeneID or joined leading-edge text
+#'   (default: ","). Pass the separator explicitly for non-comma text.
 #' @return Character vector of gene IDs
 #'
 #' @examples
@@ -114,13 +119,20 @@ getGenes <- function(x, term = NULL, sep = ",") {
     }
     res_df <- x@result
     if (inherits(x, "richResult")) {
-      # Match by Annot ID or Term name
-      idx <- which(res_df$Annot == term | res_df$Term == term)
+      # Exact identifiers take precedence over label-only matches.
+      idx <- which(res_df$Annot == term)
+      if (!length(idx)) {
+        idx <- which(res_df$Term == term)
+        if (length(unique(res_df$Annot[idx])) > 1L) {
+          stop("Ambiguous term '", term, "' matches several identifiers. Use an Annot identifier.",
+               call. = FALSE)
+        }
+      }
       if (length(idx) == 0) {
         stop("Term '", term, "' not found in results.", call. = FALSE)
       }
       gene_str <- as.character(res_df$GeneID[idx[1]])
-      return(unique(trimws(strsplit(gene_str, sep)[[1]])))
+      return(unique(trimws(strsplit(gene_str, sep, fixed = TRUE)[[1]])))
     }
     if (inherits(x, "GSEAResult")) {
       # Resolve by identifier, prefix-stripped KEGG identifier, then unique label.
@@ -129,7 +141,7 @@ getGenes <- function(x, term = NULL, sep = ",") {
       idx <- match(id, res_df$pathway)
       le <- res_df$leadingEdge[idx[1]]
       if (is.list(le)) return(unique(le[[1]]))
-      return(unique(strsplit(as.character(le), sep)[[1]]))
+      return(unique(strsplit(as.character(le), sep, fixed = TRUE)[[1]]))
     }
   }
   stop("x must be a richResult or GSEAResult object.", call. = FALSE)

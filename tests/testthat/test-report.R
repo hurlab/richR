@@ -684,3 +684,40 @@ test_that("a rerun reads each group only from its own results folder (F7: an edi
     expect_false(file.exists(out), label = to)
   }
 })
+
+# Integration seam: SPEC-RICHR-009's new status must survive SPEC-RICHR-008.
+test_that("reports and reruns retain undetermined zero-overlap theme evidence (SPEC-RICHR-008/009)", {
+  base <- .rp_tmp()
+  annot <- data.frame(GeneID = paste0("G", 1:60),
+                       Annot = rep(paste0("T", 1:6), each = 10))
+  annot$Term <- annot$Annot
+  run <- function(q, ...) suppressMessages(enrich(paste0("G", q), annot,
+    pvalue = 1, padj = 1, minSize = 1, minGSSize = 1, ...))
+  groups <- list(reported = run(c(1:8, 11:12)),
+                 all_family = run(c(11:18, 21:24), padj.family = "all"),
+                 overlap_family = run(c(11:18, 21:24)))
+  bound <- bindRich(groups)
+  expect_identical(bound$state[bound$Annot == "T1"],
+                   c("reported", "untested_or_zero_overlap", "not_tested"))
+  th <- richThemes(groups)
+  tid <- th$members$theme_id[th$members$Annot == "T1"][1]
+  view <- themeGenes(th)
+  rows <- view[view$theme_id == tid, ]
+  expect_identical(unique(rows$group_status[rows$group == "all_family"]), "undetermined")
+  expect_identical(unique(rows$group_status[rows$group == "overlap_family"]), "absent")
+
+  p <- file.path(base, "p"); q <- file.path(base, "q")
+  richReport(groups, p, themes = th, figures = FALSE)
+  richReport(p, q)
+  for (folder in c(p, q)) {
+    expect_identical(.rp_decode(folder, "theme_gene_view"), view)
+    html <- .rp_section(.rp_html(folder), tid, until = "<h3")
+    table <- .rp_table_rows(html)
+    cols <- match(c("group", "group_status"), table[[1]])
+    all_rows <- Filter(function(r) identical(r[cols[1]], "all_family"), table[-1])
+    expect_length(all_rows, sum(rows$group == "all_family"))
+    expect_gt(length(all_rows), 0)
+    expect_identical(unique(vapply(all_rows, `[`, "", cols[2])), "undetermined")
+  }
+  .rp_expect_rerun_identical(p, q)
+})

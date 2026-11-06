@@ -130,7 +130,10 @@
 #' unless \code{overwrite = TRUE} and \code{path} holds a report folder; then
 #' exactly \code{report.html}, \code{manifest.json}, \code{rerun.R},
 #' \code{results/} and \code{tables/} are replaced and every other file in
-#' \code{path} is kept.
+#' \code{path} is kept. Replacement is not transactional: if removal fails,
+#' some old files may already be gone. A retry needs the original results
+#' or an intact report folder; a partly removed report cannot serve as its
+#' own rerun source.
 #'
 #' @param x results, \code{writeRich()} folders or a report folder; see
 #'   Inputs.
@@ -194,7 +197,7 @@ richReport <- function(x, path, themes = NULL, stats = NULL, sensitivity = NULL,
     view <- if (is.null(sensitivity)) NULL else .report_sensitivity_view(sensitivity)
     plan <- .report_plan(x, themes, stats, view, title, figures, figure.top)
   }
-  .report_write(plan, path, overwrite)
+  .report_write(plan, path.expand(path), overwrite)
   invisible(path)
 }
 
@@ -508,7 +511,8 @@ richReport <- function(x, path, themes = NULL, stats = NULL, sensitivity = NULL,
                      path, .report_format), call. = FALSE)
       }
       # Keep the identifying manifest until the other entries are removed,
-      # so an interrupted overwrite remains recognizable for a later retry.
+      # so a failed removal leaves the identifying manifest in place.
+      # A retry still needs intact inputs; the old report may be incomplete.
       for (entry in .report_known) {
         if (file.access(path, 2L) != 0L ||
             unlink(file.path(path, entry), recursive = TRUE, expand = FALSE) != 0L) {
@@ -649,7 +653,8 @@ richReport <- function(x, path, themes = NULL, stats = NULL, sensitivity = NULL,
   k <- NULL
   p <- withCallingHandlers(
     if (gsea) richNES(obj, pvalue = 1, padj = NULL, top = top)
-    else richDot(obj, pvalue = 1, padj = NULL, top = top),
+    else richDot(obj, pvalue = 1, padj = NULL, top = top,
+                 usePadj = "Padj" %in% names(obj@result)),
     richR_plot_selection = function(cond) {
       k <<- cond$k
       invokeRestart("muffleMessage")

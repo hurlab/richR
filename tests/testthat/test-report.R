@@ -615,10 +615,22 @@ test_that("a result without an adjusted p column is compared with its adjusted p
   x <- list(a = leg, b = leg)
   expect_false("Padj" %in% names(bindRich(x)))
   p <- file.path(base, "p")
-  richReport(x, p, figures = FALSE)
+  richReport(x, p)
   rows <- .rp_table_rows(.rp_section(.rp_html(p), "comparison"))
   expect_identical(vapply(rows[-1], `[`, "", 1), sort(leg@result$Annot, method = "radix"))
   for (r in rows[-1]) expect_identical(r[-1], rep("reported (NA)", 2), label = r[1])
+  if (isTRUE(unname(capabilities("png")))) {
+    expect_length(.rp_match_all(.rp_html(p), "<img "), 2L)
+  }
+  q <- file.path(base, "q")
+  richReport(p, q)
+  expect_identical(.rp_files(p), .rp_files(q))
+  fixed <- grep("^(tables/|results/|rerun\\.R$)", .rp_files(p), value = TRUE)
+  expect_gt(length(fixed), 0)
+  expect_identical(unname(tools::md5sum(file.path(p, fixed))),
+                   unname(tools::md5sum(file.path(q, fixed))))
+  expect_identical(.rp_match_all(.rp_html(p), "<img [^>]*>"),
+                   .rp_match_all(.rp_html(q), "<img [^>]*>"))
 })
 
 test_that("numbers are shown in full when whole, with 4 significant digits otherwise, and NA when missing (REQ-011; F1: a large count shown as 1.235e+05)", {
@@ -720,4 +732,24 @@ test_that("reports and reruns retain undetermined zero-overlap theme evidence (S
     expect_identical(unique(vapply(all_rows, `[`, "", cols[2])), "undetermined")
   }
   .rp_expect_rerun_identical(p, q)
+})
+
+# Literal deletion must preserve R's usual home-directory expansion.
+test_that("report overwrite expands a tilde path once and returns the supplied path", {
+  home <- path.expand("~")
+  base <- tempfile("richReport-tilde-", tmpdir = home)
+  dir.create(base)
+  on.exit(unlink(base, recursive = TRUE, expand = FALSE), add = TRUE)
+  path <- file.path("~", basename(base), "study[1]")
+  disk <- path.expand(path)
+  x <- .rp_fq()$q1
+  expect_identical(richReport(x, path, figures = FALSE), path)
+  writeLines("stale", file.path(disk, "results", "stale.txt"))
+  keep <- file.path(base, "study1", "results", "keep.txt")
+  dir.create(dirname(keep), recursive = TRUE)
+  writeLines("precious", keep)
+  expect_identical(richReport(x, path, figures = FALSE, overwrite = TRUE), path)
+  expect_false(file.exists(file.path(disk, "results", "stale.txt")))
+  expect_identical(readLines(keep), "precious")
+  expect_identical(readRich(file.path(disk, "results/group_1")), x)
 })

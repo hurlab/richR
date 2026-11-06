@@ -183,7 +183,10 @@ An existing non-empty \code{path} is left unchanged and the call stops,
 unless \code{overwrite = TRUE} and \code{path} holds a report folder; then
 exactly \code{report.html}, \code{manifest.json}, \code{rerun.R},
 \code{results/} and \code{tables/} are replaced and every other file in
-\code{path} is kept.
+\code{path} is kept. Replacement is not transactional: if removal fails,
+some old files may already be gone. A retry needs the original results
+or an intact report folder; a partly removed report cannot serve as its
+own rerun source.
 }
 
 \examples{

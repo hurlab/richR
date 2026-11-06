@@ -12,12 +12,16 @@ immutable.
 - Workspace: `/home/juhur/.moai/worktrees/projects/richR/richr-release-021`.
 - Branch: `WT-release-021`; source base:
   `fa383355357ee21b21707c1e35abe79520b4b21e`.
-- Release metadata is being prepared for version `0.2.1`. GitHub publication,
-  assets and branch promotion are pending fresh release verification.
+- Release metadata and verification are complete for version `0.2.1` on tested
+  candidate `b19c2785`. Fresh install/full suite/build/check passed; the source
+  asset and checksum file are prepared and verified. Publication audit, final
+  release commit/tag, GitHub publication and branch promotion remain pending.
 - The repository's existing default branch is `stable`. Keep that designation;
   advance `stable` and `master` to the validated release commit.
-- Upstream work is separately scoped to avoid duplicating the existing open
-  contributions. No upstream PR publication is claimed by this document.
+- The new upstream contribution is limited to native encoding identity: three
+  C++ files plus its focused regression, ported unchanged from reviewed patch
+  `957de6c` onto upstream `cc30f6c`. Head `dca5857` is prepared and tested; PR
+  publication remains pending. Existing open PRs are not duplicated.
 - Distribution policy: GitHub now; any future package-repository submission
   targets Bioconductor. CRAN submission is not a release gate. No Bioconductor
   submission-readiness assessment is claimed.
@@ -30,6 +34,41 @@ and group names, result access/display, plot boundaries/network exports, and
 integer validation during folder import. Package-title and README metadata
 corrections are included. The 0.2.0 significance defaults and engine custom
 background support remain unchanged.
+
+## Fresh 0.2.1 candidate verification
+
+Candidate commit: `b19c2785eecce355e31356d2d0ab8ec0c92e3481`.
+Git tree: `4c40c8481a95bd55152ca196328d709917e0df19`.
+Fresh loaded package: version `0.2.1` at
+`/tmp/hur-richr-release-021-b19c2785eec/lib/richR`.
+The install and suite commands both exited 0. The raw suite output is:
+
+```text
+FILES: 59 BLOCKS: 411 PASSED: 6369 FAILED: 0 ERRORS: 0 SKIPPED: 3 WARNINGS: 84
+```
+
+Current release evidence: [commands.json](/home/juhur/.moai/worktrees/projects/richR/richr-release-021/.moai/reports/release-021/commands.json),
+[provenance.json](/home/juhur/.moai/worktrees/projects/richR/richr-release-021/.moai/reports/release-021/provenance.json)
+and [suite.log](/home/juhur/.moai/worktrees/projects/richR/richr-release-021/.moai/reports/release-021/suite.log).
+The fresh build and standard check commands both exited 0. The raw check tail
+records `* DONE` and `Status: OK`: 0 ERROR / 0 WARNING / 0 NOTE. The command is
+`R CMD check --no-tests`, with the fresh full suite independently executed as
+shown above; the full PDF manual and retained compiler hardening were verified.
+Current check evidence: [00check.log](/home/juhur/.moai/worktrees/projects/richR/richr-release-021/.moai/reports/release-021/00check.log)
+and [build.log](/home/juhur/.moai/worktrees/projects/richR/richr-release-021/.moai/reports/release-021/build.log).
+Publication, branch promotion and upstream-PR publication remain pending.
+
+The built source asset `richR_0.2.1.tar.gz` is 3,743,210 bytes and has SHA256
+`69342d3f790e4e9c58ddc6cf7432c9094394791741326f6f1022b63fef11ddab`.
+The checksum was recomputed against the actual retained file and matches
+[asset-provenance.json](/home/juhur/.moai/worktrees/projects/richR/richr-release-021/.moai/reports/release-021/asset-provenance.json)
+and [SHA256SUMS](/home/juhur/.moai/worktrees/projects/richR/richr-release-021/.moai/reports/release-021/assets/SHA256SUMS).
+The asset was built from candidate `b19c2785`; the parent will verify package-input
+identity with the final release commit before tagging/publication.
+
+All 305 runtime/native/test/help/data/inst/vignette/NAMESPACE files were compared
+with prior runtime commit `7df78b0` and match byte-for-byte. Its 89.9401585%
+line-coverage measurement is prior evidence, not a fresh 0.2.1 covr execution.
 
 ## Verification attribution
 
@@ -47,9 +86,25 @@ Authoritative previous reports remain in the prior isolated worktree:
 - [Prior full runtime QA](/home/juhur/.moai/worktrees/projects/richR/richr020-review-fix/.moai/reports/review-020/qa/final-qa.md)
 - [Prior standard package check](/home/juhur/.moai/worktrees/projects/richR/richr020-review-fix/.moai/reports/review-020/qa/standard-check-30e557929514/standard-check.md)
 
-Fresh 0.2.1 QA, asset hashes, publication receipts, remote branch refs and the
-upstream PR URL will be recorded under `.moai/reports/release-021/` as observed.
-Release-note draft: `.moai/reports/release-021/release-notes.md`.
+Fresh 0.2.1 QA and asset hashes are recorded under `.moai/reports/release-021/`.
+Publication receipts, verified remote refs and the upstream PR URL will be added
+there only after the corresponding operations succeed. Validated release-note
+body: `.moai/reports/release-021/release-notes.md`.
+
+## Upstream contribution prepared
+
+Prepared upstream head: `dca5857186809d7f82637e75ae075c392152efd3`, based on
+`cc30f6c4e9fe27f181f3194fbc0cffc0b55a6022`. The exact four-file scope is
+`src/name_table.cpp`, `src/reverse_list.cpp`, `src/sf.cpp`, and
+`tests/testthat/test-review-native-encoding.R`. It ports reviewed native patch
+`957de6c` without fork-wide APIs, metadata, data catalogs or unrelated changes.
+The upstream baseline reproduced 12 failures and one error; the fresh patched
+suite passed 27 focused assertions and 109 existing control assertions. These
+are separately measured upstream results, not the 0.2.1 release suite.
+
+Authoritative upstream provenance remains in the separate worktree:
+[upstream-native-provenance.json](/home/juhur/.moai/worktrees/projects/richR/richr-upstream-021/.moai/reports/release-021/upstream-native-provenance.json).
+No upstream PR URL/publication or maintainer acceptance is claimed yet.
 
 ## Historical review handoff
 

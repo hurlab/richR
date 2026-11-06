@@ -8,14 +8,33 @@ starting from reviewed source `fa383355357ee21b21707c1e35abe79520b4b21e`.
   badge/install references. Preserved the entire published 0.2.0 NEWS suffix.
 - README records GitHub distribution and Bioconductor as the only future
   package-repository target; no CRAN or Bioconductor submission is attempted.
-- Preserved all runtime/native/test/help code. Fresh release QA is pending;
-  prior 6,369 passes and 89.9401585% coverage remain attributed to development
-  runtime 7df78b0. Prior standard check 0E/0W/0N remains attributed to 30e5579.
-- Existing GitHub default branch is stable; branch advancement and release
-  publication await parent verification. Upstream contribution is independently
-  scoped against existing open PRs.
-- Draft release notes and evidence are under `.moai/reports/release-021/`.
-  No commit, push, release publication or branch promotion is claimed here.
+- Preserved all runtime/native/test/help code. Fresh candidate `b19c2785`
+  installation and full suite exited 0 as version 0.2.1 from the verified private
+  library: 59 files/411 blocks/6,369 passes/0 failures/0 errors/3 live-provider
+  skips/84 existing classified warnings. Commands, provenance and raw suite log
+  are retained in this release worktree's `.moai/reports/release-021/`.
+- All 305 runtime/native/test/help/data/inst/vignette/NAMESPACE files match
+  development runtime 7df78b0. Its 89.9401585% line coverage is prior evidence,
+  not a new 0.2.1 covr run. Prior standard check 0E/0W/0N remains attributed to
+  30e5579. The fresh candidate's own build/check subsequently exited 0 with
+  `Status: OK` (0 ERROR / 0 WARNING / 0 NOTE), full PDF manual and retained
+  hardening checks. `R CMD check --no-tests` is explicit beside the independently
+  executed full installed suite.
+- Actual source asset: richR_0.2.1.tar.gz, 3,743,210 bytes, SHA256
+  69342d3f790e4e9c58ddc6cf7432c9094394791741326f6f1022b63fef11ddab.
+  File size/checksum were recomputed and match asset-provenance.json and the
+  retained SHA256SUMS. Validated release notes include these source assets.
+- Existing GitHub default branch is stable; final release commit, publication
+  audit, tag, asset upload and branch promotion await the parent's operations
+  and receipts. The published 0.2.0 tag/assets remain immutable.
+- Prepared upstream head dca5857186809d7f82637e75ae075c392152efd3 ports only
+  reviewed native UTF-8 identity patch 957de6c plus regression (four files) onto
+  upstream cc30f6c. Actual upstream RED: 12 failures/1 error; GREEN: 27 focused
+  plus 109 existing assertions. PR publication is pending; existing proposals
+  remain separately scoped.
+- Release notes and evidence are under `.moai/reports/release-021/`.
+  No push, release publication, branch promotion or upstream-PR publication is
+  claimed by this documentation update.
 
 ## Earlier session history
 

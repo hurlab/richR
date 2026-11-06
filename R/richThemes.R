@@ -416,3 +416,254 @@ richThemes <- function(x, cutoff = 0.5) {
     rank_score = as.numeric(unlist(lapply(inputs, unname), use.names = FALSE))
   ))
 }
+
+#' Show the evidence genes of themes per group, with input statistics
+#'
+#' Drills down from themes made by \code{\link{richThemes}} to their genes:
+#' one row per theme, evidence gene and group, saying which members list the
+#' gene in that group, what the theme's status is in that group, and the
+#' gene's statistics when they are supplied. Statistics are only joined; no
+#' similarity, overlap test, score or difference between groups is computed.
+#'
+#' The genes of a theme are every evidence gene of any member in any group:
+#' ORA overlap or GSEA leading-edge genes of reported and of tested but not
+#' reported records (so there may be more genes than the theme's
+#' \code{n_similarity_genes}, which counts reported records only). Evidence
+#' genes are the genes behind a term's result, \strong{not drivers} shown to
+#' cause anything. Grouping terms into themes is \strong{not a statistical
+#' test} and \strong{no theme-level p-value exists}; related or overlapping
+#' gene sets are \strong{not independent replications}, so the number of
+#' members listing a gene is not a measure of evidence. See
+#' \code{\link{richThemes}}.
+#'
+#' @section Value:
+#' A data.frame with one row per theme, gene and group, ordered by theme (as
+#' requested), gene (radix order) and group (input order), with the columns:
+#' \describe{
+#'   \item{\code{theme_id}, \code{label}}{the theme and its label as
+#'     currently stored in \code{themes$themes}, so an edited label shows;}
+#'   \item{\code{gene}}{the evidence gene;}
+#'   \item{\code{group}}{a factor with the groups in input order;}
+#'   \item{\code{evidence_members}}{the members whose record in this group
+#'     lists the gene, comma-joined in radix order, \code{""} when none; and
+#'     \code{n_evidence_members}, their number. A theme seen in two groups is
+#'     supported by the same genes only where both groups list them;}
+#'   \item{\code{group_status}}{the theme's status in the group, first match
+#'     wins: \code{"failed"} (a \code{NULL} group), \code{"reported"} (a
+#'     member is reported), \code{"tested_only"} (a member is tested but not
+#'     reported), \code{"unavailable"} (a member's state cannot be known),
+#'     \code{"absent"} otherwise;}
+#'   \item{the statistic columns}{the further columns of \code{stats}, joined
+#'     by exact gene string; for GSEA without \code{stats}, \code{rank_score},
+#'     the group's ranked input; for ORA without \code{stats}, none;}
+#'   \item{\code{stat_status}}{why a statistic is or is not there, first match
+#'     wins: \code{"group_failed"} (a \code{NULL} group, even when
+#'     \code{stats} has an entry for it), \code{"no_statistics_for_group"},
+#'     \code{"joined"}, \code{"gene_not_in_statistics"}. A statistic that is
+#'     not joined is \code{NA}, never \code{0}.}
+#' }
+#'
+#' @param themes a \code{richThemes} object.
+#' @param theme \code{NULL} for every theme, or the \code{theme_id} values to
+#'   show.
+#' @param stats \code{NULL}, or a named list of data frames, one per group
+#'   (names among the object's groups; groups may be left out). Each needs a
+#'   character column \code{gene} listing each gene once and at least one
+#'   further column; every entry has the same further columns, and none may
+#'   be named like an output column (\code{theme_id}, \code{label},
+#'   \code{group}, \code{evidence_members}, \code{n_evidence_members},
+#'   \code{group_status}, \code{stat_status}). Gene identifiers are not
+#'   mapped: use the identifiers of the results.
+#' @return a data.frame, described in the Value section.
+#' @seealso \code{\link{richThemes}}
+#' @examples
+#' \dontrun{
+#' th <- richThemes(list(A = resA, B = resB))
+#' fc <- list(A = data.frame(gene = names(fcA), log2FC = fcA),
+#'            B = data.frame(gene = names(fcB), log2FC = fcB))
+#' themeGenes(th, "theme_001", stats = fc)
+#' }
+#' @export
+themeGenes <- function(themes, theme = NULL, stats = NULL) {
+  if (!inherits(themes, "richThemes")) {
+    stop("themeGenes: themes must be a richThemes object, as returned by ",
+         "richThemes().", call. = FALSE)
+  }
+  all_ids <- themes$themes$theme_id
+  if (is.null(theme)) {
+    theme <- all_ids
+  } else {
+    bad <- setdiff(as.character(theme), all_ids)
+    if (!is.character(theme) || length(bad)) {
+      stop("themeGenes: theme ",
+           .bind_quote(if (length(bad)) bad else as.character(theme)),
+           " is not a theme_id of themes.", call. = FALSE)
+    }
+    theme <- unique(theme)
+  }
+  groups <- themes$settings$groups
+  id <- names(themes$genes)[[3L]]
+  scols <- character(0)
+  template <- NULL
+  if (!is.null(stats)) {
+    scols <- .theme_check_stats(stats, groups)
+    template <- stats[[1L]][0L, scols, drop = FALSE]
+  } else if (identical(id, "pathway")) {
+    scols <- "rank_score"
+    rk <- themes$ranking
+    stats <- lapply(stats::setNames(nm = unique(as.character(rk$group))),
+                    function(g) {
+                      sel <- as.character(rk$group) == g
+                      data.frame(gene = rk$gene[sel],
+                                 rank_score = rk$rank_score[sel],
+                                 stringsAsFactors = FALSE)
+                    })
+    template <- data.frame(rank_score = numeric(0))
+  }
+
+  parts <- lapply(theme, .theme_gene_rows, themes = themes, groups = groups,
+                  id = id, stats = stats, scols = scols, template = template)
+  col <- function(name) do.call(c, lapply(parts, `[[`, name))
+  out <- list(
+    theme_id = as.character(col("theme_id")),
+    label = as.character(col("label")),
+    gene = as.character(col("gene")),
+    group = factor(groups[as.integer(col("group"))], levels = groups),
+    evidence_members = as.character(col("evidence_members")),
+    n_evidence_members = as.integer(col("n_evidence_members")),
+    group_status = as.character(col("group_status"))
+  )
+  for (cc in scols) {
+    v <- col(cc)
+    out[[cc]] <- if (is.null(v)) template[[cc]] else v
+  }
+  out$stat_status <- as.character(col("stat_status"))
+  .theme_frame(out)
+}
+
+#' Validate themeGenes() statistics; returns the further column names
+#' @keywords internal
+#' @noRd
+.theme_check_stats <- function(stats, groups) {
+  nm <- names(stats)
+  if (!is.list(stats) || is.data.frame(stats) || !length(stats) || is.null(nm) ||
+      anyNA(nm) || any(!nzchar(trimws(nm)))) {
+    stop("themeGenes: stats must be NULL or a named list of data frames, ",
+         "one per group.", call. = FALSE)
+  }
+  dup <- unique(nm[duplicated(nm)])
+  if (length(dup)) {
+    stop("themeGenes: stats names group(s) ", .bind_quote(dup),
+         " more than once.", call. = FALSE)
+  }
+  unknown <- setdiff(nm, groups)
+  if (length(unknown)) {
+    stop("themeGenes: stats names group(s) ", .bind_quote(unknown),
+         " that themes does not hold (groups: ", .bind_quote(groups), ").",
+         call. = FALSE)
+  }
+  reserved <- c("theme_id", "label", "group", "evidence_members",
+                "n_evidence_members", "group_status", "stat_status")
+  further <- list()
+  for (g in nm) {
+    d <- stats[[g]]
+    if (!is.data.frame(d)) {
+      stop("themeGenes: stats entry '", g, "' must be a data frame.",
+           call. = FALSE)
+    }
+    if (!"gene" %in% names(d) || !is.character(d$gene)) {
+      stop("themeGenes: stats entry '", g, "' needs a character column ",
+           "'gene'.", call. = FALSE)
+    }
+    dg <- unique(d$gene[duplicated(d$gene)])
+    if (length(dg)) {
+      stop("themeGenes: stats entry '", g, "' lists gene(s) ", .bind_quote(dg),
+           " more than once.", call. = FALSE)
+    }
+    f <- setdiff(names(d), "gene")
+    if (!length(f)) {
+      stop("themeGenes: stats entry '", g, "' has no column besides 'gene'.",
+           call. = FALSE)
+    }
+    clash <- intersect(f, reserved)
+    if (length(clash)) {
+      stop("themeGenes: stats entry '", g, "' column(s) ", .bind_quote(clash),
+           " clash with the columns themeGenes() returns.", call. = FALSE)
+    }
+    further[[g]] <- f
+  }
+  differ <- setdiff(unique(unlist(further, use.names = FALSE)),
+                    Reduce(intersect, further))
+  if (length(differ)) {
+    stop("themeGenes: stats entries differ in their column(s) ",
+         .bind_quote(differ), "; every entry needs the same columns.",
+         call. = FALSE)
+  }
+  further[[1L]]
+}
+
+#' The themeGenes() rows of one theme, as a list of columns ordered by gene
+#' (radix) and group (input order)
+#' @keywords internal
+#' @noRd
+.theme_gene_rows <- function(t, themes, groups, id, stats, scols, template) {
+  gm <- themes$genes[themes$genes$theme_id == t, , drop = FALSE]
+  genes <- sort(unique(as.character(gm$gene)), method = "radix")
+  ng <- length(groups)
+  nu <- length(genes)
+  mm <- themes$members[themes$members$theme_id == t, , drop = FALSE]
+  mgroup <- as.character(mm$group)
+  status <- vapply(groups, function(g) {
+    st <- mm$state[mgroup == g]
+    if (any(mm$execution[mgroup == g] %in% "failed")) return("failed")
+    if (any(st %in% "reported")) return("reported")
+    if (any(st %in% "tested_not_reported")) return("tested_only")
+    if (any(st %in% "unavailable")) return("unavailable")
+    "absent"
+  }, character(1), USE.NAMES = FALSE)
+
+  # Built group by group, then reordered to gene, group.
+  ev <- lapply(groups, function(g) {
+    sel <- as.character(gm$group) == g
+    split(as.character(gm[[id]][sel]), factor(gm$gene[sel], levels = genes))
+  })
+  em <- lapply(ev, vapply, function(v) {
+    paste(sort(unique(v), method = "radix"), collapse = ",")
+  }, character(1), USE.NAMES = FALSE)
+  nem <- lapply(ev, vapply, function(v) length(unique(v)), integer(1),
+                USE.NAMES = FALSE)
+  sstat <- vector("list", ng)
+  svals <- lapply(stats::setNames(nm = scols), function(cc) vector("list", ng))
+  for (k in seq_len(ng)) {
+    d <- if (!is.null(stats)) stats[[groups[[k]]]] else NULL
+    failed <- status[[k]] == "failed"
+    pos <- if (is.null(d) || failed) rep(NA_integer_, nu) else match(genes, d$gene)
+    sstat[[k]] <- if (failed) {
+      rep("group_failed", nu)
+    } else if (is.null(d)) {
+      rep("no_statistics_for_group", nu)
+    } else {
+      ifelse(is.na(pos), "gene_not_in_statistics", "joined")
+    }
+    for (cc in scols) {
+      v <- template[[cc]][rep(NA_integer_, nu)]
+      take <- !is.na(pos)
+      if (any(take)) v[take] <- d[[cc]][pos[take]]
+      svals[[cc]][[k]] <- v
+    }
+  }
+  ord <- order(rep(seq_len(nu), times = ng), rep(seq_len(ng), each = nu))
+  label <- themes$themes$label[match(t, themes$themes$theme_id)]
+  out <- list(
+    theme_id = rep(t, nu * ng),
+    label = rep(label, nu * ng),
+    gene = rep(genes, times = ng)[ord],
+    group = rep(seq_len(ng), each = nu)[ord],
+    evidence_members = unlist(em, use.names = FALSE)[ord],
+    n_evidence_members = unlist(nem, use.names = FALSE)[ord],
+    group_status = rep(status, each = nu)[ord]
+  )
+  for (cc in scols) out[[cc]] <- do.call(c, svals[[cc]])[ord]
+  out$stat_status <- as.character(unlist(sstat, use.names = FALSE))[ord]
+  out
+}

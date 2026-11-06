@@ -1,11 +1,11 @@
 # richR Updates
 
-## Version 0.2.0 (unreleased)
+## Version 0.2.0 (2026-11-06)
 
 ### Significance cutoffs (changes reported results)
 
-- Every function that reports or plots enrichment results now applies one
-  significance rule: a term is kept when its raw p-value is at most `pvalue`
+- Significance filtering now uses one rule: a term is kept when its raw
+  p-value is at most `pvalue`
   **and**, unless `padj` is `NULL`, its adjusted p-value is at most `padj`.
   Both comparisons use `<=`, and a row with a missing p-value (or a missing
   adjusted p-value while `padj` is set) is dropped. In 0.1.x the comparisons
@@ -16,7 +16,7 @@
   `filterPathways()`, `richGSEAcurve()` and the plot functions.
 - The defaults are now `pvalue = 0.05` and `padj = 0.05` everywhere,
   including the plot functions; in 0.1.x `padj` defaulted to `NULL`. A
-  default call therefore reports fewer terms than in 0.1.5, and on random or
+  default call can therefore report fewer terms than in 0.1.5, and on random or
   weak input it can report none. To get the old behaviour back:
   - `padj = NULL` filters on the raw p-value only, as the 0.1.x defaults did;
   - `pvalue = 1` filters on the adjusted p-value alone, as a 0.1.x call with
@@ -244,8 +244,9 @@
 
 ### Tested terms, comparing and storing results
 
-`@result` and `compareResult()` are unchanged: every entry point reports the
-same rows, columns, values and order as before, and `compareResult()`,
+The tested-table additions below do not change `@result` or
+`compareResult()`: their reporting still follows the analysis and cutoff
+rules described above. `compareResult()`,
 `richCompareDot()`, `batchEnrich()` and the plots do not read the new tested
 table.
 
@@ -552,8 +553,8 @@ No existing function changes.
   options, the groups in input order, the theme cutoff, the sensitivity
   design (level names and sizes, not the background identifiers), what each
   figure draws, every table's column classes, factor levels and row names,
-  and the SHA-256 of every saved file, so each table reads back identical to
-  its source.
+  and the SHA-256 of the files under `results/` and `tables/`, plus `rerun.R`,
+  so each table reads back identical to its source.
 - `report.html` is one self-contained file without scripts or external
   resources, with every text escaped. Per group it shows the
   `enrichmentInfo()` record (long values summarised by their size), every
@@ -570,9 +571,10 @@ No existing function changes.
   `Rscript rerun.R <new folder>`, run inside the report folder, verifies the
   checksums, reads the saved results back, rebuilds the themes and stops if
   any rebuilt theme table differs from the saved one; on the same
-  installation every saved file is byte-identical and `report.html` and
-  `manifest.json` differ only by the generation time.
-- Every check runs before `path` is created or changed. An existing
+  installation the files under `results/` and `tables/`, plus `rerun.R`, are
+  byte-identical and `report.html` and `manifest.json` differ only by the
+  generation time. Changes to `manifest.json` itself are not detected.
+- Input validation completes before `path` is created or changed. An existing
   non-empty folder is left unchanged unless `overwrite = TRUE` and it holds a
   report, in which case only the report's own files and folders are replaced.
 - A term significant in one group and not in another is not evidence of a
@@ -720,8 +722,8 @@ output is as before. See `?richR_plot_selection`.
 ### Internal changes
 
 These changes do not alter results or the set of exported functions (the
-four new exports of 0.2.0 are described under "Tested terms, comparing and
-storing results"), and the only characterization snapshot they changed is
+new exports of 0.2.0 are described in their respective sections above), and
+the only characterization snapshot they changed is
 the `detail()` bug fix above. (The GSEA, `compareGSEA()`, `enrich()` and
 `compareResult()` snapshots were later re-pinned for the behaviour changes
 described in the sections above.)

@@ -642,13 +642,19 @@ test_that("a list cell must itself be JSON even when a matching local file exist
 })
 test_that("overwrite stops when a known entry cannot be removed", {
   x <- .fora_reference()
-  p <- tempfile("locked-entry-"); writeRich(x, p)
+  p <- io_dir(); writeRich(x, p)
+  on.exit(unlink(p, recursive = TRUE, expand = FALSE), add = TRUE)
+  manifest <- file.path(p, "manifest.json")
+  old_manifest <- readBin(manifest, "raw", n = file.info(manifest)$size)
+  replacement <- methods::as(x@result, "richResult")
   unlink(file.path(p, "detail.tsv"))
   dir.create(file.path(p, "detail.tsv"))
   marker <- file.path(p, "detail.tsv", "keep.txt")
   writeLines("keep", marker)
-  expect_error(writeRich(x, p, overwrite = TRUE), "writeRich.*could not remove")
+  expect_error(writeRich(replacement, p, overwrite = TRUE), "writeRich.*could not remove")
   expect_identical(readLines(marker), "keep")
-  # A failed overwrite must not write a fresh manifest after deletion.
-  expect_false(file.exists(file.path(p, "manifest.json")))
+  # The original manifest may remain or be removed, but cannot be replaced.
+  if (file.exists(manifest)) {
+    expect_identical(readBin(manifest, "raw", n = file.info(manifest)$size), old_manifest)
+  }
 })

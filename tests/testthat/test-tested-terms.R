@@ -146,3 +146,53 @@ test_that("GSEA with KEGG = TRUE records the KEGG level columns in the tested ta
   expect_true(all(c("Level3", "Level2", "Level1") %in% names(tt)))
   expect_false(anyNA(tt$Level1))
 })
+
+# ---- derived views (AC-005 verb leg) -------------------------------------------
+
+test_that("dplyr verbs on a richResult change @result only and keep the analysis record", {
+  # Catches a verb that also prunes the tested table (losing the "tested, not
+  # significant" record) or rewrites the analysis options in the metadata.
+  r <- .fora_reference(pvalue = 1)
+  expect_gt(nrow(r@result), 1)
+  tested <- testedTerms(r)
+  info <- enrichmentInfo(r)
+  plain <- r@result
+  views <- list(
+    filter = list(dplyr::filter(r, Annot != "T1"),
+                  dplyr::filter(plain, Annot != "T1")),
+    arrange = list(dplyr::arrange(r, dplyr::desc(Pvalue)),
+                   dplyr::arrange(plain, dplyr::desc(Pvalue))),
+    slice = list(dplyr::slice(r, 0), dplyr::slice(plain, 0)),
+    mutate = list(dplyr::mutate(r, Pvalue = 1), dplyr::mutate(plain, Pvalue = 1)),
+    select = list(dplyr::select(r, Annot, Term, Pvalue),
+                  dplyr::select(plain, Annot, Term, Pvalue)),
+    rename = list(dplyr::rename(r, P = Pvalue), dplyr::rename(plain, P = Pvalue)),
+    # The method's .drop default is FALSE.
+    group_by = list(dplyr::group_by(r, Term),
+                    dplyr::group_by(plain, Term, .drop = FALSE))
+  )
+  for (verb in names(views)) {
+    v <- views[[verb]][[1]]
+    expect_true(methods::is(v, "richResult"), info = verb)
+    expect_identical(v@result, views[[verb]][[2]], info = verb)
+    expect_identical(testedTerms(v), tested, info = verb)
+    expect_identical(enrichmentInfo(v), info, info = verb)
+  }
+  # The verbs did change @result, so the tested table is not just a copy of it.
+  expect_identical(nrow(views$filter[[1]]@result), nrow(plain) - 1L)
+  expect_true(inherits(views$group_by[[1]]@result, "grouped_df"))
+})
+
+test_that("dplyr verbs on a GSEAResult change @result only and keep the analysis record", {
+  skip_if_not_installed("fgsea")
+  g <- .fgsea_run(minSize = 3, maxSize = 20, pvalue = 1, padj = NULL)
+  expect_gt(nrow(g@result), 1)
+  tested <- testedTerms(g)
+  info <- enrichmentInfo(g)
+  for (v in list(dplyr::filter(g, pval <= 0.5), dplyr::slice(g, 1),
+                 dplyr::group_by(g, Term))) {
+    expect_true(methods::is(v, "GSEAResult"))
+    expect_identical(testedTerms(v), tested)
+    expect_identical(enrichmentInfo(v), info)
+  }
+})

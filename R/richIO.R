@@ -49,6 +49,8 @@ writeRich <- function(x, path, overwrite = FALSE) {
   if (!is.logical(overwrite) || length(overwrite) != 1L || is.na(overwrite)) {
     stop("writeRich(): `overwrite` must be TRUE or FALSE.", call. = FALSE)
   }
+  supplied_path <- path
+  path <- path.expand(path)
   ## Everything is checked and encoded in memory before the first file
   ## operation, so a refused call leaves the disk as it was.
   files <- .rich_io_encode(x)
@@ -66,7 +68,7 @@ writeRich <- function(x, path, overwrite = FALSE) {
   if (!dir.exists(path)) dir.create(path, recursive = TRUE)
   ## The manifest goes last: a folder without one is never read as a result.
   for (f in names(files)) .rich_io_write_lines(files[[f]], file.path(path, f))
-  invisible(path)
+  invisible(supplied_path)
 }
 
 ## The file names writeRich() writes; the only files overwrite = TRUE removes.

@@ -65,6 +65,7 @@ Collate:
     compareResult.R
     batch.R
     enrichmentInfo.R
+    tested.R
     accessors.R
     dplyr-methods.R
     theme.R

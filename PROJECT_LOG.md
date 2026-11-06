@@ -1,4 +1,346 @@
-# PROJECT_LOG.md — richR
+# PROJECT_LOG.md (active) — richR
+Historical session entries are preserved verbatim. Newest first.
+
+## Session 2026-11-06 — Active autonomous post-release review and consumer verification
+
+- New operator-authorized task after completed 0.2.0 publication: autonomous
+  Hur Harness code review and fix; then detailed richStudio compatibility checks.
+- Isolated branch `WT-review-fix-020`, release base `5fdadf3`. Twelve reproduced
+  findings grouped into SPEC-RICHR-010 through 015; only shared-file dependency
+  010 → 014 (`R/ggnetwork.R`). Corrected 014 plan passed focused re-audit.
+- Independent Hur per-fix reviews approve 010 at `12829ba`, 011 at `957de6c`,
+  012 at `c96524d`, revised 013 at `a42a3ce`, 014 at `b298d10`, and 015 at
+  `528e528`; all six are merged into the integration branch. The 013 revision
+  restores the normal console layout; its earlier NEEDS REVISION remains historical.
+  The 014 reviewer source-equivalence check passed and six scoped files produced
+  652 assertions, 0 failures/errors/warnings/skips. These are scoped approvals,
+  not final integrated acceptance; final QA/security/audit gates remain active.
+- Fresh current-run QA baseline: 5,964 passes, 0 failures, 0 errors, 3 skips,
+  44 warnings. Full-package line coverage 5479/6134 = 89.32181%; expression
+  coverage 3697/4225 = 87.50296%. R 4.6.2 Linux, fresh release installation.
+- Security reproduced malformed-manifest coercion and public HTML-save
+  forwarding defects; bounded tracked-text secret scan 301 files/0 candidates,
+  AST 43 R files, OSV 123 package queries/0 matches with known-positive control.
+- Three consumer H1–H7 reports and background capability probe distinguish
+  real analysis from stored-table filtering, cache-sensitive annotation identity,
+  reference catalogs from species membership, and producer from exporter versions.
+  No sibling source/dependency pin/deployed application was changed.
+- Documentation sets development version 0.2.0.9000 and starts unreleased NEWS.
+  Published v0.2.0, its NEWS section/assets, and README release pin stay unchanged.
+- Detailed evidence and gaps: PROJECT_HANDOFF.md and ignored
+  `.moai/reports/review-020/consumer/richStudio-handoff.md`.
+- Final integrated QA/security/audit, SPEC close and parent-controlled integration
+  remain pending. No new release/tag/stable promotion is authorized. This entry
+  does not reopen the historical release work or claim this review completed.
+
+---
+
+# PROJECT_LOG.md (active) — richR
+Historical session entries are preserved verbatim. Newest first.
+
+## Session Index (active, newest first)
+- 2026-11-06 — richR 0.2.0 completed and published
+- 2026-10-28 21:47 CDT — Reboot recovery, upstream merge confirmed, richR 2.0 proposal handed to Claude
+- 2026-10-20 16:39 CDT — Closure clarified: nothing queued to resume
+- 2026-10-20 14:22 CDT — Reliability releases, consumer adoption and upstream delivery completed
+- 2026-10-17 CDT — Fork sync and harness cleanup reconciled
+- 2026-04-16 CDT — PR #9 opened, ggUpSet retired, hurlab 0.1.4 staged
+- 2026-04-15 CDT — Upstream sync after PR #6/#8 merges
+- 2026-03-28 16:20 CDT
+
+---
+
+## Session 2026-11-06 — richR 0.2.0 completed and published
+
+- Resumed after Claude Code CLI usage limit. Read checkpoint, reconciled two worktrees,
+  and obtained resume confirmation. Operator then delegated autonomous best technical
+  decisions and completion of 0.2.0 while leaving for sleep; previous per-action
+  confirmation requests were superseded by this explicit delegation.
+- Independently reproduced and fixed SPEC-009 read/overwrite/status findings, including
+  the adjacent list-column JSON external-file substitution and native tilde-home
+  overwrite regression. Kept unavailable distinct from undetermined with explicit
+  sensitivity-count documentation. Preserved the original audit and amended SPEC scope.
+- Preserved and completed M6.3 partial tests; fixed literal overwrite safety, graphics
+  session independence, full theme-settings validation, comparison-key collisions,
+  missing adjusted-p columns, and missing plotting-only columns. The latter omit the
+  figure with a precise caption while preserving original data; no statistics invented.
+- Integrated SPEC-009 through hurlab PR #14 (7c101a4) and SPEC-008 through hurlab PR #15
+  (5fdadf3). Both local ignored SPECs are completed after independent acceptance:
+  SPEC-009 PASS99 on b411dc9; SPEC-008 PASS98.4 on bdac831.
+- Final tested source bdac83135f2f588ff4c9faba0d707803f9ec9e65, tree
+  d180faed8bd8d0c6d7b4bacb26d4108153f378bb: fresh installed suite: 52 files / 377 blocks /
+  5,964 passes / 0 failures / 0 errors / 3 live-provider skips, with 44 alias warnings. Completed
+  R CMD check --as-cran: 0 errors, 1 WARNING, 3 NOTEs. Warning: missing inconsolata.sty;
+  notes: compiler flag, absent HTML Tidy, manual TeX detritus. Supplemental guard/rerun
+  verification: 43 successes; report-module scoped line coverage: 538/583 = 92.28%.
+- Published v0.2.0 at 2026-11-06T08:27:15Z; master/stable/tag peel all
+  5fdadf3cb8c75fc8b2b5682d1c9db8eab9ebaac1, whose entire tree equals tested bdac831.
+  No separate postmerge test run claimed. Tarball: 3,733,230 bytes; SHA256
+  f537c9ebb7d4b409c8f22474394523585a0bb6ef0ec305fa7083ab4fd62b0c01.
+  Published tarball and SHA256SUMS re-downloaded and verified by the orchestrator.
+- GitHub Actions disabled; native Windows/macOS, live-provider execution, global
+  coverage, dedicated LSP/lintr and a fresh vulnerability-database scan remain gaps.
+  Auditors inspected parent-executed raw evidence because sandbox R execution failed.
+- Shared primary branch/product files retained: upstream-pr/richr-v0.1.3@eb4c9da, existing .gitignore
+  modification/Rplots.pdf preserved; measured remote divergence: 155 left / 3 right is the
+  deliberately retained historical branch. No source/harness/session commit there.
+- Durable release receipt and verification:
+  /home/juhur/.moai/worktrees/projects/richR/spec-richr-008/.moai/reports/release-0.2.0/.
+  SPEC-009 evidence: /home/juhur/.moai/worktrees/projects/richR/spec-richr-009/.moai/reports/SPEC-RICHR-009/.
+- Session handoff files updated locally; completed SPEC-009 evidence was also copied to
+  ignored primary .moai. The isolated worktree links remain authoritative.
+- Completed: requested 0.2.0 implementation, integration, release, and session handoff.
+  No implementation remains queued. Optional upstream submissions/richStudio pin update
+  are future operator decisions. No worktree cleanup, upstream PR or consumer deploy.
+- Supersedes the 2026-10-28 planning-only handoff and interrupted NEXT_SESSION checkpoint.
+  Earlier log entries below remain verbatim historical records, not current work orders.
+
+---
+
+## Session 2026-10-28 21:47 CDT — Reboot recovery, upstream merge confirmed, richR 2.0 proposal handed to Claude
+
+- Coding CLI used: Codex CLI. Phases: recovery verification, read-only source/tool
+  research, product proposal documentation and session handoff.
+- Reboot assessment: primary checkout plus all ten worktrees remained present
+  and clean. Fork master/tag and contribution branch heads matched the saved
+  commits; HANDOFF/LOG/NEXT_SESSION and project memory survived.
+- Six referenced upstream /tmp CI logs were missing. Downloaded nine retained
+  GitHub job logs (producer postmerge and both upstream scopes), checked the
+  historical heads/conclusions/markers, read back bytes and SHA256 manifests,
+  and persisted them in the three scope report ci-logs folders. Updated upstream
+  submission receipts to those durable paths. No product tests were rerun.
+- GitHub PR metadata identified the author of PRs #11–#14 as windysky/Junguk Hur.
+  #12 is MERGED, merge cc30f6c4e9fe27f181f3194fbc0cffc0b55a6022; #11/#13/#14
+  remain OPEN. Corrected the earlier all-open snapshot; no branch sync or merge
+  was performed by this session and no current integrated CI PASS is inferred.
+- Inspected hurlab source9be43ab (0.1.5) and official clusterProfiler/decoupleR/
+  ReactomeGSA descriptions for a proposed product direction. Existing engines,
+  classes, batch/comparison, clustering and provenance are reuse foundations.
+- User requested a detailed document for continuation in Claude. Created
+  RICHR_2_0_PROPOSAL.md: user journeys, six capabilities, first vertical slice,
+  input/mapping/data model sketches, statistical invariants, theme/gene evidence,
+  stability design, project boundaries, compatibility, draft acceptance targets,
+  milestone gates, open decisions, sources and receiving-Claude instructions.
+- Decision: distinguish this new proposed planning track from completed 0.1.5
+  work. No approval of all features, final SPEC, implementation, rewrite, release
+  number change, new package, upstream integration or deployment is implied.
+- Next: receiving Claude reviews the proposal and prepares an MVP/SPEC planning
+  draft after resume confirmation; finalize scope and independent plan review
+  before Luna High implementation. No automatic PR polling is scheduled.
+- Files changed: local proposal/session docs and memory; recovered CI evidence
+  and receipt paths; existing wiki installed-regression page/log. No tracked
+  product source or .gitignore changed, and no richR commit/push was made.
+- Verification: document read-back/link/structure checks and closeout scripts.
+  Historical logs preserved; no new product/runtime/performance validation.
+- 💡 Idea: richR 2.0 as a study-level enrichment interpretation workflow:
+  multi-contrast evidence, reversible themes, stability and reproducible export.
+  Detailed proposal saved locally; no Atlas Capture/inbox/database write.
+
+### Superseded saved prompt — historical only; do not execute
+
+````markdown
+# Next Session — richR completed
+
+Last updated: 2026-10-20 16:39 CDT.
+
+There is no pending implementation or scheduled follow-up. When the user says
+"resume", "start", or "continue where we left off", read this file and give a
+ONE-LINE completed-state summary. CONFIRM before executing any actionable new
+request (never auto-run), verify its preconditions mechanically and surface drift.
+Do not start PR polling or reopen completed work. `ultrathink.` cannot fire from
+reading a file, so self-apply maximum reasoning effort.
+
+## THE SAVED PROMPT (execute verbatim)
+
+```text
+ultrathink. richR completed-session acknowledgement entering.
+applied lessons: PROJECT_HANDOFF.md; memory/project_richr_fork_upstream_state.md
+source_session_id: 01a14c61-7853-7562-bbd8-6789453ce4e5
+
+Preconditions:
+1) rg -n "No active development work" PROJECT_HANDOFF.md → completed-state note.
+
+Run: State that no work is pending to resume and await an explicit new request. Do not initiate PR polling, implementation, testing or deployment.
+```
+````
+
+---
+
+## Session 2026-10-20 16:39 CDT — Closure clarified: nothing queued to resume
+
+- Coding CLI used: Codex CLI. Phase: session-record clarification only.
+- Completed: user confirmed implementation, tests, release and PR delivery are
+  finished; upstream review is external, not a queued task for this session.
+- Changed: HANDOFF outstanding/restart sections, saved NEXT_SESSION prompt and
+  project memory. No product implementation, release, deployment, PR mutation,
+  background polling or new tests were performed during this follow-up.
+- Decision: resume acknowledges completion. New work starts only for an explicit
+  request or concrete upstream feedback; do not reopen completed items.
+- Verification: local record read-back and deterministic closeout scripts only.
+  Prior technical evidence remains attributed to the 14:22 closeout baseline.
+- No additional cross-project lesson or new standalone project idea.
+
+### Superseded resume prompt — historical only; do not execute
+
+````markdown
+# Next Session — richR
+
+Last updated: 2026-10-20 14:22 CDT.
+
+When the user says "resume", "start", or "continue where we left off", read this
+file and give a ONE-LINE summary. CONFIRM the saved next action before executing
+(never auto-run), then mechanically verify each precondition and surface drift.
+Do not reset any branch to force a recorded expectation. `ultrathink.` cannot fire
+from a file read, so self-apply maximum reasoning effort.
+
+## THE SAVED PROMPT (execute verbatim)
+
+```text
+ultrathink. richR upstream contributions — maintainer-feedback inspection entering.
+applied lessons: PROJECT_HANDOFF.md; memory/project_richr_fork_upstream_state.md; memory/feedback_no_moai_files_in_git.md; wiki/concept/r-package-regressions-need-an-installed-namespace.md
+source_session_id: 01a14c61-7853-7562-bbd8-6789453ce4e5
+
+Preconditions:
+1) git rev-parse --short HEAD → eb4c9da in the shared primary checkout; do not switch it.
+2) git ls-remote origin refs/heads/master → 9be43abdae556d9f1df128149a70721f08ab7d25.
+3) gh pr view 13 -R guokai8/richR --json state,isDraft,headRefOid → OPEN,false,84b9658 prefix.
+4) gh pr view 14 -R guokai8/richR --json state,isDraft,headRefOid → OPEN,false,b7d0aa2 prefix.
+
+Run: Inspect upstream PRs #11–#14 for new maintainer feedback and report the current acceptance state; do not reopen completed producer/release/deployment work.
+
+Follow-up: Only for a concrete new request, use a fresh MoAI worktree, Luna High implementation and independent Sol review; retain contribution trees until remote integration.
+```
+````
+
+---
+
+## Session 2026-10-20 14:22 CDT — Reliability releases, consumer adoption and upstream delivery completed
+
+- **Coding CLI used:** Codex CLI, resuming earlier Claude Code work; product
+  implementation delegated to GPT-6-Luna / High. Independent plan/code reviews
+  used the read-only MoAI Codex launcher; exact served model IDs were unavailable.
+- **Phases:** source analysis, SPEC/review, implementation, scoped verification,
+  package/release preparation, consumer coordination and independent receipt
+  inspection, upstream ports/reviews/CI, endsession.
+- **Completed:** ORA deduplication/background/annotation normalization and tested-
+  family reporting; GSEA backend/RNG controls; diagnostics/provenance; exact batch
+  row binding and typed status; empty comparisons/axes without fabricated terms.
+  Work remains within the agreed 0.1.x line, not 0.2.0.
+- **Completed:** package/import NOTE cleanup, NEWS.md/development-file exclusion,
+  explicit/local bundled-data loading; v0.1.5 further qualifies all data sites
+  for namespace-only use and preserves named Kappa term groups. Historical
+  four-NOTE and unpublished April 0.1.4 snapshots are not current release status.
+- **Completed:** hurlab PR #6 merged; v0.1.5 published at master/tag
+  `9be43abdae556d9f1df128149a70721f08ab7d25` with source archive SHA256
+  `0fdca054567c3e6c0ef51512a11ba755ea3694126aa42cbbb051fed3f1b69abf`.
+- **Modules touched in isolated worktrees:** shared ORA helpers and enrichment
+  entry points; R/batch.R, R/compareResult.R, R/kappa.R, R/misc.R, R/richGSEA.R,
+  R/richKEGG.R, R/richLevel.R, R/utils.R; associated tests/Rd/metadata/packaging.
+  No primary-checkout product edit or branch switch was performed.
+- **Completed:** richStudio adoption/deployment by its owning session, app
+  v0.1.6 at `06206d050dcae02a2e773a709c5c6119d29f436e`. User executed the
+  reviewed retry1 sudo script; root read the actual deployment result and
+  independently queried Tailscale host 100.94.67.89 for exit-status 0, corrected
+  script checksum, release marker and symlink. Read worker/integrity/health
+  receipts (142 tracked files, zero mismatches, new native libraries, HTTP200).
+  Consumer browser/server test evidence remains attributed to its own report.
+- **Completed:** guokai8/richR PR #13 namespace/Kappa port, final head
+  `84b9658b83e0062a6a42a894a336f5e0f0353970`; PR #14 batch/comparison port,
+  final head `b7d0aa22cbe1ff46c74892fa04b587d8c1632bb3`. Both OPEN and ready
+  for review. Original public API/version/authors retained. Existing #11/#12
+  were not rewritten or merged. Original base remains `ef0fb86` (0.1.2).
+- **Decisions:** separate focused upstream ports instead of importing fork
+  metadata or feature dependencies. The shared named-list validator matches #12
+  byte-for-byte and occurs only once per branch. Three-way merge overlaps and
+  exact reconciliation instructions are in both PR descriptions/handoff.
+- **Review fixes resolved:** Kappa unequal/error representation-label coverage
+  matrix; unmocked two-positive-group ORA raw/adjusted cutoff regression. Final
+  independent product-delta, amended-plan and workflow reviews passed.
+- **CI problems/resolutions:** the unchanged original whole-package workflow
+  stops during the network vignette for missing sna (already declared in #11).
+  Added an identical three-OS scoped installed-package workflow to both ports;
+  preserved the original full workflow and disclosed its separate failure.
+  Pinned actual PR head, copied tests outside the checkout because test_file
+  changes cwd, asserted archive-installed namespace/version and child libraries.
+  Windows multiline Bash Rscript invocation exited139 before markers; native
+  Rscript script-file execution passed. Root cause of that crash is unproven.
+  Two #14 macOS jobs never acquired a hosted runner. A source-tree-identical
+  retry eventually passed; cancelled jobs were not counted as regressions.
+- **Verification:** hurlab postmerge run39444179753 at9be43ab passed all three
+  OS with Status OK / FAIL0 WARN0 SKIP0 PASS552. Upstream scoped installed
+  run39469077673 at84b9658 passed all three OS, both fresh namespace markers;
+  run39471536415 atb7d0aa2 passed all three OS, 105 expectations per OS in the
+  three batch/comparison files. Root downloaded/read actual job logs and checked
+  source head, loaded version/path, external test copies and emitted pass marker.
+  Source-only probes stayed labelled; no local dependency installation/full
+  suite/performance test substituted for hosted installed-package evidence.
+- **Boundaries:** no full upstream suite/metadata PASS or combined-PR runtime
+  success is claimed. Remaining work is upstream review/merge and later combined
+  integration validation. Keep upstream worktrees until remote integration.
+- **Checkpoint fold-in:** the 2026-10-17 mid-task prompt below was consumed and
+  superseded. Its already-completed upstream ID-mapping/harness cleanup remains
+  completed; the new resume action is read-only maintainer-feedback inspection,
+  not another merge/reset/cleanup or deploy.
+- **Session records:** primary root HANDOFF/LOG were absent on the PR branch.
+  Restored historical master LOG sessions verbatim into a bounded local copy,
+  authored current HANDOFF, and used existing .git/info/exclude policy so session
+  files stay out of the upstream PR. No session-doc commit/push to richR.
+- **Wiki:** one reusable concept, r-package-regressions-need-an-installed-namespace,
+  applies to richR/richStudio. No new standalone project/grant idea captured.
+
+### Superseded checkpoint — historical only; do not execute
+
+````markdown
+# Next Session — Resume
+
+> **Checkpoint** written mid-task by `/save-for-resume` at 2026-10-17 18:50 CDT — not a session close.
+> PROJECT_HANDOFF.md / PROJECT_LOG.md were NOT updated for this work; the task below is the
+> source of truth until a full `/endsession` folds it in.
+
+When the user says "resume" / "start" / "continue where we left off", read this
+file, give a **ONE-LINE summary**, **CONFIRM before executing** (never auto-run),
+verify each precondition mechanically below (surface drift may have happened
+since this was written), then run the saved prompt. `ultrathink.` cannot fire
+from a file read, so self-apply maximum reasoning effort on this task regardless.
+
+## THE SAVED PROMPT (execute verbatim)
+
+```text
+ultrathink. richR (hurlab fork) — resume: fork/upstream sync + MoAI-file cleanup is DONE; only wrap-up remains.
+requested by: user, 2026-10-17 session ("fork vs Kai Guo 차이 정리" → "원본 수정 가져오자" → "MoAI 파일 없애자, git에 커밋되면 안돼")
+source_session_id: 6127a8fc-1e6d-435f-8ce4-74d9dcb928be
+language mode: /lang gloss (Korean chat, English artifacts, gloss only established Korean terms)
+
+Done — do NOT redo (evidence on disk):
+- Fork vs upstream comparison reported in chat (fork 0.1.4 vs upstream 0.1.2; fork code delta = richUpset align/blend, sna Import, Rd regen, README figures).
+- Upstream 590efdb + ef0fb86 (AnnotationDbi::mapIds in idconvert()) merged into hurlab master → origin/master 19f38fb (pushed). idconvert tested OK without AnnotationDbi attached.
+- MoAI commit 23f977c (826 files) removed from upstream PR guokai8/richR#11: origin/upstream-pr/richr-v0.1.3 force-pushed to eb4c9da; PR now 24 files.
+- Local branch reset (mixed) to eb4c9da; MoAI files kept on disk but untracked; R-package .gitignore restored from eb4c9da; MoAI paths + /NEXT_SESSION.md listed in .git/info/exclude.
+- Memory: feedback_no_moai_files_in_git.md, project_richr_fork_upstream_state.md, MEMORY.md index.
+In progress — resume HERE:
+- none (task complete; user said "이제 정리하자")
+Left, in order:
+1) At real close run /endsession. NOTE: PROJECT_HANDOFF.md / PROJECT_LOG.md live only on hurlab master, NOT on this PR branch — do not create/commit them on upstream-pr/richr-v0.1.3.
+2) Optional, only if user asks: ping Kai Guo on PR #11 (open, unreviewed since 2026-04-16); install `sna` locally for full R CMD check.
+Decisions already taken — do NOT reopen:
+- hurlab fork (origin/master) is the main line; upstream = guokai8/richR (user, 2026-10-17).
+- Sync upstream by merge (not cherry-pick) so upstream-only count stays 0 (assistant, accepted).
+- MoAI/harness files must never be committed to any richR branch; use .git/info/exclude, never .gitignore commits (user, 2026-10-17).
+Read first:
+- ~/.claude/projects/-home-juhur-PROJECTS-20-libs-richR/memory/feedback_no_moai_files_in_git.md — commit rule
+- ~/.claude/projects/-home-juhur-PROJECTS-20-libs-richR/memory/project_richr_fork_upstream_state.md — remote/PR state
+
+Preconditions:
+1) git rev-parse --short HEAD → eb4c9da
+2) git fetch origin -q && git rev-parse --short origin/master → 19f38fb
+3) gh pr view 11 -R guokai8/richR --json headRefOid,files --jq '.headRefOid[0:7]+" "+(.files|length|tostring)' → eb4c9da 24
+4) git status --short | wc -l → 0
+
+Run: verify preconditions, then ask the user whether to run /endsession now (nothing else pending).
+```
+````
+
+---
 
 ## Session 2026-10-17 CDT — Fork sync and harness cleanup reconciled
 

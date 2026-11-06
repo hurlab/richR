@@ -1,5 +1,40 @@
 # richR Updates
 
+## Development version 0.2.0.9000 (unreleased)
+
+This development source follows the published 0.2.0 release. The 0.2.0 tag,
+release notes and release assets remain unchanged. Integration verification is
+still in progress; this section does not announce a release.
+
+### Data integrity fixes
+
+- Gene separators are interpreted literally by detail extraction and gene,
+  similarity, network and UpSet plot consumers. ORA detail joins use the
+  analyzed input row names so a separate `gene` column cannot misassign scores.
+- Native grouping treats equivalent UTF-8 and Latin-1 identifiers as the same
+  key while retaining existing ordering and missing-value behavior.
+- GSEA table output preserves internal spaces in leading-edge identifiers.
+  Comparisons reject duplicate, partially named or blank explicit group names
+  before retrieving results by name.
+- Gene accessors prefer an exact ORA identifier over a colliding term label,
+  reject ambiguous label matches, and honor explicit literal separators.
+  Console display handles valid results with selected or missing columns while
+  retaining the ordinary complete-table layout.
+- Folder import rejects malformed dimensions, integer row names and typed
+  integer metadata before lossy coercion. Valid missing integer values,
+  automatic row names, zero-column tables and character row names retain
+  their existing round-trip behavior.
+
+### Plot boundary and export fixes
+
+- Empty dot plots return without an undefined-object error. Heatmaps return
+  requested raw data without clustering and retain input order when sparse or
+  constant profiles make correlation clustering undefined.
+- Multi-result networks distinguish colliding term identifiers by source while
+  preserving each row's statistics and the existing disconnected-term behavior.
+- Interactive network wrappers forward `savehtml` so requested HTML output is
+  written for result objects, data frames, GSEA results and multi-result maps.
+
 ## Version 0.2.0 (2026-11-06)
 
 ### Significance cutoffs (changes reported results)

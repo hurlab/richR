@@ -33,6 +33,37 @@ test_that("F-LINK is cut with average linkage, not single or complete (catches a
   expect_identical(.th_partition(th), c("PQR", "T", "Z"))
 })
 
+test_that("the cut is inclusive: terms whose kappa equals cutoff share a theme (catches richCluster()'s strict kappa > cutoff, which splits them)", {
+  u <- function(i) sprintf("u%02d", i)
+  # P-Q kappa is exactly 0.5 on the background u01..u04; R shares nothing
+  expect_identical(.th_kappa(u(1), u(1:2), u(1:4)), 0.5)
+  pqr <- .th_res(c("P", "Q", "R"), list(u(1), u(1:2), u(3:4)), c(0.01, 0.02, 0.03),
+                 c("p", "q", "r"))
+  th <- richThemes(pqr, cutoff = 0.5)
+  expect_identical(.th_partition(th), c("PQ", "R"))
+  expect_identical(th$similarity$kappa, 0.5)
+
+  # K and M have identical similarity genes (kappa 1): they join at cutoff = 1
+  x <- .th_fth2()
+  expect_identical(.th_partition(richThemes(list(q1 = x$q1, q2 = x$q2), cutoff = 1)),
+                   c("KM", "L", "N"))
+})
+
+test_that("evidence genes are split on the result's own sep (catches a non-comma sep read as one gene per term, which changes every theme)", {
+  G <- sprintf("G%02d", 1:80)
+  q <- G[c(1:6, 11:14, 17)]
+  comma <- .th_enrich(q)
+  slash <- .th_enrich(q, sep = "/")
+  expect_identical(slash@sep, "/")
+  expect_identical(slash@result$GeneID[slash@result$Annot == "K"], "G01/G02/G03/G04/G05/G06")
+  a <- richThemes(list(q1 = comma))
+  s <- richThemes(list(q1 = slash))
+  expect_identical(s$genes$gene[s$genes$Annot == "K"], sprintf("G%02d", 1:6))
+  expect_identical(s$themes, a$themes)
+  expect_identical(s$genes, a$genes)
+  expect_identical(s$similarity, a$similarity)
+})
+
 test_that("terms tested but reported nowhere are not grouped (catches tested-only terms shown as if they were findings)", {
   x <- .th_fth2()
   .th_fth2_roles(x$q1, x$q2)
@@ -118,6 +149,30 @@ test_that("the representative is the most central member, not the smallest p-val
   expect_identical(utils::tail(th9$themes$theme_id, 1), "theme_007")
 })
 
+test_that("themes are numbered by size before representative (catches theme ids assigned in representative order, which moves every theme_id link when a larger theme has a later representative)", {
+  y <- function(i) sprintf("y%02d", i)
+  a <- sprintf("a%02d", 1:3)
+  # Y and Z join (kappa 0.58); the singleton A sorts before Y
+  expect_gte(.th_kappa(y(1:6), y(c(1:5, 7)), c(a, y(1:7))), 0.5)
+  ayz <- .th_res(c("A", "Y", "Z"), list(a, y(1:6), y(c(1:5, 7))), c(0.01, 0.02, 0.03),
+                 c("a term", "y term", "z term"))
+  tt <- richThemes(ayz)$themes
+  expect_identical(tt$theme_id, c("theme_001", "theme_002"))
+  expect_identical(tt$representative, c("Y", "A"))
+  expect_identical(tt$n_terms, c(2L, 1L))
+})
+
+test_that("a blank Term is not a label: the next reporting group's Term, else the identifier, is used (catches a whitespace or empty label shown for a theme)", {
+  y <- function(i) sprintf("y%02d", i)
+  g1 <- .th_res(c("A", "B"), list(y(1:4), y(11:14)), c(0.01, 0.02), c("  ", ""))
+  g2 <- .th_res("A", list(y(1:4)), 0.03, "alpha")
+  tt <- richThemes(list(g1 = g1, g2 = g2))$themes
+  expect_identical(tt$representative, c("A", "B"))
+  # A: g1 is radix-first but its Term is blank, so g2's Term is used
+  expect_identical(tt$representative_term, c("alpha", NA))
+  expect_identical(tt$label, c("alpha", "B"))
+})
+
 # ---- AC-004: reversibility to bindRich() rows and the groups' records -------
 
 test_that("members are the bindRich() rows and genes come from each group's own record (catches a theme that cannot be traced to its rows, and genes of a reporting group shown for a tested-not-reported member)", {
@@ -192,6 +247,19 @@ test_that("GSEA leading-edge genes are read the same from both storage forms and
   }
   expect_identical(names(th1$ranking), c("group", "gene", "rank_score"))
   expect_type(th0$members$leadingEdge, "list")
+})
+
+test_that("the ranking keeps the stored order of an input that is not sorted (catches a ranking re-sorted in either direction)", {
+  skip_if_not_installed("fgsea")
+  t1 <- .th_fgsea(TRUE)
+  a <- t1$a
+  n <- length(a@input)
+  a@input <- a@input[c(2L, 1L, seq.int(3L, n))]
+  expect_false(identical(a@input, sort(a@input)))
+  expect_false(identical(a@input, sort(a@input, decreasing = TRUE)))
+  rk <- richThemes(list(a = a, b = t1$b))$ranking
+  r <- rk[rk$group == "a", ]
+  expect_identical(stats::setNames(r$rank_score, r$gene), a@input)
 })
 
 # ---- AC-006: settings and a failed group ------------------------------------

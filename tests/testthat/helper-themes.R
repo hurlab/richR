@@ -116,9 +116,9 @@
         mk("W", "weakly hit set", 17:29), mk("Z", "large background set", 41:80))
 }
 
-.th_enrich <- function(q, pvalue = 0.05) {
+.th_enrich <- function(q, pvalue = 0.05, sep = ",") {
   suppressMessages(richR::enrich(q, .th_fth2_annot(), pvalue = pvalue, padj = NULL,
-                                 minSize = 2, minGSSize = 3))
+                                 minSize = 2, minGSSize = 3, sep = sep))
 }
 
 .th_fth2 <- function() {

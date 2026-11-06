@@ -470,6 +470,59 @@ are unchanged.
   (`AnnotationDbi::mapIds(multiVals = "first")`); use `mapGenes()` for a
   recorded conversion.
 
+### Themes of related terms
+
+`richCluster()`, `richClusterDot()` and `richTermSim()` are unchanged.
+
+- New `richThemes(x, cutoff = 0.5)` groups the terms that one result, or a
+  list of results of one class (named and validated as in `bindRich()`,
+  `NULL` for a failed group), reports into themes. Only terms reported in at
+  least one group are grouped. A term's evidence genes are read from each
+  group's own record: the ORA overlap genes (`GeneID`) or the GSEA
+  leading-edge genes (`leadingEdge`, in either storage form), from the result
+  where the term is reported and from the tested table where it is tested but
+  not reported. Two terms are compared by Cohen's kappa of their evidence
+  genes unioned over the groups that report them, against the union of those
+  genes over every grouped term (`settings$background_size`), and clustered by
+  average linkage of `1 - kappa`, cut so that clusters join when their average
+  kappa is at least `cutoff` (`richCluster()` keeps pairs with kappa strictly
+  above its cutoff). Because the genes pool the supplied groups, themes can
+  change when a group is added or removed. Every grouped term is in exactly
+  one theme and single terms stay as their own theme: unlike `richCluster()`,
+  no term is dropped and no theme is filtered by size or by a score.
+- The `richThemes` object holds `themes` (one row per theme: `theme_id`,
+  `label`, `representative`, `representative_term`, `n_terms`,
+  `n_groups_reported`, `n_similarity_genes`, `mean_within_kappa`), `members`
+  (the unchanged `bindRich()` rows of every member in every group, with
+  `theme_id` and `is_representative`), `genes` (each member's evidence genes
+  per group, with `evidence_type` `"ora_overlap"` or `"gsea_leading_edge"`),
+  `similarity` (kappa and shared genes of every member pair), `ranking` (each
+  GSEA group's ranked input) and `settings` (method, linkage, cutoff, the
+  rules, the group names and each group's `enrichmentInfo()` record), so a
+  theme can be traced back to its terms, their rows and their genes.
+- The representative is the member with the highest mean kappa to the other
+  members (ties within `1e-12`, and single terms, go to the first identifier
+  in C-locale order), not the most significant term. The default label is the
+  representative's `Term` in the first group, by name in C-locale order, that
+  reports it with a non-blank `Term`, or else its identifier; labels can be edited in `themes$label`, and every table
+  links by `theme_id`. Themes, ids, representatives and labels do not depend
+  on the order of the groups or of the rows.
+- New `themeGenes(themes, theme = NULL, stats = NULL)` lists, for each theme,
+  every evidence gene crossed with every group: the members whose record in
+  that group lists the gene, the theme's status in the group (`reported`,
+  `tested_only`, `unavailable`, `absent` or `failed`) and the statistics
+  joined by gene from `stats`, a named list of data frames with a `gene`
+  column and the same further columns, of the same class and factor levels,
+  in every entry (for GSEA without `stats`, the group's ranked input as
+  `rank_score`). A statistic that is missing is `NA` with a `stat_status`
+  reason, never `0`, so a theme found in two groups shows whether the same
+  or different genes support it.
+- A theme summarizes the listed terms and is not a statistical test: no
+  theme-level p-value exists and a representative's p-value is not one.
+  Related or overlapping gene sets are not independent replications, so a
+  theme's number of terms is not a measure of evidence, and evidence genes
+  are ORA overlap or GSEA leading-edge genes, not shown to be causal drivers.
+
 ### Plots show what they draw (changes default plot output)
 
 A plot function now only displays an enrichment result: it reports the rows

@@ -71,6 +71,7 @@ Collate:
     tested.R
     bindRich.R
     richSensitivity.R
+    richThemes.R
     richIO.R
     accessors.R
     dplyr-methods.R

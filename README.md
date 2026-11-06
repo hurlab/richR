@@ -1,7 +1,7 @@
 # richR <img src="man/figures/logo.png" align="right" height="120" />
 
 [![Project Status:](http://www.repostatus.org/badges/latest/active.svg)](http://www.repostatus.org/#active)
-[![](https://img.shields.io/badge/version-0.1.5-green.svg)](https://github.com/hurlab/richR)
+[![](https://img.shields.io/badge/version-0.2.0-green.svg)](https://github.com/hurlab/richR)
 [![R-CMD-check](https://github.com/hurlab/richR/actions/workflows/R-CMD-check.yaml/badge.svg)](https://github.com/hurlab/richR/actions/workflows/R-CMD-check.yaml)
 ![](https://img.shields.io/github/languages/code-size/hurlab/richR)
 [![DOI](https://zenodo.org/badge/243827597.svg)](https://zenodo.org/badge/latestdoi/243827597)
@@ -31,10 +31,12 @@ and you can supply custom gene sets via GMT files or named lists.
 
 ## Installation
 
+richR 0.2.0 requires R 4.6 or later.
+
 ```r
-# Install from GitHub
+# Install the 0.2.0 release from GitHub
 library(devtools)
-install_github("hurlab/richR")
+install_github("hurlab/richR", ref = "v0.2.0")
 ```
 
 Bioconductor annotation packages are needed for building annotations:
@@ -582,10 +584,11 @@ recorded, and the full tables are in `tables/`.
 A term significant in one group and not in another is not evidence of a
 difference between the groups. rerun.R regenerates this report from the saved
 results. It does not re-execute the enrichment: the gene inputs and the
-universe are not stored. A rerun checks the SHA-256 of every saved file and
-stops if one was changed; on the same installation it reproduces the folder
-byte for byte apart from the generation time. An existing non-empty folder is
-never overwritten unless `overwrite = TRUE` and it holds a report.
+universe are not stored. A rerun checks the SHA-256 of the files under
+`results/` and `tables/`, plus `rerun.R`, and stops if one was changed; on the
+same installation it reproduces the folder byte for byte apart from the
+generation time. An existing non-empty folder is never overwritten unless
+`overwrite = TRUE` and it holds a report.
 
 ## Function name aliases
 

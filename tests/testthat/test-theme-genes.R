@@ -44,6 +44,21 @@ test_that("a theme's genes are shown per group with the members that list them a
   expect_true(all(r$group_status[r$group == "f"] == "failed"))
 })
 
+test_that("a group where one member is reported and another only tested has status reported (catches the theme's status in a group taken from a member that is only tested)", {
+  G <- sprintf("G%02d", 1:80)
+  x <- .th_fth2()
+  q3 <- .th_enrich(G[c(1, 2, 7, 8, 41, 42)])
+  b <- bindRich(list(q1 = x$q1, q3 = q3))
+  expect_identical(c(.th_state(b, "K", "q3"), .th_state(b, "M", "q3")),
+                   c("reported", "tested_not_reported"))
+  th <- richThemes(list(q1 = x$q1, q3 = q3))
+  expect_identical(.th_partition(th), c("KM", "L"))
+  r <- themeGenes(th, th$themes$theme_id[th$themes$representative == "K"])
+  expect_true(all(r$group_status[r$group == "q3"] == "reported"))
+  expect_identical(.tg_row(r, "G01", "q3")$evidence_members, "K,M")
+  expect_identical(.tg_row(r, "G07", "q3")$evidence_members, "K")
+})
+
 test_that("statistics are joined per group and a missing one is NA with its reason, never 0 (catches missing statistics shown as 0, one group's statistics joined to another, and statistics shown for a failed group)", {
   th <- .tg_themes()
   st <- .tg_stats()
@@ -71,6 +86,47 @@ test_that("statistics are joined per group and a missing one is NA with its reas
   rf <- themeGenes(th, "theme_001", c(st, list(f = data.frame(gene = "G01", log2FC = 9))))
   expect_true(all(rf$stat_status[rf$group == "f"] == "group_failed"))
   expect_true(all(is.na(rf$log2FC[rf$group == "f"])))
+})
+
+test_that("a statistic column whose class or factor levels differ between stats entries is refused, and equal ones join exactly (catches a statistic lost as NA while stat_status says joined, and numbers silently turned into text)", {
+  th <- .tg_themes()
+  genes <- sprintf("G%02d", 1:7)
+  lev <- c("down", "up")
+  dir1 <- rep(lev, length.out = 7)
+  frame <- function(v) data.frame(gene = genes, direction = v)
+  bad <- list(
+    factor_levels = list(q1 = frame(factor(dir1, levels = lev)),
+                         q2 = frame(factor(rep("c", 7), levels = c("c", "d")))),
+    numeric_character = list(q1 = frame((1:7) / 2), q2 = frame(as.character(1:7))),
+    character_numeric = list(q1 = frame(as.character(1:7)), q2 = frame((1:7) / 2)))
+  for (k in names(bad)) {
+    e <- tryCatch({
+      suppressWarnings(themeGenes(th, "theme_001", bad[[k]]))
+      NA_character_
+    }, error = conditionMessage)
+    expect_false(is.na(e), info = k)
+    expect_match(e, "'direction'", fixed = TRUE, info = k)
+    expect_match(e, "'q1'", fixed = TRUE, info = k)
+    expect_match(e, "'q2'", fixed = TRUE, info = k)
+  }
+
+  ok <- list(factor = list(q1 = frame(factor(dir1, levels = lev)),
+                           q2 = frame(factor(rev(dir1), levels = lev))),
+             character = list(q1 = frame(dir1), q2 = frame(rev(dir1))))
+  for (k in names(ok)) {
+    st <- ok[[k]]
+    r <- themeGenes(th, "theme_001", st)
+    expect_identical(class(r$direction), class(st$q1$direction), info = k)
+    expect_identical(levels(r$direction), levels(st$q1$direction), info = k)
+    for (g in c("q1", "q2")) {
+      for (gene in genes) {
+        row <- .tg_row(r, gene, g)
+        expect_identical(row$direction, st[[g]]$direction[st[[g]]$gene == gene], info = k)
+        expect_identical(row$stat_status, "joined", info = k)
+      }
+      expect_true(is.na(.tg_row(r, "G08", g)$direction), info = k)
+    }
+  }
 })
 
 test_that("without statistics ORA has no statistic column and GSEA uses the group's ranked input (catches a statistic invented for ORA and the GSEA drill-down to input statistics broken)", {
@@ -117,4 +173,14 @@ test_that("invalid themes, theme ids and statistics stop with an error naming th
   e <- tryCatch(themeGenes(th, stats = list(q1 = fr(log2FC = 1:2), q2 = fr(score = 1:2))),
                 error = conditionMessage)
   expect_match(e, "log2FC", fixed = TRUE); expect_match(e, "score", fixed = TRUE)
+})
+
+test_that("an empty theme selection is refused, while an analysis without themes still gives an empty table (catches an empty request returning a table that reads as no evidence)", {
+  th <- .tg_themes()
+  expect_error(themeGenes(th, character(0)), "theme must name at least one theme_id",
+               fixed = TRUE)
+  tz <- themeGenes(richThemes(.th_fzero()))
+  expect_identical(nrow(tz), 0L)
+  expect_identical(names(tz), c("theme_id", "label", "gene", "group", "evidence_members",
+                                "n_evidence_members", "group_status", "stat_status"))
 })

@@ -381,7 +381,8 @@ table.
   that group lists the gene, the theme's status in the group (`reported`,
   `tested_only`, `unavailable`, `absent` or `failed`) and the statistics
   joined by gene from `stats`, a named list of data frames with a `gene`
-  column (for GSEA without `stats`, the group's ranked input as
+  column and the same further columns, of the same class and factor levels,
+  in every entry (for GSEA without `stats`, the group's ranked input as
   `rank_score`). A statistic that is missing is `NA` with a `stat_status`
   reason, never `0`, so a theme found in two groups shows whether the same
   or different genes support it.

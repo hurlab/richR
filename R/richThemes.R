@@ -464,16 +464,19 @@ richThemes <- function(x, cutoff = 0.5) {
 #' }
 #'
 #' @param themes a \code{richThemes} object.
-#' @param theme \code{NULL} for every theme, or the \code{theme_id} values to
-#'   show.
+#' @param theme \code{NULL} for every theme, or one or more \code{theme_id}
+#'   values to show; an empty vector is an error.
 #' @param stats \code{NULL}, or a named list of data frames, one per group
 #'   (names among the object's groups; groups may be left out). Each needs a
 #'   character column \code{gene} listing each gene once and at least one
-#'   further column; every entry has the same further columns, and none may
+#'   further column; every entry has the same further columns, each of the
+#'   same class in every entry (and, for a factor, with the same levels, so
+#'   no value is coerced or lost when the groups are joined), and none may
 #'   be named like an output column (\code{theme_id}, \code{label},
 #'   \code{group}, \code{evidence_members}, \code{n_evidence_members},
-#'   \code{group_status}, \code{stat_status}). Gene identifiers are not
-#'   mapped: use the identifiers of the results.
+#'   \code{group_status}, \code{stat_status}). \code{stats} that break these
+#'   rules are refused with an error naming the offending entry or column.
+#'   Gene identifiers are not mapped: use the identifiers of the results.
 #' @return a data.frame, described in the Value section.
 #' @seealso \code{\link{richThemes}}
 #' @examples
@@ -493,6 +496,10 @@ themeGenes <- function(themes, theme = NULL, stats = NULL) {
   if (is.null(theme)) {
     theme <- all_ids
   } else {
+    if (!length(theme)) {
+      stop("themeGenes: theme must name at least one theme_id of themes, or be ",
+           "NULL for every theme.", call. = FALSE)
+    }
     bad <- setdiff(as.character(theme), all_ids)
     if (!is.character(theme) || length(bad)) {
       stop("themeGenes: theme ",
@@ -598,6 +605,25 @@ themeGenes <- function(themes, theme = NULL, stats = NULL) {
     stop("themeGenes: stats entries differ in their column(s) ",
          .bind_quote(differ), "; every entry needs the same columns.",
          call. = FALSE)
+  }
+  # Each statistic column is joined into one vector, so a class or factor
+  # levels that differ between entries would coerce values or turn them NA.
+  same <- "; every entry needs the same class and, for a factor, the same levels."
+  for (cc in further[[1L]]) {
+    cls <- vapply(stats, function(d) paste(class(d[[cc]]), collapse = "/"),
+                  character(1))
+    if (length(unique(cls)) > 1L) {
+      stop("themeGenes: stats column ", .bind_quote(cc), " has a different class ",
+           "in different entries (", paste0("'", nm, "': ", cls, collapse = "; "),
+           ")", same, call. = FALSE)
+    }
+    lev <- lapply(stats, function(d) levels(d[[cc]]))
+    off <- !vapply(lev, identical, logical(1), lev[[1L]])
+    if (any(off)) {
+      stop("themeGenes: stats column ", .bind_quote(cc), " has different ",
+           "factor levels in entries ", .bind_quote(c(nm[[1L]], nm[off])), same,
+           call. = FALSE)
+    }
   }
   further[[1L]]
 }

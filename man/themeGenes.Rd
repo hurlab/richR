@@ -9,17 +9,20 @@ themeGenes(themes, theme = NULL, stats = NULL)
 \arguments{
 \item{themes}{a \code{richThemes} object.}
 
-\item{theme}{\code{NULL} for every theme, or the \code{theme_id} values to
-show.}
+\item{theme}{\code{NULL} for every theme, or one or more \code{theme_id}
+values to show; an empty vector is an error.}
 
 \item{stats}{\code{NULL}, or a named list of data frames, one per group
 (names among the object's groups; groups may be left out). Each needs a
 character column \code{gene} listing each gene once and at least one
-further column; every entry has the same further columns, and none may
+further column; every entry has the same further columns, each of the
+same class in every entry (and, for a factor, with the same levels, so
+no value is coerced or lost when the groups are joined), and none may
 be named like an output column (\code{theme_id}, \code{label},
 \code{group}, \code{evidence_members}, \code{n_evidence_members},
-\code{group_status}, \code{stat_status}). Gene identifiers are not
-mapped: use the identifiers of the results.}
+\code{group_status}, \code{stat_status}). \code{stats} that break these
+rules are refused with an error naming the offending entry or column.
+Gene identifiers are not mapped: use the identifiers of the results.}
 }
 \value{
 a data.frame, described in the Value section.

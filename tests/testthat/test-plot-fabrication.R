@@ -161,3 +161,52 @@ test_that("a member gene without a fold change is drawn grey55, never as fold ch
                 grepl("no fold change supplied", cap, fixed = TRUE) &&
                 grepl("not in the term", cap, fixed = TRUE), info = cap)
 })
+
+test_that("richHeatmap draws an absent term as missing and names the column it draws (AC-008)", {
+  # Catches: an absent term shown as p = 1 (R-6), a legend naming the other
+  # p-value column (R-13), and a row-order change.
+  grDevices::pdf(NULL)
+  on.exit(grDevices::dev.off(), add = TRUE)
+  x <- .m61_fp6(); r2 <- .m61_r2()
+  tab <- richHeatmap(list(x, r2), returnData = TRUE)
+  cell <- function(term, group) tab[tab$Term == paste("term", term), group]
+  expect_true(is.na(cell("A2", "Group_2")))
+  expect_true(is.na(cell("B9", "Group_1")))
+  expect_identical(cell("A1", "Group_1"), 1e-4)
+  expect_identical(cell("A1", "Group_2"), 0.02)
+  expect_identical(cell("A2", "Group_1"), 1e-3)
+  expect_identical(cell("B9", "Group_2"), 0.03)
+
+  ref <- readRDS(testthat::test_path("fixtures", "plot_reference_m6base.rds"))$plots
+  for (use in c(FALSE, TRUE)) {
+    col <- if (use) "Padj" else "Pvalue"
+    p <- richHeatmap(list(x, r2), usePadj = use)
+    info <- paste("usePadj =", use)
+    expect_identical(ggplot2::get_labs(p)$fill, paste0("-log10(", col, ")"), info = info)
+    d <- p$data
+    expect_true(col %in% names(d), info = info)
+    drawn <- stats::setNames(d[[col]], paste(sub("^term ", "", d$Term), d$variable))
+    expect_true(is.na(drawn[["A2 Group_2"]]), info = info)
+    expect_true(is.na(drawn[["B9 Group_1"]]), info = info)
+    expect_identical(drawn[["A1 Group_1"]], x@result[["A1", col]], info = info)
+    expect_identical(drawn[["B9 Group_2"]], r2@result[["B9", col]], info = info)
+    # absent cells are drawn in the scale's missing-value colour
+    b <- ggplot2::ggplot_build(p)
+    na_col <- b$plot$scales$get_scales("fill")$na.value
+    ld <- b$data[[1]]
+    at <- paste(sub("^term ", "", .m61_axis_values(p, 1, "y")), .m61_axis_values(p, 1, "x"))
+    # A2-A6 are absent from r2, B9 from F-P6
+    absent <- c(paste0("A", 2:6, " Group_2"), "B9 Group_1")
+    expect_true(all(absent %in% at), info = info)
+    for (k in absent) {
+      expect_true(is.na(drawn[[k]]), info = paste(info, k))
+      expect_identical(.m61_rgb(ld$fill[at == k]), .m61_rgb(na_col), info = paste(info, k))
+    }
+    for (k in setdiff(at, absent)) {
+      expect_false(identical(.m61_rgb(ld$fill[at == k]), .m61_rgb(na_col)), info = paste(info, k))
+    }
+    # row order as on the M6.1 base
+    r <- ref[[if (use) "richHeatmap_ac008_q" else "richHeatmap_ac008_p"]]
+    expect_identical(levels(d$Term), levels(r$data$Term), info = info)
+  }
+})

@@ -279,3 +279,323 @@ writeRich <- function(x, path, overwrite = FALSE) {
   txt <- readLines(file, warn = FALSE, encoding = "UTF-8")
   jsonlite::fromJSON(paste(txt, collapse = "\n"), simplifyVector = FALSE)
 }
+
+#' Read an enrichment result written by writeRich()
+#'
+#' Rebuilds the \code{richResult} or \code{GSEAResult} that
+#' \code{\link{writeRich}} stored in \code{path}. Every value comes back exact,
+#' doubles included; the tested table is unavailable exactly when it was
+#' unavailable in the stored object; and \code{\link{enrichmentInfo}} returns
+#' the stored record unchanged, so reading never alters, upgrades or re-dates
+#' the analysis record.
+#'
+#' Version policy: the folder format version must be \code{1}, and the
+#' metadata \code{schema_version} \code{1} (results saved before richR 0.2.0)
+#' or \code{2}; a missing, non-integer, older or newer version is an error
+#' naming the found and the supported versions. \code{readRich()} also stops,
+#' naming the folder, file, column and first offending row, when
+#' \code{manifest.json} is missing or names another format or a class other
+#' than \code{richResult} or \code{GSEAResult}, when a table file the manifest
+#' lists is missing or a table file it does not list is present, when a
+#' table's header or row count differs from the manifest, on an unknown escape
+#' sequence, and on a cell that does not parse to its column's class. It never
+#' returns a partially read or silently coerced object.
+#'
+#' @param path folder written by \code{writeRich()}
+#' @return the stored \code{richResult} or \code{GSEAResult}
+#' @seealso \code{\link{writeRich}}
+#' @export
+readRich <- function(path) {
+  if (!is.character(path) || length(path) != 1L || is.na(path) || !dir.exists(path)) {
+    stop("readRich(): `path` must be a folder written by writeRich().",
+         call. = FALSE)
+  }
+  mf <- file.path(path, "manifest.json")
+  if (!file.exists(mf)) {
+    stop(sprintf("readRich(): no manifest.json in folder '%s'.", path),
+         call. = FALSE)
+  }
+  m <- tryCatch(.rich_io_read_json(mf), error = function(e) {
+    stop(sprintf("readRich(): manifest.json of '%s' is not valid JSON: %s",
+                 path, conditionMessage(e)), call. = FALSE)
+  })
+  where <- sprintf("manifest.json of '%s'", path)
+  if (!is.list(m) || !identical(m$format, .rich_io_format)) {
+    stop(sprintf("readRich(): %s records format %s, not '%s'.", where,
+                 .rich_io_found(if (is.list(m)) m$format), .rich_io_format),
+         call. = FALSE)
+  }
+  .rich_io_check_version(m$format_version, .rich_io_format_version,
+                         "format version", where)
+  cls <- m$class
+  if (!(is.character(cls) && length(cls) == 1L &&
+        cls %in% c("richResult", "GSEAResult"))) {
+    stop(sprintf("readRich(): class %s in %s is not supported (supported: richResult, GSEAResult).",
+                 .rich_io_found(cls), where), call. = FALSE)
+  }
+  bad <- function(what) {
+    stop(sprintf("readRich(): %s is inconsistent: %s.", where, what), call. = FALSE)
+  }
+  for (flag in c("tested_recorded", "metadata_recorded")) {
+    if (!(is.logical(m[[flag]]) && length(m[[flag]]) == 1L && !is.na(m[[flag]]))) {
+      bad(paste(flag, "is not TRUE or FALSE"))
+    }
+  }
+
+  metadata <- NULL
+  if (m$metadata_recorded) {
+    metadata <- .rich_io_untyped(m$metadata, function() bad("the metadata cannot be decoded"))
+    if (!is.list(metadata)) bad("the metadata is not a list")
+    .rich_io_check_version(metadata$schema_version, 1:2,
+                           "metadata schema_version", where)
+  } else if (!is.null(m$metadata)) {
+    bad("metadata is present but metadata_recorded is FALSE")
+  }
+  slots <- .rich_io_untyped(m$slots, function() bad("the slots cannot be decoded"))
+  expected_slots <- .rich_io_scalar_slots(cls)
+  if (!is.list(slots) || !setequal(names(slots), expected_slots) ||
+      anyDuplicated(names(slots))) {
+    bad(paste("the slots do not match those of", cls))
+  }
+
+  ## Table entries: the tables of the class, tested only when recorded.
+  entries <- m$tables
+  wanted <- c("result", if (m$tested_recorded) "tested",
+              if (identical(cls, "richResult")) "detail" else "input")
+  listed <- vapply(entries, function(e) {
+    if (is.list(e) && is.character(e$slot) && length(e$slot) == 1L) e$slot else NA_character_
+  }, character(1))
+  if (!is.list(entries) || anyNA(listed) || anyDuplicated(listed) ||
+      !setequal(listed, wanted)) {
+    bad(sprintf("it lists the tables %s, expected %s",
+                paste(listed, collapse = ", "), paste(wanted, collapse = ", ")))
+  }
+  names(entries) <- listed
+  files <- unlist(lapply(entries, function(e) e$file))
+  present <- .rich_io_known_files[-1L][file.exists(file.path(path, .rich_io_known_files[-1L]))]
+  unlisted <- setdiff(present, files)
+  if (length(unlisted)) {
+    stop(sprintf("readRich(): %s in folder '%s' is not listed in manifest.json.",
+                 unlisted[1L], path), call. = FALSE)
+  }
+  tables <- lapply(entries, .rich_io_read_table, path = path, bad = bad)
+
+  obj <- methods::new(cls)
+  tryCatch({
+    for (s in expected_slots) methods::slot(obj, s) <- slots[[s]]
+    obj@result <- tables$result
+    if (m$tested_recorded) obj@tested <- tables$tested
+    if (identical(cls, "richResult")) {
+      obj@detail <- tables$detail
+    } else {
+      input <- tables$input
+      if (!identical(names(input), c("gene", "score"))) bad("input has other columns than gene and score")
+      v <- input$score
+      if (isTRUE(entries$input$names)) names(v) <- input$gene
+      obj@input <- v
+    }
+  }, error = function(e) {
+    stop(sprintf("readRich(): cannot rebuild the %s stored in '%s': %s", cls,
+                 path, conditionMessage(e)), call. = FALSE)
+  })
+  if (!is.null(metadata)) attr(obj, "richR_metadata") <- metadata
+  obj
+}
+
+## A value from a parsed manifest as text for an error message.
+.rich_io_found <- function(v) {
+  if (is.null(v)) return("(none)")
+  v <- unlist(v)
+  if (is.character(v)) paste0('"', v, '"', collapse = ", ")
+  else paste(format(v), collapse = ", ")
+}
+
+## A version must be one whole number within `supported`.
+.rich_io_check_version <- function(v, supported, what, where) {
+  sup <- paste(supported, collapse = ", ")
+  if (is.null(v)) {
+    stop(sprintf("readRich(): %s records no %s (supported: %s).", where, what, sup),
+         call. = FALSE)
+  }
+  whole <- is.numeric(v) && length(v) == 1L && is.finite(v) && v == round(v)
+  reason <- if (!whole) "is not a whole number"
+            else if (v < min(supported)) "is older than the oldest supported"
+            else if (v > max(supported)) "is newer than the newest supported"
+            else NULL
+  if (!is.null(reason)) {
+    stop(sprintf("readRich(): %s %s in %s %s (supported: %s).", what,
+                 .rich_io_found(v), where, reason, sup), call. = FALSE)
+  }
+}
+
+## Decode a typed JSON node of the manifest (see .rich_io_typed_json()).
+.rich_io_untyped <- function(node, fail) {
+  if (is.null(node)) fail()
+  tryCatch(
+    jsonlite::unserializeJSON(jsonlite::toJSON(node, auto_unbox = TRUE,
+                                               null = "null", digits = I(17))),
+    error = function(e) fail())
+}
+
+## Read one table as the manifest describes it; every check runs before the
+## data.frame is built.
+.rich_io_read_table <- function(entry, path, bad) {
+  slot <- entry$slot
+  columns <- entry$columns
+  n <- entry$nrow
+  if (!(is.numeric(n) && length(n) == 1L && n >= 0 && n == round(n))) {
+    bad(sprintf("the row count of %s is not a whole number", slot))
+  }
+  if (!is.list(columns) || !identical(length(columns), as.integer(entry$ncol))) {
+    bad(sprintf("the columns of %s do not match its column count", slot))
+  }
+  col_names <- vapply(columns, function(cl) as.character(cl$name)[1L], character(1))
+  col_classes <- vapply(columns, function(cl) as.character(cl$class)[1L], character(1))
+  known <- c("character", "integer", "double", "logical", "factor", "list")
+  if (anyNA(col_names) || anyNA(col_classes) || !all(col_classes %in% known)) {
+    bad(sprintf("the column records of %s are incomplete or name an unknown class", slot))
+  }
+  row_names <- .rich_io_restore_row_names(entry$row_names, n, slot, bad)
+  if (!length(columns)) {
+    if (!is.null(entry$file)) bad(sprintf("the zero-column table %s names a file", slot))
+    return(structure(list(), names = character(0), row.names = row_names,
+                     class = "data.frame"))
+  }
+  file <- entry$file
+  if (!identical(file, paste0(slot, ".tsv"))) {
+    bad(sprintf("the file of %s is not %s.tsv", slot, slot))
+  }
+  f <- file.path(path, file)
+  if (!file.exists(f)) {
+    stop(sprintf("readRich(): table file %s listed in manifest.json of '%s' is missing.",
+                 file, path), call. = FALSE)
+  }
+  raw <- tryCatch(
+    utils::read.delim(f, header = FALSE, quote = "", na.strings = character(0),
+                      blank.lines.skip = FALSE, comment.char = "", fill = FALSE,
+                      colClasses = "character", encoding = "UTF-8",
+                      check.names = FALSE),
+    error = function(e) {
+      stop(sprintf("readRich(): cannot read %s in '%s': %s", file, path,
+                   conditionMessage(e)), call. = FALSE)
+    })
+  fail <- function(column, row, what) {
+    stop(sprintf("readRich(): %s in '%s', column '%s', row %d: %s.", file, path,
+                 column, row, what), call. = FALSE)
+  }
+  header <- .rich_io_unescape(unlist(raw[1L, ], use.names = FALSE),
+                              function(row, what) fail("(header)", row, what))
+  if (!identical(header, col_names)) {
+    common <- seq_len(min(length(header), length(col_names)))
+    k <- which(header[common] != col_names[common])[1L]
+    if (is.na(k)) k <- length(common) + 1L
+    stop(sprintf(paste("readRich(): the header of %s in '%s' does not match",
+                       "manifest.json: %d columns found, %d recorded; column %d is",
+                       "%s, expected %s."),
+                 file, path, length(header), length(col_names), k,
+                 if (k <= length(header)) paste0("'", header[k], "'") else "absent",
+                 if (k <= length(col_names)) paste0("'", col_names[k], "'") else "none"),
+         call. = FALSE)
+  }
+  body <- raw[-1L, , drop = FALSE]
+  if (nrow(body) != n) {
+    stop(sprintf("readRich(): %s in '%s' has %d data rows; manifest.json records %d.",
+                 file, path, nrow(body), as.integer(n)), call. = FALSE)
+  }
+  values <- lapply(seq_along(col_names), function(j) {
+    cells <- body[[j]]
+    missing <- cells == "\\N"
+    v <- .rich_io_unescape(cells, function(row, what) fail(col_names[j], row, what),
+                           skip = missing)
+    .rich_io_parse(v, missing, col_classes[j], columns[[j]],
+                   function(row) {
+                     fail(col_names[j], row, sprintf("'%s' does not parse as %s",
+                                                    cells[row], col_classes[j]))
+                   })
+  })
+  structure(values, names = col_names, row.names = row_names, class = "data.frame")
+}
+
+## Undo .rich_io_escape(): \\, \t, \n, \r; any other backslash sequence is an
+## error. Cells flagged in `skip` (the missing token) are left untouched.
+.rich_io_unescape <- function(cells, fail, skip = rep(FALSE, length(cells))) {
+  idx <- which(!skip & grepl("\\", cells, fixed = TRUE))
+  if (!length(idx)) return(cells)
+  map <- c("\\\\" = "\\", "\\t" = "\t", "\\n" = "\n", "\\r" = "\r")
+  y <- cells[idx]
+  m <- gregexpr("\\\\.?", y, perl = TRUE)
+  tokens <- regmatches(y, m)
+  for (i in seq_along(tokens)) {
+    unknown <- setdiff(tokens[[i]], names(map))
+    if (length(unknown)) {
+      fail(idx[i], sprintf("unknown escape sequence '%s'", unknown[1L]))
+    }
+  }
+  regmatches(y, m) <- lapply(tokens, function(t) unname(map[t]))
+  cells[idx] <- y
+  cells
+}
+
+## Convert decoded cells to the recorded class; `fail(row)` on the first cell
+## that does not parse.
+.rich_io_parse <- function(v, missing, class, column, fail) {
+  check <- function(ok) {
+    wrong <- which(!missing & !ok)
+    if (length(wrong)) fail(wrong[1L])
+  }
+  out <- switch(class,
+    character = v,
+    factor = {
+      lev <- as.character(unlist(column$levels))
+      check(v %in% lev)
+      factor(ifelse(missing, NA_character_, v), levels = lev)
+    },
+    integer = {
+      x <- suppressWarnings(as.integer(v))
+      check(grepl("^-?[0-9]+$", v) & !is.na(x))
+      x
+    },
+    double = {
+      x <- suppressWarnings(as.numeric(v))
+      check(!is.na(x) | v == "NaN")
+      x
+    },
+    logical = {
+      check(v %in% c("TRUE", "FALSE"))
+      v == "TRUE"
+    },
+    list = {
+      check(rep(TRUE, length(v)))
+      lapply(seq_along(v), function(i) {
+        ## Only a JSON array is parsed (fromJSON() would read other text as a
+        ## file path or URL).
+        p <- if (missing[i] || !startsWith(v[i], "[")) NULL else
+          tryCatch(jsonlite::fromJSON(v[i]), error = function(e) NULL)
+        if (is.list(p) && !length(p)) return(character(0))
+        if (is.character(p) && is.null(dim(p))) return(as.character(p))
+        if (is.logical(p) && is.null(dim(p)) && all(is.na(p))) return(as.character(p))
+        fail(i)
+      })
+    })
+  if (!identical(class, "list")) out[missing] <- NA
+  out
+}
+
+## Rebuild the internal row.names attribute recorded by .rich_io_row_names().
+.rich_io_restore_row_names <- function(rn, n, slot, bad) {
+  type <- if (is.list(rn)) rn$type else NULL
+  values <- unlist(rn$values)
+  out <- switch(if (is.character(type) && length(type) == 1L) type else "",
+    automatic = {
+      k <- rn$n
+      if (!(is.numeric(k) && length(k) == 1L && abs(k) == n)) NULL
+      else c(NA_integer_, as.integer(k))
+    },
+    integer = if (n == 0 || is.numeric(values)) as.integer(values) else NULL,
+    character = if (n == 0 || is.character(values)) as.character(values) else NULL,
+    NULL)
+  if (is.null(out) || (!identical(type, "automatic") && length(out) != n)) {
+    bad(sprintf("the row names of %s do not match its row count", slot))
+  }
+  out
+}

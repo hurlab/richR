@@ -141,15 +141,22 @@ ggvolcano_internal <- function(resultFis,
     resultFis$effect <- resultFis$NES
     x_label <- "Normalized Enrichment Score (NES)"
   } else {
+    # The titles name what is drawn: a result saved before richR 0.1.2 has no
+    # FoldEnrichment, and the rich factor (or nothing) is drawn instead (REQ-003).
+    x_label <- "log2(Fold Enrichment)"
+    colour_label <- "log2(FE)"
     if (!"FoldEnrichment" %in% names(resultFis)) {
       if ("Significant" %in% names(resultFis) && "Annotated" %in% names(resultFis)) {
         resultFis$FoldEnrichment <- resultFis$Significant / resultFis$Annotated
+        x_label <- "log2(Rich Factor = Significant/Annotated)"
+        colour_label <- "log2(Rich Factor)"
       } else {
         resultFis$FoldEnrichment <- 1
+        x_label <- "No effect column: all points at 0"
+        colour_label <- "No effect column"
       }
     }
     resultFis$effect <- log2(pmax(resultFis$FoldEnrichment, 0.001))
-    x_label <- "log2(Fold Enrichment)"
   }
 
   # y / size: -log10(p)
@@ -167,7 +174,7 @@ ggvolcano_internal <- function(resultFis,
                                                 color = effect, size = neg_log_p)) +
     ggplot2::geom_point(alpha = 0.8) +
     ggplot2::scale_color_gradient2(low = low, mid = mid, high = high, midpoint = 0,
-                                   name = if (is_gsea) "NES" else "log2(FE)") +
+                                   name = if (is_gsea) "NES" else colour_label) +
     ggplot2::scale_size_continuous(range = size.range,
                                    name = paste0("-log10(", sig_col, ")")) +
     ggplot2::geom_hline(yintercept = -log10(cutoff), linetype = "dashed", color = "grey50") +
@@ -356,17 +363,21 @@ ggscatter_internal <- function(resultFis,
     # x-axis: log10(Annotated) — pathway size
     resultFis$log_annotated <- log10(resultFis$Annotated)
 
-    # y-axis: log2(FoldEnrichment) — effect size
+    # y-axis: log2(FoldEnrichment) — effect size; without FoldEnrichment (a
+    # result saved before richR 0.1.2) the rich factor is drawn and titled as
+    # such (REQ-003).
+    y_label <- "log2(Fold Enrichment)"
     if (!"FoldEnrichment" %in% names(resultFis)) {
       if ("Significant" %in% names(resultFis) && "Annotated" %in% names(resultFis)) {
         resultFis$FoldEnrichment <- resultFis$Significant / resultFis$Annotated
+        y_label <- "log2(Rich Factor = Significant/Annotated)"
       } else {
         resultFis$FoldEnrichment <- 1
+        y_label <- "No effect column: all points at 0"
       }
     }
     resultFis$log2_fe <- log2(pmax(resultFis$FoldEnrichment, 0.001))
     x_label <- "log10(Pathway Size)"
-    y_label <- "log2(Fold Enrichment)"
   }
 
   # color: -log10(p)

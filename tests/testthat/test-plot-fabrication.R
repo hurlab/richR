@@ -60,3 +60,37 @@ test_that("GSEA lollipop, gene-bar and scatter plots draw NES, not a constant (A
   expect_identical(ggplot2::get_labs(p)$x, "log10(Gene-set size)")
   expect_false(any(c("RichFactor", "Annotated", "FoldEnrichment", "log2_fe") %in% names(p$data)))
 })
+
+test_that("volcano and scatter titles name the effect they draw when FoldEnrichment is absent (AC-006)", {
+  # Catches: a rich factor or a constant presented as fold enrichment (R-4,
+  # R-15), and results saved before richR 0.1.2 (no FoldEnrichment) broken by
+  # an error.
+  grDevices::pdf(NULL)
+  on.exit(grDevices::dev.off(), add = TRUE)
+  with_fe <- .m61_fp6()@result
+  no_fe <- with_fe; no_fe$FoldEnrichment <- NULL
+  none <- no_fe; none$Significant <- NULL; none$Annotated <- NULL
+  rich <- stats::setNames(log2(with_fe$Significant / with_fe$Annotated), with_fe$Annot)
+  expect_equal(round(unname(rich), 3), c(-1.737, -1.515, -1.322, -1.152, -1, -0.862))
+
+  v <- richVolcano(with_fe, pvalue = 1, padj = NULL)
+  expect_identical(ggplot2::get_labs(v)$x, "log2(Fold Enrichment)")
+  expect_identical(ggplot2::get_labs(v)$colour, "log2(FE)")
+  s <- richScatter(with_fe, pvalue = 1, padj = NULL)
+  expect_identical(ggplot2::get_labs(s)$y, "log2(Fold Enrichment)")
+
+  v <- richVolcano(no_fe, pvalue = 1, padj = NULL)
+  expect_equal(stats::setNames(v$data$effect, v$data$Annot)[names(rich)], rich, tolerance = 1e-12)
+  expect_identical(ggplot2::get_labs(v)$x, "log2(Rich Factor = Significant/Annotated)")
+  expect_identical(ggplot2::get_labs(v)$colour, "log2(Rich Factor)")
+  s <- richScatter(no_fe, pvalue = 1, padj = NULL)
+  ld <- ggplot2::layer_data(s, .m61_layers_of(s, "GeomPoint")[1])
+  expect_equal(stats::setNames(ld$y, s$data$Annot)[names(rich)], rich, tolerance = 1e-12)
+  expect_identical(ggplot2::get_labs(s)$y, "log2(Rich Factor = Significant/Annotated)")
+
+  v <- richVolcano(none, pvalue = 1, padj = NULL)
+  expect_true(all(v$data$effect == 0))
+  expect_identical(nrow(v$data), 6L)
+  expect_identical(ggplot2::get_labs(v)$x, "No effect column: all points at 0")
+  expect_identical(ggplot2::get_labs(v)$colour, "No effect column")
+})

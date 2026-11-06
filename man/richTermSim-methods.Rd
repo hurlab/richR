@@ -165,6 +165,17 @@ edges between terms that share genes above a similarity cutoff.
 Node size = gene count, colour = -log10(p). Connected clusters
 reveal groups of functionally related pathways.
 }
+\section{Row selection}{
+
+Draws the rows passing \code{Pvalue <= pvalue} and, unless \code{padj} is
+\code{NULL}, \code{Padj <= padj}, then the first \code{top} of them in
+input order. When this drops rows it signals one
+\code{\link{richR_plot_selection}} message (\code{suppressMessages()}
+silences it). A selected term sharing no gene with another is still drawn.
+To draw every row with a p-value:
+\code{richTermSim(x, pvalue = 1, padj = NULL, top = Inf)}.
+}
+
 \examples{
 \dontrun{
   res <- richKEGG(gene, kodata = hsako)

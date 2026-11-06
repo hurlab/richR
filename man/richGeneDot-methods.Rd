@@ -162,6 +162,30 @@ ggplot2 object
 \description{
 Gene-pathway association dotplot
 }
+\section{Row selection}{
+
+Draws the terms passing \code{Pvalue <= pvalue} and, unless \code{padj} is
+\code{NULL}, \code{Padj <= padj}, then the first \code{top} of them in
+input order, each with up to \code{max.genes} genes. When this drops terms
+it signals one \code{\link{richR_plot_selection}} message
+(\code{suppressMessages()} silences it); the count is of terms, not genes.
+To draw every term with a p-value:
+\code{richGeneDot(x, pvalue = 1, padj = NULL, top = Inf)}. For a
+\code{GSEAResult}, a selected pathway with an empty leading edge has no
+genes and the call stops with an error; subset the result, or keep a cutoff
+that excludes such pathways.
+}
+
+\section{Missing fold changes}{
+
+When \code{fc} holds no value for a member gene of a drawn term, that gene's
+fold change is \code{NA} in the plot data (never 0) and the gene is drawn in
+the fixed colour \code{grey55} (\code{#8C8C8C}) at the smallest point size;
+the caption says so. Before richR 0.2.0 it was drawn as fold change 0, the
+same as a measured zero. When every member gene has a fold change, or
+\code{fc} is \code{NULL}, the plot is unchanged.
+}
+
 \examples{
 \dontrun{
   res <- richKEGG(gene, kodata = hsako)

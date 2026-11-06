@@ -17,6 +17,21 @@
 #' @param horizontal flip the heatmap horizontally
 #' @param returnData return the data instead of the plot
 #' @param ... additional arguments
+#' @section Row selection:
+#' Draws the union of the first \code{top} identifiers of each result (rows
+#' are matched across results by \code{Annot}, else \code{Term}); no
+#' significance predicate is applied. When this drops identifiers it signals
+#' one \code{\link{richR_plot_selection}} message counted in identifiers over
+#' all results (\code{suppressMessages()} silences it). To draw every
+#' identifier: \code{richHeatmap(x, top = Inf)}.
+#' @section Absent terms:
+#' An identifier absent from one result has no p-value there: its cell is
+#' \code{NA} in the drawn data and in the \code{returnData = TRUE} table and is
+#' drawn in the missing-value colour. For the row ordering only it counts as
+#' \code{p = 1}, so the order is as before. The fill legend names the column
+#' drawn: \code{-log10(Pvalue)} with \code{usePadj = FALSE},
+#' \code{-log10(Padj)} with \code{usePadj = TRUE}. Before richR 0.2.0 such a
+#' cell held \code{1} and the legend named the other column.
 #' @examples
 #' \dontrun{
 #'   hsago <- buildAnnot(species="human", keytype="SYMBOL", anntype="GO")

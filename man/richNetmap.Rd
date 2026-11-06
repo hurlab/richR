@@ -135,6 +135,21 @@ ggnetmap(
 \description{
 generate network based on Enrichment results
 }
+\section{Row selection}{
+
+Takes the first \code{top} rows of each result, combines them ordered by
+\code{Pvalue}, then applies the selection of \code{\link{richNetwork}}
+(\code{Pvalue <= pvalue} and, unless \code{padj} is \code{NULL},
+\code{Padj <= padj}; the first \code{top}). When this drops rows it signals
+one \code{\link{richR_plot_selection}} message counted against the sum of
+the results' rows (\code{suppressMessages()} silences it); the count is of
+rows, not nodes, and the layout omits a selected term that shares no gene
+with another. To select every row with a p-value, give a finite \code{top}
+at least the total row count:
+\code{richNetmap(x, pvalue = 1, padj = NULL, top = sum(vapply(x, function(r) nrow(r@result), 1L)))};
+\code{top = Inf} and \code{top = NULL} are not supported.
+}
+
 \examples{
 \dontrun{
 hsako <- buildAnnot(species="human",keytype="SYMBOL",anntype = "KEGG")

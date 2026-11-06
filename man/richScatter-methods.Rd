@@ -157,6 +157,27 @@ Analogous to an MA plot in differential expression: small pathways
 (left) can have extreme fold enrichment by chance, while large
 pathways (right) with high enrichment are the most robust findings.
 }
+\section{Row selection}{
+
+Draws the rows passing \code{Pvalue <= pvalue} and, unless \code{padj} is
+\code{NULL}, \code{Padj <= padj}, then the first \code{top} of them in
+input order. When this drops rows it signals one
+\code{\link{richR_plot_selection}} message (\code{suppressMessages()}
+silences it). To draw every row with a p-value:
+\code{richScatter(x, pvalue = 1, padj = NULL, top = Inf)}.
+}
+
+\section{Effect column}{
+
+For ORA input the y axis is \code{log2(FoldEnrichment)}, titled
+\code{log2(Fold Enrichment)}; a result without \code{FoldEnrichment} (saved
+before richR 0.1.2) is drawn with \code{log2(Significant/Annotated)}, titled
+\code{log2(Rich Factor = Significant/Annotated)}. For a \code{GSEAResult}
+the y axis is \code{NES} and the x axis \code{log10(size)}, titled
+\code{log10(Gene-set size)}; before richR 0.2.0 GSEA pathways were drawn at
+a constant \code{log2} fold enrichment of 0.
+}
+
 \examples{
 \dontrun{
   res <- richKEGG(gene, kodata = hsako)

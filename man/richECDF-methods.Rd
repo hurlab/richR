@@ -114,6 +114,17 @@ ggplot2 object
 \description{
 ECDF step plot of GSEA ranked gene sets
 }
+\section{Row selection}{
+
+Keeps the pathways passing \code{Pvalue <= pvalue} and, unless \code{padj}
+is \code{NULL}, \code{Padj <= padj}, then draws the first \code{top} by
+\code{NES}, ascending, so a small \code{top} shows only the most negative
+pathways. When this drops rows it signals one
+\code{\link{richR_plot_selection}} message (\code{suppressMessages()}
+silences it). To draw every pathway with a p-value:
+\code{richECDF(x, pvalue = 1, padj = NULL, top = Inf)}.
+}
+
 \examples{
 \dontrun{
   res <- richGSEA(genelist, gseadata)

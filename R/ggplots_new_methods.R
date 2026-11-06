@@ -31,6 +31,16 @@
 #'   res   <- richKEGG(gene, kodata = hsako)
 #'   richLollipop(res)
 #' }
+#' @section Row selection:
+#' Draws the rows passing \code{Pvalue <= pvalue} and, unless \code{padj} is
+#' \code{NULL}, \code{Padj <= padj}, then the first \code{top} of them in
+#' input order. When this drops rows it signals one
+#' \code{\link{richR_plot_selection}} message (\code{suppressMessages()}
+#' silences it). To draw every row with a p-value:
+#' \code{richLollipop(x, pvalue = 1, padj = NULL, top = Inf)}.
+#' @section GSEA input:
+#' For a \code{GSEAResult} the value axis is each pathway's \code{NES}, titled
+#' \code{NES}. Before richR 0.2.0 it drew a constant \code{RichFactor = 1}.
 #' @rdname richLollipop-methods
 #' @export
 setGeneric("richLollipop", function(object, top = 20, pvalue = 0.05, padj = 0.05,
@@ -108,6 +118,21 @@ setMethod("richLollipop", signature(object = "GSEAResult"), function(object, top
 #'   resgs <- richGSEA(genelist, gseadata)
 #'   richVolcano(resgs)
 #' }
+#' @section Row selection:
+#' Draws the first \code{top} rows in input order and applies no significance
+#' predicate (\code{pvalue} and \code{padj} only place the reference line).
+#' When this drops rows it signals one \code{\link{richR_plot_selection}}
+#' message (\code{suppressMessages()} silences it). To draw every row:
+#' \code{richVolcano(x, top = Inf)}.
+#' @section Effect column:
+#' For ORA input the x axis is \code{log2(FoldEnrichment)}, titled
+#' \code{log2(Fold Enrichment)}. A result without \code{FoldEnrichment} (saved
+#' before richR 0.1.2) is drawn with \code{log2(Significant/Annotated)}, titled
+#' \code{log2(Rich Factor = Significant/Annotated)} (colour legend
+#' \code{log2(Rich Factor)}); without \code{Significant} and \code{Annotated}
+#' as well, every point is at 0 and the x axis is titled
+#' \code{No effect column: all points at 0}. Before richR 0.2.0 both cases were
+#' titled as fold enrichment.
 #' @rdname richVolcano-methods
 #' @export
 setGeneric("richVolcano", function(object, top = 50, pvalue = 0.05, padj = 0.05,
@@ -175,6 +200,13 @@ setMethod("richVolcano", signature(object = "data.frame"), function(object, top 
 #'   res <- richKEGG(gene, kodata = hsako)
 #'   richCircle(res)
 #' }
+#' @section Row selection:
+#' Draws the rows passing \code{Pvalue <= pvalue} and, unless \code{padj} is
+#' \code{NULL}, \code{Padj <= padj}, then the first \code{top} of them in
+#' input order. When this drops rows it signals one
+#' \code{\link{richR_plot_selection}} message (\code{suppressMessages()}
+#' silences it). To draw every row with a p-value:
+#' \code{richCircle(x, pvalue = 1, padj = NULL, top = Inf)}.
 #' @rdname richCircle-methods
 #' @export
 setGeneric("richCircle", function(object, top = 15, pvalue = 0.05, padj = 0.05,
@@ -235,6 +267,14 @@ setMethod("richCircle", signature(object = "GSEAResult"), function(object, top =
 #'   res <- richGSEA(genelist, gseadata)
 #'   richNES(res)
 #' }
+#' @section Row selection:
+#' Keeps the pathways passing \code{Pvalue <= pvalue} and, unless \code{padj}
+#' is \code{NULL}, \code{Padj <= padj}, then draws the first \code{top} by
+#' \code{NES}, descending, so a small \code{top} shows only the most positive
+#' pathways. When this drops rows it signals one
+#' \code{\link{richR_plot_selection}} message (\code{suppressMessages()}
+#' silences it). To draw every pathway with a p-value:
+#' \code{richNES(x, pvalue = 1, padj = NULL, top = Inf)}.
 #' @rdname richNES-methods
 #' @export
 setGeneric("richNES", function(object, top = 20, pvalue = 0.05, padj = 0.05,
@@ -293,6 +333,21 @@ setMethod("richNES", signature(object = "data.frame"), function(object, top = 20
 #'   res <- richKEGG(gene, kodata = hsako)
 #'   richScatter(res)
 #' }
+#' @section Row selection:
+#' Draws the rows passing \code{Pvalue <= pvalue} and, unless \code{padj} is
+#' \code{NULL}, \code{Padj <= padj}, then the first \code{top} of them in
+#' input order. When this drops rows it signals one
+#' \code{\link{richR_plot_selection}} message (\code{suppressMessages()}
+#' silences it). To draw every row with a p-value:
+#' \code{richScatter(x, pvalue = 1, padj = NULL, top = Inf)}.
+#' @section Effect column:
+#' For ORA input the y axis is \code{log2(FoldEnrichment)}, titled
+#' \code{log2(Fold Enrichment)}; a result without \code{FoldEnrichment} (saved
+#' before richR 0.1.2) is drawn with \code{log2(Significant/Annotated)}, titled
+#' \code{log2(Rich Factor = Significant/Annotated)}. For a \code{GSEAResult}
+#' the y axis is \code{NES} and the x axis \code{log10(size)}, titled
+#' \code{log10(Gene-set size)}; before richR 0.2.0 GSEA pathways were drawn at
+#' a constant \code{log2} fold enrichment of 0.
 #' @rdname richScatter-methods
 #' @export
 setGeneric("richScatter", function(object, top = 50, pvalue = 0.05, padj = 0.05,
@@ -361,6 +416,14 @@ setMethod("richScatter", signature(object = "GSEAResult"), function(object, top 
 #'   res <- richGSEA(genelist, gseadata)
 #'   richECDF(res)
 #' }
+#' @section Row selection:
+#' Keeps the pathways passing \code{Pvalue <= pvalue} and, unless \code{padj}
+#' is \code{NULL}, \code{Padj <= padj}, then draws the first \code{top} by
+#' \code{NES}, ascending, so a small \code{top} shows only the most negative
+#' pathways. When this drops rows it signals one
+#' \code{\link{richR_plot_selection}} message (\code{suppressMessages()}
+#' silences it). To draw every pathway with a p-value:
+#' \code{richECDF(x, pvalue = 1, padj = NULL, top = Inf)}.
 #' @rdname richECDF-methods
 #' @export
 setGeneric("richECDF", function(object, top = 30, pvalue = 0.05, padj = 0.05,
@@ -421,6 +484,14 @@ setMethod("richECDF", signature(object = "data.frame"), function(object, top = 3
 #'   richTermSim(res)
 #'   richTermSim(res, sim.cutoff = 0.3)
 #' }
+#' @section Row selection:
+#' Draws the rows passing \code{Pvalue <= pvalue} and, unless \code{padj} is
+#' \code{NULL}, \code{Padj <= padj}, then the first \code{top} of them in
+#' input order. When this drops rows it signals one
+#' \code{\link{richR_plot_selection}} message (\code{suppressMessages()}
+#' silences it). A selected term sharing no gene with another is still drawn.
+#' To draw every row with a p-value:
+#' \code{richTermSim(x, pvalue = 1, padj = NULL, top = Inf)}.
 #' @rdname richTermSim-methods
 #' @export
 setGeneric("richTermSim", function(object, top = 20, pvalue = 0.05, padj = 0.05,
@@ -501,6 +572,24 @@ setMethod("richTermSim", signature(object = "GSEAResult"), function(object, top 
 #'   richGeneDot(res, fc = my_foldchanges)
 #'   richGeneDot(res)  # no fc: colour by significance
 #' }
+#' @section Row selection:
+#' Draws the terms passing \code{Pvalue <= pvalue} and, unless \code{padj} is
+#' \code{NULL}, \code{Padj <= padj}, then the first \code{top} of them in
+#' input order, each with up to \code{max.genes} genes. When this drops terms
+#' it signals one \code{\link{richR_plot_selection}} message
+#' (\code{suppressMessages()} silences it); the count is of terms, not genes.
+#' To draw every term with a p-value:
+#' \code{richGeneDot(x, pvalue = 1, padj = NULL, top = Inf)}. For a
+#' \code{GSEAResult}, a selected pathway with an empty leading edge has no
+#' genes and the call stops with an error; subset the result, or keep a cutoff
+#' that excludes such pathways.
+#' @section Missing fold changes:
+#' When \code{fc} holds no value for a member gene of a drawn term, that gene's
+#' fold change is \code{NA} in the plot data (never 0) and the gene is drawn in
+#' the fixed colour \code{grey55} (\code{#8C8C8C}) at the smallest point size;
+#' the caption says so. Before richR 0.2.0 it was drawn as fold change 0, the
+#' same as a measured zero. When every member gene has a fold change, or
+#' \code{fc} is \code{NULL}, the plot is unchanged.
 #' @rdname richGeneDot-methods
 #' @export
 setGeneric("richGeneDot", function(object, fc = NULL, top = 10, max.genes = 30,
@@ -581,6 +670,25 @@ setMethod("richGeneDot", signature(object = "GSEAResult"), function(object, fc =
 #'   richGeneHeat(res, fc = my_foldchanges)
 #'   richGeneHeat(res)  # no fc: fill by significance
 #' }
+#' @section Row selection:
+#' Draws the terms passing \code{Pvalue <= pvalue} and, unless \code{padj} is
+#' \code{NULL}, \code{Padj <= padj}, then the first \code{top} of them in
+#' input order, with up to \code{max.genes} genes. When this drops terms it
+#' signals one \code{\link{richR_plot_selection}} message
+#' (\code{suppressMessages()} silences it); the count is of terms, not genes.
+#' To draw every term with a p-value:
+#' \code{richGeneHeat(x, pvalue = 1, padj = NULL, top = Inf)}. For a
+#' \code{GSEAResult}, a selected pathway with an empty leading edge has no
+#' genes and the call stops with an error; subset the result, or keep a cutoff
+#' that excludes such pathways.
+#' @section Missing fold changes:
+#' When \code{fc} holds no value for a member gene of a drawn term, that cell's
+#' fold change is \code{NA} in the plot data (never 0) and the cell is filled
+#' with the fixed colour \code{grey55} (\code{#8C8C8C}); cells of genes that
+#' are not in the term keep \code{na.fill}. The caption names both. Before
+#' richR 0.2.0 such a cell was drawn as fold change 0, the same as a measured
+#' zero. When every member gene has a fold change, or \code{fc} is
+#' \code{NULL}, the plot is unchanged.
 #' @rdname richGeneHeat-methods
 #' @export
 setGeneric("richGeneHeat", function(object, fc = NULL, top = 10, max.genes = 30,
@@ -665,6 +773,16 @@ setMethod("richGeneHeat", signature(object = "GSEAResult"), function(object, fc 
 #'   res <- richKEGG(gene, kodata = hsako)
 #'   richGeneBar(res)
 #' }
+#' @section Row selection:
+#' Draws the terms passing \code{Pvalue <= pvalue} and, unless \code{padj} is
+#' \code{NULL}, \code{Padj <= padj}, then the first \code{top} of them in
+#' input order, each listing up to \code{max.genes} genes. When this drops
+#' terms it signals one \code{\link{richR_plot_selection}} message
+#' (\code{suppressMessages()} silences it). To draw every term with a p-value:
+#' \code{richGeneBar(x, pvalue = 1, padj = NULL, top = Inf)}.
+#' @section GSEA input:
+#' For a \code{GSEAResult} the bar length is each pathway's \code{NES}, titled
+#' \code{NES}. Before richR 0.2.0 it drew a constant \code{RichFactor = 1}.
 #' @rdname richGeneBar-methods
 #' @export
 setGeneric("richGeneBar", function(object, top = 10, pvalue = 0.05, padj = 0.05, usePadj = TRUE,

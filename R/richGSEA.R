@@ -315,6 +315,10 @@ richGSEA_internal<-function(x,object,keytype="",pvalue=0.05,padj=0.05,KEGG=FALSE
     res <- res[, c(cols[seq_len(le_pos)], "Term",
                    setdiff(cols[-seq_len(le_pos)], "Term")), drop = FALSE]
   }
+  # Tested record (REQ-002): every pathway fgsea returned, captured before the
+  # significance predicate; it takes the same ordering and KEGG level columns
+  # as @result below, and nothing is recomputed.
+  tested <- res
   # richR's own padj (above) is computed over the full returned family before
   # the significance predicate runs.
   res <- res[.sig_keep(res, pvalue, padj, p_col = "pval", padj_col = "padj"), ,
@@ -322,12 +326,16 @@ richGSEA_internal<-function(x,object,keytype="",pvalue=0.05,padj=0.05,KEGG=FALSE
   if (is.null(padj)) padj <- numeric()
   res<-res[order(res$pval),]
   res <- res[!is.na(res$pathway),]
+  tested <- tested[order(tested$pval),]
+  tested <- tested[!is.na(tested$pathway),]
   if(isTRUE(KEGG)){
     path_env <- new.env(parent = emptyenv())
     utils::data("path", package = "richR", envir = path_env)
     path <- path_env$path
     res<-cbind(res,.gsea_kegg_levels(res$pathway, path))
+    tested <- cbind(tested, .gsea_kegg_levels(tested$pathway, path))
   }
+  tested$reported <- tested$pathway %in% res$pathway
   if(is.null(organism)){
     organism=character()
   }
@@ -347,6 +355,7 @@ richGSEA_internal<-function(x,object,keytype="",pvalue=0.05,padj=0.05,KEGG=FALSE
               keytype        = keytype,
               sep = sep
   )
+  result@tested <- tested
   annotation_genes <- unique(as.character(object[, 1]))
   ranked_ids <- unique(as.character(original_input_ids[!is.na(original_input_ids) &
                                                         nzchar(trimws(original_input_ids))]))
@@ -373,6 +382,7 @@ richGSEA_internal<-function(x,object,keytype="",pvalue=0.05,padj=0.05,KEGG=FALSE
                      effective_ids = ranked_ids)
   testing <- list(family_policy = "fgsea_returned_before_filtering",
                   tested_count = as.integer(tested_count),
+                  zero_overlap_count = 0L,
                   effective_N = NA_integer_, effective_n = NA_integer_)
   options <- list(pvalue = pvalue, padj = metadata_padj, minSize = minSize,
                   maxSize = maxSize, padj.method = padj.method,

@@ -237,7 +237,7 @@ summarise.Annot <- function(.data, ...) {
 #' @export
 group_by.richResult <- function(.data, ..., add = FALSE, .drop = FALSE) {
   dots <- quos(...)
-  .data@result %<>% group_by(!!!dots, add = add, .drop = .drop)
+  .data@result %<>% group_by(!!!dots, .add = add, .drop = .drop)
   return(.data)
 }
 
@@ -251,6 +251,6 @@ group_by.GSEAResult <- group_by.richResult
 #' @export
 group_by.Annot <- function(.data, ..., add = FALSE, .drop = FALSE) {
   dots <- quos(...)
-  .data@annot %<>% group_by(!!!dots, add = add, .drop = .drop)
+  .data@annot %<>% group_by(!!!dots, .add = add, .drop = .drop)
   return(.data)
 }

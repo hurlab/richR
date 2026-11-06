@@ -36,7 +36,8 @@ Imports:
     rlang,
     S4Vectors,
     sna,
-    digest
+    digest,
+    jsonlite
 LinkingTo: Rcpp
 Suggests:
     knitr,
@@ -65,6 +66,9 @@ Collate:
     compareResult.R
     batch.R
     enrichmentInfo.R
+    tested.R
+    bindRich.R
+    richIO.R
     accessors.R
     dplyr-methods.R
     theme.R

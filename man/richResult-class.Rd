@@ -17,6 +17,12 @@ This class represents the result of enrichment analysis.
 
 \item{\code{detail}}{genes included in significant terms and original information}
 
+\item{\code{tested}}{tested table: one row per tested term whose overlap with the
+query is greater than zero, with the columns of \code{result} and a
+logical \code{reported} column (\code{TRUE} for the terms \code{result}
+holds); a zero-column data.frame when no tested table was recorded. Read
+it with \code{\link{testedTerms}}.}
+
 \item{\code{pvalueCutoff}}{cutoff pvalue}
 
 \item{\code{pAdjustMethod}}{pvalue adjust method}

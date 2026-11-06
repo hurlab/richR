@@ -45,6 +45,7 @@ ggnetwork_internal<-function (object=object,gene=gene,top = 50, pvalue = 0.05, p
                               label.color = "black", label.size = 2,node.shape=NULL, layout = "fruchtermanreingold",savefig=FALSE,
                               visNet=FALSE,smooth=TRUE,nodeselect=FALSE,edit=FALSE,savehtml=FALSE,filename=NULL,
                               width=7,height=7,segment.size=0.2,node.alpha=0.7,sep=",",...){
+  n <- nrow(object)
   object <- .sig_filter(object, pvalue, padj)
   if (nrow(object) <= top) {
     object <- object
@@ -52,6 +53,7 @@ ggnetwork_internal<-function (object=object,gene=gene,top = 50, pvalue = 0.05, p
   else {
     object <- object[1:top, ]
   }
+  .plot_selection("richNetwork", nrow(object), n, rule = .selection_rule(pvalue, padj, top))
   # Node names are display labels, unique per identifier.
   object <- .ora_display_terms(object)
   if (is.data.frame(gene)) {

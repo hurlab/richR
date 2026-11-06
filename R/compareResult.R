@@ -130,6 +130,7 @@ richCompareDot<-function (x, pvalue = 0.05, low = "lightpink", high = "red",leve
   group_levels <- if (is.factor(x$group)) levels(x$group) else unique(as.character(x$group))
   .check_cutoff(pvalue, "pvalue")
   .check_cutoff(padj, "padj", allow_null = TRUE)
+  n <- nrow(x)
   if(isTRUE(include.all)){
     # include.all skips the significance predicate: every input row is drawn
     low<-"white"
@@ -142,6 +143,10 @@ richCompareDot<-function (x, pvalue = 0.05, low = "lightpink", high = "red",leve
   if(!is.null(pathway)){
     x<-x[x[,level]%in%pathway,]
   }
+  .plot_selection("richCompareDot", nrow(x), n,
+                  rule = paste(c(if (!isTRUE(include.all)) .cutoff_rule(pvalue, padj),
+                                 if (!is.null(pathway)) paste(level, "in the given pathway")),
+                               collapse = "; "))
   # Display labels (after shortening) over all groups: one row per identifier.
   x <- .ora_display_terms(x)
   if (isTRUE(include.all)) {

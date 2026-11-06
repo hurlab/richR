@@ -44,7 +44,8 @@ gglollipop_internal <- function(resultFis,
                                 width    = 10,
                                 height   = 8) {
 
-  resultFis <- .filter_and_top(resultFis, top = top, pvalue = pvalue, padj = padj)
+  resultFis <- .filter_and_top(resultFis, top = top, pvalue = pvalue, padj = padj,
+                               fun = "richLollipop")
   if (nrow(resultFis) == 0) { message("No significant terms to plot."); return(invisible(NULL)) }
   resultFis <- .ora_display_terms(resultFis, short = short)
 
@@ -116,7 +117,10 @@ ggvolcano_internal <- function(resultFis,
   .check_cutoff(pvalue, "pvalue")
   .check_cutoff(padj, "padj", allow_null = TRUE)
   resultFis <- .standardise_gsea_cols(resultFis)
+  n <- nrow(resultFis)
   if (nrow(resultFis) > top) resultFis <- resultFis[seq_len(top), ]
+  .plot_selection("richVolcano", nrow(resultFis), n,
+                  rule = .selection_rule(pvalue, padj, top, predicate = FALSE))
   resultFis <- .ora_display_terms(resultFis, short = short)
 
   # x-axis: log2(FoldEnrichment) for ORA, NES for GSEA
@@ -206,7 +210,8 @@ ggcircbar_internal <- function(resultFis,
                                width  = 10,
                                height = 8) {
 
-  resultFis <- .filter_and_top(resultFis, top = top, pvalue = pvalue, padj = padj)
+  resultFis <- .filter_and_top(resultFis, top = top, pvalue = pvalue, padj = padj,
+                               fun = "richCircle")
   if (nrow(resultFis) == 0) { message("No significant terms to plot."); return(invisible(NULL)) }
   resultFis <- .ora_display_terms(resultFis, short = short)
 
@@ -257,10 +262,13 @@ ggNES_internal <- function(resultFis,
                            height     = 8) {
 
   resultFis <- .standardise_gsea_cols(resultFis)
+  n <- nrow(resultFis)
   resultFis <- .sig_filter(resultFis, pvalue, padj)
 
   resultFis <- resultFis[order(resultFis$NES, decreasing = TRUE), ]
   if (nrow(resultFis) > top) resultFis <- resultFis[seq_len(top), ]
+  .plot_selection("richNES", nrow(resultFis), n,
+                  rule = .selection_rule(pvalue, padj, top, order = "by NES, descending"))
   if (nrow(resultFis) == 0) { message("No significant terms to plot."); return(invisible(NULL)) }
   resultFis <- .ora_display_terms(resultFis, short = short)
 
@@ -320,7 +328,8 @@ ggscatter_internal <- function(resultFis,
                                width      = 10,
                                height     = 8) {
 
-  resultFis <- .filter_and_top(resultFis, top = top, pvalue = pvalue, padj = padj)
+  resultFis <- .filter_and_top(resultFis, top = top, pvalue = pvalue, padj = padj,
+                               fun = "richScatter")
   if (nrow(resultFis) == 0) { message("No significant terms to plot."); return(invisible(NULL)) }
   resultFis <- .ora_display_terms(resultFis, short = short)
 
@@ -402,9 +411,12 @@ ggecdf_internal <- function(resultFis,
                             height     = 8) {
 
   resultFis <- .standardise_gsea_cols(resultFis)
+  n <- nrow(resultFis)
   resultFis <- .sig_filter(resultFis, pvalue, padj)
   resultFis <- resultFis[order(resultFis$NES), ]
   if (nrow(resultFis) > top) resultFis <- resultFis[seq_len(top), ]
+  .plot_selection("richECDF", nrow(resultFis), n,
+                  rule = .selection_rule(pvalue, padj, top, order = "by NES, ascending"))
   if (nrow(resultFis) == 0) { message("No significant terms to plot."); return(invisible(NULL)) }
   resultFis <- .ora_display_terms(resultFis, short = short)
 
@@ -461,7 +473,8 @@ ggtermsim_internal <- function(resultFis,
                                width      = 10,
                                height     = 8) {
 
-  resultFis <- .filter_and_top(resultFis, top = top, pvalue = pvalue, padj = padj)
+  resultFis <- .filter_and_top(resultFis, top = top, pvalue = pvalue, padj = padj,
+                               fun = "richTermSim")
   if (nrow(resultFis) < 3) { message("Need at least 3 terms for MDS."); return(invisible(NULL)) }
   resultFis <- .ora_display_terms(resultFis, short = short)
 
@@ -578,7 +591,8 @@ gggenedot_internal <- function(resultFis,
                                width      = 12,
                                height     = 8) {
 
-  resultFis <- .filter_and_top(resultFis, top = top, pvalue = pvalue, padj = padj)
+  resultFis <- .filter_and_top(resultFis, top = top, pvalue = pvalue, padj = padj,
+                               fun = "richGeneDot")
   if (nrow(resultFis) == 0) { message("No significant terms to plot."); return(invisible(NULL)) }
   resultFis <- .ora_display_terms(resultFis, short = short)
 
@@ -655,7 +669,8 @@ gggeneheat_internal <- function(resultFis,
                                 width        = 12,
                                 height       = 8) {
 
-  resultFis <- .filter_and_top(resultFis, top = top, pvalue = pvalue, padj = padj)
+  resultFis <- .filter_and_top(resultFis, top = top, pvalue = pvalue, padj = padj,
+                               fun = "richGeneHeat")
   if (nrow(resultFis) == 0) { message("No significant terms to plot."); return(invisible(NULL)) }
   resultFis <- .ora_display_terms(resultFis, short = short)
 
@@ -740,7 +755,8 @@ gggenebar_internal <- function(resultFis,
                                width     = 10,
                                height    = 8) {
 
-  resultFis <- .filter_and_top(resultFis, top = top, pvalue = pvalue, padj = padj)
+  resultFis <- .filter_and_top(resultFis, top = top, pvalue = pvalue, padj = padj,
+                               fun = "richGeneBar")
   if (nrow(resultFis) == 0) { message("No significant terms to plot."); return(invisible(NULL)) }
   resultFis <- .ora_display_terms(resultFis, short = short)
 
@@ -776,12 +792,65 @@ gggenebar_internal <- function(resultFis,
 # ============================================================
 
 #' Filter and subset enrichment results
+#'
+#' Keeps the rows passing the significance predicate, then the first `top` in
+#' input order. With `fun` given, signals the plot-selection message of `fun`
+#' when rows were dropped (see \code{.plot_selection}).
 #' @keywords internal
 #' @noRd
-.filter_and_top <- function(df, top, pvalue, padj) {
+.filter_and_top <- function(df, top, pvalue, padj, fun = NULL) {
+  n <- nrow(df)
   df <- .sig_filter(df, pvalue, padj)
   if (nrow(df) > top) df <- df[seq_len(top), , drop = FALSE]
+  if (!is.null(fun)) .plot_selection(fun, nrow(df), n, rule = .selection_rule(pvalue, padj, top))
   df
+}
+
+# @MX:ANCHOR: [AUTO] the one place a plot reports its row selection (IC-1)
+# @MX:REASON: every table plot of set P and richNetmap route their k-of-n count here; class and text are a public contract (SPEC-RICHR-006 REQ-001)
+#' Report a plot's row selection
+#'
+#' Signals one condition of class
+#' \code{c("richR_plot_selection", "message", "condition")} when a plot draws
+#' fewer rows (or identifiers) than its input holds (\code{k < n}); signals
+#' nothing when \code{k == n}. The text reads
+#' \code{"<fun>: drawing <k> of <n> <unit> (<rule>)"}; the condition also
+#' carries \code{fun}, \code{k}, \code{n} and \code{unit}.
+#' @param fun name of the plot function the user called
+#' @param k number of rows (or identifiers) drawn
+#' @param n number of rows (or identifiers) in the input
+#' @param unit counted unit, \code{"rows"} or \code{"identifiers"}
+#' @param rule the selection applied, cutoffs and order rule
+#' @return \code{TRUE} invisibly when a condition was signalled
+#' @keywords internal
+#' @noRd
+.plot_selection <- function(fun, k, n, unit = "rows", rule) {
+  if (k >= n) return(invisible(FALSE))
+  msg <- sprintf("%s: drawing %s of %s %s (%s)", fun, format(k), format(n), unit, rule)
+  cond <- structure(
+    class = c("richR_plot_selection", "message", "condition"),
+    list(message = paste0(msg, "\n"), call = NULL, fun = fun, k = k, n = n, unit = unit)
+  )
+  message(cond)
+  invisible(TRUE)
+}
+
+#' Text of the significance predicate a plot applied
+#' @keywords internal
+#' @noRd
+.cutoff_rule <- function(pvalue, padj) {
+  rule <- paste("Pvalue <=", format(pvalue))
+  if (!is.null(padj)) rule <- paste(rule, "and Padj <=", format(padj))
+  rule
+}
+
+#' Text of a plot's selection: predicate (unless NULL) then the top rule
+#' @keywords internal
+#' @noRd
+.selection_rule <- function(pvalue, padj, top, order = "in input order",
+                            predicate = TRUE) {
+  paste(c(if (isTRUE(predicate)) .cutoff_rule(pvalue, padj),
+          paste("first", format(top), order)), collapse = "; ")
 }
 
 #' Display labels for a plotted enrichment frame

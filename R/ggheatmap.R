@@ -39,6 +39,9 @@ richHeatmap<-function(richRes, top = 50, colnames = NULL, xsize = 6, ysize = 6,u
     r <- x@result
     head(as.character(r[[key]]), min(top, nrow(r)))
   })))
+  n_ids <- length(unique(unlist(lapply(richRes, function(x) as.character(x@result[[key]])))))
+  .plot_selection("richHeatmap", length(sel), n_ids, unit = "identifiers",
+                  rule = paste("first", format(top), "identifiers of each result; union"))
   value_col <- if (isTRUE(usePadj)) "Padj" else "Pvalue"
   res <- Reduce(function(x, y) full_join(x, y, by = key),
                 lapply(richRes, function(x) x@result[, c(key, value_col)]))

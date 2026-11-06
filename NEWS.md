@@ -3,8 +3,9 @@
 ## Development version 0.2.0.9000 (unreleased)
 
 This development source follows the published 0.2.0 release. The 0.2.0 tag,
-release notes and release assets remain unchanged. Integration verification is
-still in progress; this section does not announce a release.
+release notes and release assets remain unchanged. The scoped fixes passed
+integrated QA and independent acceptance review; this development version
+remains unreleased.
 
 ### Data integrity fixes
 

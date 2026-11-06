@@ -29,9 +29,85 @@ Historical session entries are preserved verbatim. Newest first.
   Published v0.2.0, its NEWS section/assets, and README release pin stay unchanged.
 - Detailed evidence and gaps: PROJECT_HANDOFF.md and ignored
   `.moai/reports/review-020/consumer/richStudio-handoff.md`.
-- Final integrated QA/security/audit, SPEC close and parent-controlled integration
-  remain pending. No new release/tag/stable promotion is authorized. This entry
-  does not reopen the historical release work or claim this review completed.
+- First attempted freeze `6086335719a0f5465201d0b88d32b7b614a2d416`, tree
+  `163f20f27f2c35e60a8067bd8c587079a27d5b59`, freshly installed as 0.2.0.9000:
+  59 files/411 blocks/6,369 passes/0 failures/0 errors/3 skips/84 warnings.
+  Evidence: `qa/final-6086335719a0/{provenance.json,suite.log,results.rds}`.
+- Mechanical warning classification corrects earlier all-alias wording:
+  baseline 44 = 24 alias+20 igraph; final 84 = 24 alias+60 igraph. Same 52 baseline
+  files have identical 44 warning signatures; new network-export regression
+  contributes 40 existing igraph deprecations, with 0 new message types.
+  Historical log bodies are retained; this entry records the correction.
+- Scoped security at that first attempted freeze completed: 308 tracked text files/
+  0 secret candidates, 43 R files parsed, 123 OSV queries/0 matches with live
+  known-positive control. Public malformed-integer guards and HTML-save probes
+  pass; no dependency version changes; 51 source hashes match. No new C/H
+  finding established within the report's limited scope, not a vulnerability-free
+  claim. Evidence: `security/postfix-6086335719a0/final-security.md`.
+- The first 608 package check completed with 1 WARNING/4 NOTEs, including
+  unqualified sd code usage; it is not final accepted verification. Author revision
+  `0ca51d3` changes only both calls to `stats::sd`. Independent reviewer APPROVED:
+  69 assertions, 0 failures/errors/warnings/skips, 0 sd visibility diagnostics,
+  package code-usage issue count 0. Historical 608 evidence is retained separately.
+- Corrected freeze `7df78b07aabee622625192db4a245734e35f03da`, tree
+  `4bb38b4c2232b4d5c442e5905b6a438ce97cfc5f`, fresh private installation:
+  full suite 59 files/411 blocks/6,369 passes/0 failures/errors/3 skips/84 warnings.
+  New-run warning classification is unchanged: 24 alias+60 igraph, 0 new types,
+  identical 44 warnings across the 52 original files.
+- All scoped security scans/probes independently reran on corrected 7df source
+  and private library: 308 text files/0 candidates, 43 R files parsed, 123 OSV
+  queries/0 matches with positive control, public integer guards/HTML-save pass,
+  dependency versions unchanged and 51 source hashes matching. No new C/H finding
+  established in that limited scope. Records: `qa/final-7df78b07aabe/` and
+  `security/postfix-7df78b07aabe/final-security.md`.
+- Corrected 7df QA now complete: line coverage 5561/6183=89.9401585%, up from
+  5479/6134=89.3218128%; expressions 3775/4270=88.40749%; instrumented suite
+  matches installed suite. Parse 111 files/0 errors. Joint regressions 405 passes,
+  0 failures/errors/skips, 40 known warnings, plus 23 further successes; core 8
+  successes. Browser screenshot inspected by QA; DOM 14 unique IDs/4 resolving
+  links/2 embedded PNGs, browser exit 0.
+- Corrected package build/check driver exit 0; copied 00check.log has *DONE,
+  1 WARNING/3 NOTEs and R code possible-problems OK (no sd NOTE). Explicit
+  --as-cran --no-tests: test step skipped in check, full exact-source installed
+  suite measured separately. Retained diagnostics: missing inconsolata.sty,
+  compiler flag, missing HTML Tidy and manual-build detritus.
+- Binding sync audit now PASS 97.75/100, 26/26 ACs against exact 7df source.
+  Auditor independently recounted hashes/coverage/warning CSVs and inspected
+  saved runtime evidence; sandbox R execution remained unavailable. Consolidated
+  QA report: `qa/final-qa.md`; binding verdict: `final-audit.md`.
+- Six scoped code SPECs closed after actual PASS; status frontmatter/E4 updated,
+  E2/E3 and requirements/AC bodies preserved. Canonical sync SHA pending-backfill
+  awaits parent commit. NEWS now states reviewed development source, unreleased.
+- Check-profile clarification: original 7df --as-cran check had incoming disabled
+  by _R_CHECK_CRAN_INCOMING_=false (also NOT_CRAN=true), not a default incoming
+  result. Canonical QA report corrected; frozen report restored byte-identical
+  with separate report-clarification-receipt.json, preserving manifest integrity.
+- Isolated default-incoming 7df check completed 1 ERROR/0 WARNING/0 NOTE.
+  All four original environment diagnostics now report OK with real embedded
+  font PDF, tidy 5.6 and temporary exact-token compiler flag cleanup retaining
+  other hardening, without suppressions. Strict incoming failure includes archived
+  RichR name collision, development version policy, GO.db software-repository
+  lookup and then-existing URLs. GO.db annotation page verified reachable;
+  package identity/version/dependency removal was not used to hide findings.
+- Fresh check-built native/ORA regressions passed 175 assertions. Collector CSV
+  serialization failed after saving raw RDS; independent raw-RDS verification
+  confirmed counts/exported scalar CSV, retaining original failure evidence.
+- TASK-CRAN-METADATA-001 independently APPROVED, committed 30e55792951451ac38bd8c2018b423a4aee0053c:
+  only DESCRIPTION Title case, README HTTPS links and disabled/broken CI badge
+  removal. QA equivalence verifies 305 runtime/test/help/data/inst/vignette/
+  NAMESPACE files byte-identical to 7df. Version 0.2.0.9000, GO.db, package identity
+  and README v0.2.0 pin unchanged; Actions disabled, no CI pass claimed.
+- Standard --no-tests check on 30e now completed: build/check exit 0, Status: OK
+  (0 ERROR/0 WARNING/0 NOTE). Fresh check-built library postcompile regression
+  also exit 0: 175 passes/0 failures/errors/warnings/skips. Real PDF manual OK.
+  Standard profile has no separate HTML-manual step; strict 7df HTML check passed
+  with byte-identical Rd, rather than being inferred from standard output.
+- Final standard-check report: `qa/standard-check-30e557929514/standard-check.md`.
+- Code+environment review complete; final commit and remote push receipt remain
+  pending at planned `.moai/reports/review-020/git-receipt.json`. A receipt path
+  is not evidence that push already occurred. Standard check does not negate
+  strict incoming 1 ERROR or establish CRAN readiness. No release/tag/stable
+  promotion is authorized.
 
 ---
 

@@ -81,3 +81,68 @@ test_that("testedTerms() rejects objects that are not enrichment results", {
   expect_error(testedTerms(annot), "richResult or GSEAResult")
   expect_error(testedTerms(data.frame(Annot = "T1")), "richResult or GSEAResult")
 })
+
+# ---- GSEA (AC-003) -------------------------------------------------------------
+
+# Pathway sizes after intersecting with the ranked genes, computed without
+# fgsea: the family fgsea tests under [minSize, maxSize].
+gsea_sizes <- function(annot, ranked) {
+  inside <- annot[annot$GeneID %in% names(ranked), ]
+  sizes <- table(inside$Term)
+  stats::setNames(as.integer(sizes), names(sizes))
+}
+
+check_gsea_tested <- function(g, sizes, maxSize) {
+  tt <- testedTerms(g)
+  family <- names(sizes)[sizes >= 3 & sizes <= maxSize]
+  expect_setequal(tt$pathway, family)
+  expect_identical(tt$size, unname(sizes[tt$pathway]))
+  expect_identical(tt$padj, stats::p.adjust(tt$pval, "BH"))
+  expect_identical(tt$reported, tt$pathway %in% g@result$pathway)
+  expect_gt(nrow(g@result), 0)
+  expect_true(any(!tt$reported))
+  expect_identical(names(tt), c(names(g@result), "reported"))
+  expect_identical(tt[tt$reported, names(g@result), drop = FALSE], g@result)
+  info <- enrichmentInfo(g)
+  expect_identical(info$schema_version, 2L)
+  expect_identical(info$testing$zero_overlap_count, 0L)
+  expect_identical(nrow(tt), info$testing$tested_count)
+  tt
+}
+
+test_that("GSEA records every pathway fgsea returned and flags the reported ones", {
+  # Catches GSEA keeping only significant pathways, a tested table built from
+  # every annotation pathway instead of what fgsea tested, a tested padj that
+  # differs from the one the reported rows used, and tested rows missing the
+  # columns @result carries.
+  skip_if_not_installed("fgsea")
+  annot <- .char_read("gsea_annot.csv", character = TRUE)
+  sizes <- gsea_sizes(annot, .fgsea_ranked())
+  expect_identical(sizes[c("T1", "T2", "T3", "T4", "T5")],
+                   c(T1 = 8L, T2 = 8L, T3 = 7L, T4 = 5L, T5 = 10L))
+
+  g <- .fgsea_run(minSize = 3, maxSize = 9, pvalue = 0.05, table = TRUE)
+  tt <- check_gsea_tested(g, sizes, maxSize = 9)
+  expect_false("T5" %in% tt$pathway)
+  expect_type(tt$leadingEdge, "character")
+
+  gl <- .fgsea_run(minSize = 3, maxSize = 9, pvalue = 0.05, table = FALSE)
+  ttl <- check_gsea_tested(gl, sizes, maxSize = 9)
+  expect_type(ttl$leadingEdge, "list")
+})
+
+test_that("GSEA with KEGG = TRUE records the KEGG level columns in the tested table", {
+  # Catches tested rows missing the KEGG level columns richGSEA adds to
+  # @result after filtering.
+  skip_if_not_installed("fgsea")
+  annot <- .char_read("gsea_annot.csv", character = TRUE)
+  ids <- c(T1 = "00010", T2 = "00061", T3 = "00190", T4 = "00230", T5 = "00970")
+  annot$Term <- unname(ids[annot$Term])
+  sizes <- gsea_sizes(annot, .fgsea_ranked())
+
+  g <- .fgsea_run(annot = annot, minSize = 3, maxSize = 9, pvalue = 0.05,
+                  KEGG = TRUE)
+  tt <- check_gsea_tested(g, sizes, maxSize = 9)
+  expect_true(all(c("Level3", "Level2", "Level1") %in% names(tt)))
+  expect_false(anyNA(tt$Level1))
+})

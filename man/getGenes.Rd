@@ -10,12 +10,15 @@ getGenes(x, term = NULL, sep = ",")
 \item{x}{A richResult or GSEAResult object}
 
 \item{term}{Optional term ID (Annot column) or term name to extract genes for.
-If NULL, returns all input genes from the analysis. For a GSEAResult the
+If NULL, returns all input genes from the analysis. For a richResult, an
+exact Annot identifier takes precedence over a unique Term label; a label
+shared by several identifiers is an error. For a GSEAResult the
 term resolves by pathway identifier, KEGG identifier with or without
 organism prefix, then unique \code{Term} label (the leading-edge genes are
 returned); a label shared by several pathways is an error.}
 
-\item{sep}{Separator used in GeneID column (default: ",")}
+\item{sep}{Literal separator used in GeneID or joined leading-edge text
+(default: ","). Pass the separator explicitly for non-comma text.}
 }
 \value{
 Character vector of gene IDs

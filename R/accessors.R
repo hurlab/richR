@@ -32,7 +32,8 @@ setMethod("show", signature(object = "richResult"), function(object) {
   cat(.cutoff_text(object@pvalueCutoff, object@padjCutoff), "\n", sep = "")
   if (n_sig > 0) {
     top_n <- min(5, n_sig)
-    cols <- intersect(c("Annot", "Term", "Pvalue", "Padj", "Significant", "Annotated"), colnames(object@result))
+    cols <- intersect(c("Term", "Pvalue", "Padj", "Significant", "Annotated"), colnames(object@result))
+    if (!("Term" %in% cols) && "Annot" %in% colnames(object@result)) cols <- c("Annot", cols)
     top <- object@result[1:top_n, cols, drop = FALSE]
     if ("Pvalue" %in% cols) top$Pvalue <- formatC(top$Pvalue, format = "e", digits = 2)
     if ("Padj" %in% cols) top$Padj <- formatC(as.numeric(top$Padj), format = "e", digits = 2)

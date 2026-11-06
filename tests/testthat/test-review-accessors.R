@@ -52,7 +52,7 @@ test_that("comma splitting and explicit overrides retain their existing contract
   expect_identical(getGenes(g, "p1"), c("G1", "G2"))
 })
 
-for (columns in list(c("Annot", "Term"), "Term", "Pvalue", "Padj", character())) {
+for (columns in list(c("Annot", "Term"), "Annot", "Term", "Pvalue", "Padj", character())) {
   test_that(paste("show handles valid richResult columns", paste(columns, collapse = ",")), {
     original <- .review_access_result()
     x <- dplyr::select(original, dplyr::all_of(columns))
@@ -60,6 +60,7 @@ for (columns in list(c("Annot", "Term"), "Term", "Pvalue", "Padj", character()))
     before <- x
     output <- capture.output(returned <- methods::show(x))
     expect_match(paste(output, collapse = "\n"), "richResult object")
+    if (identical(columns, "Annot")) expect_match(paste(output, collapse = "\n"), "Annot")
     if ("Term" %in% columns) expect_match(paste(output, collapse = "\n"), "unique label")
     expect_identical(returned, before)
     expect_identical(x, before)
@@ -69,3 +70,18 @@ for (columns in list(c("Annot", "Term"), "Term", "Pvalue", "Padj", character()))
     expect_identical(original, .review_access_result())
   })
 }
+
+
+test_that("show preserves the normal five-column result table", {
+  x <- .review_access_result()
+  before <- x
+  expected <- x@result[, c("Term", "Pvalue", "Padj", "Significant", "Annotated")]
+  expected$Pvalue <- formatC(expected$Pvalue, format = "e", digits = 2)
+  expected$Padj <- formatC(expected$Padj, format = "e", digits = 2)
+  expected_output <- capture.output(print(expected, row.names = FALSE, right = FALSE))
+  output <- capture.output(methods::show(x))
+  table_start <- grep("Top 4 terms:", output, fixed = TRUE)
+  expect_length(table_start, 1L)
+  expect_identical(output[seq.int(table_start + 1L, length(output))], expected_output)
+  expect_identical(x, before)
+})

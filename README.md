@@ -559,6 +559,34 @@ in a theme is not a measure of evidence, and evidence genes are not shown to be
 causal drivers. Themes can change when a group is added or removed, because the
 evidence genes pool the supplied groups.
 
+### Study report
+
+`richReport()` writes a folder to share a study: a self-contained
+`report.html`, the saved results, every table behind the report as a TSV, a
+`manifest.json` with checksums, and a `rerun.R` recipe:
+
+```r
+richReport(list(A = res1, B = res2), "study_report",
+           themes = th,                       # optional: richThemes() of the same results
+           sensitivity = g)                   # optional: a richSensitivity() grid
+# later, inside study_report/:  Rscript rerun.R ../study_report_again
+```
+
+The report shows, per group, the analysis record, every reported row (each
+with an anchor), a figure drawn with `pvalue = 1, padj = NULL` so it shows the
+reported rows rather than re-thresholding them, and the mapping audit; then
+the comparison of the groups, the themes and the sensitivity grid. It
+performs no new statistical test: the audit and the grid are shown as
+recorded, and the full tables are in `tables/`.
+
+A term significant in one group and not in another is not evidence of a
+difference between the groups. rerun.R regenerates this report from the saved
+results. It does not re-execute the enrichment: the gene inputs and the
+universe are not stored. A rerun checks the SHA-256 of every saved file and
+stops if one was changed; on the same installation it reproduces the folder
+byte for byte apart from the generation time. An existing non-empty folder is
+never overwritten unless `overwrite = TRUE` and it holds a report.
+
 ## Function name aliases
 
 All plotting functions use the `rich*` prefix as the primary name.

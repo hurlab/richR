@@ -523,6 +523,56 @@ are unchanged.
   theme's number of terms is not a measure of evidence, and evidence genes
   are ORA overlap or GSEA leading-edge genes, not shown to be causal drivers.
 
+### Study report
+
+No existing function changes.
+
+- New `richReport(x, path, themes = NULL, stats = NULL, sensitivity = NULL,
+  title, figures = TRUE, figure.top = 30, overwrite = FALSE)` writes a folder
+  a collaborator can open offline: `report.html`, the saved results
+  (`results/group_<i>/`, written by `writeRich()`; none for a failed group),
+  every table behind the report as a `writeRich()`-encoded TSV under
+  `tables/` (`comparison` from `bindRich()`, `audit_group_<i>` from
+  `mappingAudit()`, the five `richThemes()` tables and the `themeGenes()`
+  view, the `stats` entries, the `richSensitivity()` cells, summary and
+  states), `manifest.json` and `rerun.R`. `x` is a result, a list of results
+  (as in `bindRich()`), a vector of `writeRich()` folders, or a previous
+  report folder; a data frame such as a `bindRich()` table is refused because
+  it carries no analysis record.
+- `manifest.json` records the generation time (UTC, the only value that
+  depends on when the report was made), the richR and R versions, the
+  options, the groups in input order, the theme cutoff, the sensitivity
+  design (level names and sizes, not the background identifiers), what each
+  figure draws, every table's column classes, factor levels and row names,
+  and the SHA-256 of every saved file, so each table reads back identical to
+  its source.
+- `report.html` is one self-contained file without scripts or external
+  resources, with every text escaped. Per group it shows the
+  `enrichmentInfo()` record (long values summarised by their size), every
+  reported row with an anchor, a figure and the mapping audit as counts per
+  role and decision linked to its full table; then the comparison of the
+  terms reported in at least one group (each group's `bindRich()` state and
+  adjusted p-value, `failed` for a failed group), the themes and the
+  sensitivity grid when given, and how to reproduce the report. Figures use
+  `richDot()` or `richNES()` with `pvalue = 1, padj = NULL, top = figure.top`,
+  drawn under a local `LC_COLLATE = "C"`, and the caption states how many of
+  the reported rows are drawn.
+- rerun.R regenerates this report from the saved results. It does not
+  re-execute the enrichment, whose gene inputs and universe are not stored.
+  `Rscript rerun.R <new folder>`, run inside the report folder, verifies the
+  checksums, reads the saved results back, rebuilds the themes and stops if
+  any rebuilt theme table differs from the saved one; on the same
+  installation every saved file is byte-identical and `report.html` and
+  `manifest.json` differ only by the generation time.
+- Every check runs before `path` is created or changed. An existing
+  non-empty folder is left unchanged unless `overwrite = TRUE` and it holds a
+  report, in which case only the report's own files and folders are replaced.
+- A term significant in one group and not in another is not evidence of a
+  difference between the groups. Theme grouping summarizes the listed terms;
+  it is not a statistical test, and no theme-level p-value exists. The
+  mapping audit and the sensitivity grid are shown as recorded or supplied,
+  never recomputed.
+
 ### Plots show what they draw (changes default plot output)
 
 A plot function now only displays an enrichment result: it reports the rows

@@ -322,9 +322,11 @@ table.
   exact: the tested table is unavailable exactly when it was in the stored
   object, and `enrichmentInfo()` returns the stored record unchanged, never
   upgraded or re-dated. Version policy: the folder format version must be `1`
-  and the metadata `schema_version` `1` or `2`; an older `schema_version` is
-  read as it is, without conversion, and a missing, non-integer, older or
-  newer version is an error naming the found and supported versions.
+  and, when the folder records metadata, its `schema_version` `1` or `2`;
+  `schema_version` 1 is read as it is, without conversion, and a missing,
+  non-integer, older or newer version is an error naming the found and
+  supported versions. A folder written from an object without metadata is
+  read back without metadata.
   `readRich()` also stops, naming the folder, file, column and first offending
   row, on a missing manifest, a missing or unlisted table file, a header or
   row count that differs from the manifest, an unknown escape sequence or a

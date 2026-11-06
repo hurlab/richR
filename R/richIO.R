@@ -290,10 +290,13 @@ writeRich <- function(x, path, overwrite = FALSE) {
 #' the stored record unchanged, so reading never alters, upgrades or re-dates
 #' the analysis record.
 #'
-#' Version policy: the folder format version must be \code{1}, and the
-#' metadata \code{schema_version} \code{1} (results saved before richR 0.2.0)
-#' or \code{2}; a missing, non-integer, older or newer version is an error
-#' naming the found and the supported versions. \code{readRich()} also stops,
+#' Version policy: the folder format version must be \code{1}, and when the
+#' folder records metadata, its \code{schema_version} must be \code{1}
+#' (results saved before richR 0.2.0) or \code{2}; a missing, non-integer,
+#' older or newer version is an error naming the found and the supported
+#' versions. A folder written from an object without metadata (such as
+#' \code{as(<data.frame>, "richResult")}) is read back without metadata, as
+#' it was stored. \code{readRich()} also stops,
 #' naming the folder, file, column and first offending row, when
 #' \code{manifest.json} is missing or names another format or a class other
 #' than \code{richResult} or \code{GSEAResult}, when a table file the manifest

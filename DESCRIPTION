@@ -70,6 +70,7 @@ Collate:
     mappingAudit.R
     tested.R
     bindRich.R
+    richSensitivity.R
     richIO.R
     accessors.R
     dplyr-methods.R

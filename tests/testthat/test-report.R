@@ -130,6 +130,13 @@ test_that("report statements lead back to their term, run and annotation (AC-002
   t1 <- .rp_section(h, "theme_001", until = "<h3")
   members <- unique(.rp_th(q1, q2)$members$Annot[.rp_th(q1, q2)$members$theme_id == "theme_001"])
   expect_setequal(sub("^#", "", .rp_hrefs(t1)), .rp_anchor(1, members))
+  # A missing fold change (q2 has no statistics) is shown as NA, never 0.
+  gv <- .rp_table_rows(t1)
+  hit <- Filter(function(r) identical(r[match(c("gene", "group"), gv[[1]])], c("G01", "q2")),
+                gv[-1])
+  expect_length(hit, 1L)
+  expect_identical(hit[[1]][match(c("log2FC", "stat_status"), gv[[1]])],
+                   c("NA", "no_statistics_for_group"))
 
   # Provenance and the record summary rules.
   for (o in list(q1, q2)) {
@@ -141,6 +148,10 @@ test_that("report statements lead back to their term, run and annotation (AC-002
   expect_identical(.rp_record_value(g1, "background$effective_ids"), "character vector of 76 values")
   expect_identical(.rp_record_value(g1, "input$unmapped_ids"), "character vector of 0 values")
   expect_identical(.rp_record_value(g1, "options$padj"), "NULL")
+  # Every reported row with every column, in result order.
+  rt <- .rp_table_rows(g1, "Reported terms: ")
+  expect_identical(rt[[1]], names(q1@result))
+  expect_identical(vapply(rt[-1], `[`, "", match("Annot", rt[[1]])), q1@result$Annot)
 
   pl <- file.path(base, "pl")
   richReport(list(q1 = q1, leg = leg), pl)
@@ -248,7 +259,9 @@ test_that("figures draw every reported row up to figure.top and say what they dr
   expect_identical(.rp_captions(h3), "No figure: figures = FALSE.")
 
   pn <- file.path(base, "pn"); richReport(list(q1 = q$q1, f = NULL), pn)
-  expect_identical(.rp_captions(.rp_html(pn))[2], "No figure: the group failed.")
+  hn <- .rp_html(pn)
+  expect_identical(.rp_captions(hn)[2], "No figure: the group failed.")
+  expect_true(.rp_has(.rp_section(hn, "group-2"), "Execution: failed."))
 })
 
 test_that("GSEA figures follow richNES()'s order rule and caption it (AC-004: a GSEA caption that misstates the drawn rows)", {
@@ -487,4 +500,187 @@ test_that("a rerun under another session collation reproduces the figures (AC-00
   setwd(owd)
   expect_identical(status, 0L)
   .rp_expect_rerun_identical(p, q5)
+})
+
+# ---- fix round 1: Codex M6.3 review and sync-audit test debt ----------------
+
+test_that("overwrite removes the report's own entries literally and stops when one cannot be removed (Codex M6.3 #1: a bracketed folder name deleting a sibling folder; a failed removal leaving stale files)", {
+  base <- .rp_tmp()
+  q <- .rp_fq()
+  x <- list(q1 = q$q1, q2 = q$q2)
+  p <- file.path(base, "study[1]")
+  richReport(x, p, figures = FALSE)
+  keep <- file.path(base, "study1", "results", "keep.txt")
+  dir.create(dirname(keep), recursive = TRUE)
+  writeLines("precious", keep)
+  writeLines("stale", file.path(p, "results", "stale.txt"))
+  richReport(x, p, figures = FALSE, overwrite = TRUE)
+  expect_true(file.exists(keep))
+  expect_false(file.exists(file.path(p, "results", "stale.txt")))
+  expect_true(.rp_has(.rp_html(p), "Group 2: q2"))
+
+  skip_on_os("windows")
+  pl <- file.path(base, "pl")
+  richReport(x, pl, figures = FALSE)
+  locked <- file.path(pl, "tables", "locked")
+  dir.create(locked)
+  writeLines("x", file.path(locked, "a.txt"))
+  writeLines("x", file.path(locked, "b.txt"))
+  Sys.chmod(locked, "0555")
+  on.exit(Sys.chmod(locked, "0755"), add = TRUE, after = FALSE)
+  if (unlink(file.path(locked, "a.txt")) == 0L) skip("file removal is not refused here (root?)")
+  expect_error(richReport(x, pl, figures = FALSE, overwrite = TRUE), "could not remove",
+               fixed = TRUE)
+  Sys.chmod(locked, "0755")
+  richReport(x, pl, figures = FALSE, overwrite = TRUE)
+  expect_false(dir.exists(locked))
+})
+
+test_that("figures do not depend on the session's graphics settings and leave them as found (Codex M6.3 #2: a rerun drawing other figures after update_geom_defaults() or another bitmapType)", {
+  skip_on_os("windows")
+  skip_if_not(capabilities("png"), "the png device is unavailable")
+  skip_if_not(capabilities("cairo"), "cairo is unavailable")
+  base <- .rp_tmp()
+  old <- ggplot2::update_geom_defaults("point", list(shape = 8, fill = "red", stroke = 4))
+  on.exit(ggplot2::update_geom_defaults("point", old), add = TRUE)
+  bar <- ggplot2::update_geom_defaults("bar", list(colour = "red", linewidth = 3, alpha = 0.1))
+  on.exit(ggplot2::update_geom_defaults("bar", bar), add = TRUE)
+  op <- options(bitmapType = "cairo-png")
+  on.exit(options(op), add = TRUE)
+  p <- file.path(base, "p")
+  .rp_main(p)
+  expect_identical(ggplot2::GeomPoint$default_aes$shape, 8)
+  expect_identical(getOption("bitmapType"), "cairo-png")
+  q <- file.path(base, "q")
+  owd <- setwd(p)
+  status <- system2(.rp_rscript(), c("rerun.R", shQuote(q)), env = .rp_lib_env(),
+                    stdout = FALSE, stderr = FALSE)
+  setwd(owd)
+  expect_identical(status, 0L)
+  .rp_expect_rerun_identical(p, q)
+  pg <- file.path(base, "pg"); qg <- file.path(base, "qg")
+  richReport(.th_fgsea(FALSE), pg)
+  owd <- setwd(pg)
+  status <- system2(.rp_rscript(), c("rerun.R", shQuote(qg)), env = .rp_lib_env(),
+                    stdout = FALSE, stderr = FALSE)
+  setwd(owd)
+  expect_identical(status, 0L)
+  .rp_expect_rerun_identical(pg, qg)
+  expect_identical(ggplot2::GeomBar$default_aes$alpha, 0.1)
+})
+
+test_that("themes whose settings were edited are refused (Codex M6.3 #3: a report showing settings its rerun does not reproduce)", {
+  base <- .rp_tmp()
+  q <- .rp_fq()
+  x <- list(q1 = q$q1, q2 = q$q2)
+  edits <- list(background_size = 999999L, method = "jaccard", linkage = "complete")
+  for (e in names(edits)) {
+    th <- richThemes(x)
+    expect_false(identical(th$settings[[e]], edits[[e]]), label = e)
+    th$settings[[e]] <- edits[[e]]
+    pe <- file.path(base, e)
+    expect_error(richReport(x, pe, themes = th, figures = FALSE), "settings", label = e)
+    expect_false(file.exists(pe), label = e)
+  }
+})
+
+test_that("comparison cells come from their own group when names contain the key separator (Codex M6.3 #4: another group's state and adjusted p shown)", {
+  base <- .rp_tmp()
+  leg <- .rp_fleg(.rp_fq()$q1)
+  two <- function(ids) {
+    o <- leg
+    o@result <- o@result[1:2, ]
+    o@result$Annot <- ids
+    o
+  }
+  x <- stats::setNames(list(two(c("B\001C", "zz")), two(c("yy", "C"))), c("A", "A\001B"))
+  b <- bindRich(x)
+  pick <- function(g, id) b[as.character(b$group) == g & b$Annot == id, ]
+  expect_identical(c(pick("A", "C")$state, pick("A\001B", "C")$state),
+                   c("unavailable", "reported"))
+  expect_false(isTRUE(all.equal(pick("A\001B", "C")$Padj, pick("A", "B\001C")$Padj)))
+  p <- file.path(base, "p")
+  richReport(x, p, figures = FALSE)
+  rows <- .rp_table_rows(.rp_section(.rp_html(p), "comparison"))
+  cell <- Filter(function(r) identical(r[1], "C"), rows[-1])
+  expect_length(cell, 1L)
+  expect_identical(cell[[1]][-1],
+                   c("unavailable", sprintf("reported (%.4g)", pick("A\001B", "C")$Padj)))
+})
+
+test_that("a result without an adjusted p column is compared with its adjusted p shown as NA (Codex M6.3 #5: comparison rendering crashing)", {
+  base <- .rp_tmp()
+  leg <- .rp_fleg(.rp_fq()$q1)
+  leg@result$Padj <- NULL
+  x <- list(a = leg, b = leg)
+  expect_false("Padj" %in% names(bindRich(x)))
+  p <- file.path(base, "p")
+  richReport(x, p, figures = FALSE)
+  rows <- .rp_table_rows(.rp_section(.rp_html(p), "comparison"))
+  expect_identical(vapply(rows[-1], `[`, "", 1), sort(leg@result$Annot, method = "radix"))
+  for (r in rows[-1]) expect_identical(r[-1], rep("reported (NA)", 2), label = r[1])
+})
+
+test_that("numbers are shown in full when whole, with 4 significant digits otherwise, and NA when missing (REQ-011; F1: a large count shown as 1.235e+05)", {
+  expect_identical(richR:::.report_num(c(123456L, NA)), c("123456", "NA"))
+  expect_identical(richR:::.report_num(c(123456, 1e15, -2e5, 0, 0.1, 2 / 3, NA)),
+                   c("123456", "1000000000000000", "-200000", "0", "0.1", "0.6667", "NA"))
+})
+
+test_that("the generation time is UTC whatever the session time zone (REQ-005; F3: local time stamped Z)", {
+  base <- .rp_tmp()
+  old <- Sys.getenv("TZ", unset = NA)
+  on.exit(if (is.na(old)) Sys.unsetenv("TZ") else Sys.setenv(TZ = old), add = TRUE)
+  Sys.setenv(TZ = "Asia/Tokyo")
+  p <- file.path(base, "p")
+  richReport(.rp_fq()$q1, p, figures = FALSE)
+  generated <- .rp_manifest(p)$generated
+  at <- as.POSIXct(generated, format = "%Y-%m-%dT%H:%M:%SZ", tz = "UTC")
+  expect_lt(abs(as.numeric(difftime(at, Sys.time(), units = "mins"))), 5)
+  expect_true(.rp_has(.rp_html(p), paste("Generated:", generated)))
+})
+
+test_that("identifier text and record values are escaped at every site (AC-006; F5: a hostile identifier raw in comparison rows, member links or the representative, a hostile id raw in a record value)", {
+  base <- .rp_tmp()
+  hid <- "<K&'\">"
+  gene <- "<i>G01</i>"
+  a <- .rp_a80(c(G01 = gene))
+  a$Term[a$Term == "K"] <- hid
+  query <- replace(.rp_G(c(1:6, 11:14)), 1, gene)
+  x <- list(a = .rp_enrich(query, annot = a), b = .rp_enrich(.rp_G(c(1:8, 30:35)), annot = a))
+  expect_true(hid %in% x$a@result$Annot)
+  th <- richThemes(x)
+  expect_identical(th$themes$representative[1], hid)
+  p <- file.path(base, "p")
+  richReport(x, p, themes = th, figures = FALSE)
+  h <- .rp_html(p)
+  for (raw in c("<K&", "<i>G01")) expect_false(grepl(raw, h, fixed = TRUE), label = raw)
+  rows <- .rp_table_rows(.rp_section(h, "comparison"))
+  expect_true(hid %in% vapply(rows[-1], `[`, "", 1))
+  t1 <- .rp_section(h, "theme_001", until = "<h3")
+  expect_true(.rp_has(t1, paste0("Representative: ", hid)))
+  expect_true(grepl(">&lt;K&amp;&#39;&quot;&gt;</a>", t1, fixed = TRUE))
+  expect_identical(.rp_record_value(.rp_section(h, "group-1"), "input$ids"),
+                   paste(query, collapse = ", "))
+})
+
+test_that("a rerun reads each group only from its own results folder (F7: an edited manifest.json reading results from elsewhere)", {
+  base <- .rp_tmp()
+  q <- .rp_fq()
+  p <- file.path(base, "p")
+  richReport(list(q1 = q$q1, q2 = q$q2), p, figures = FALSE)
+  writeRich(q$q2, file.path(base, "ext"))
+  mtext <- readLines(file.path(p, "manifest.json"), encoding = "UTF-8")
+  line <- "\"folder\": \"results/group_1\""
+  expect_identical(sum(grepl(line, mtext, fixed = TRUE)), 1L)
+  for (k in 1:2) {
+    to <- c("../ext", "results/group_2")[k]
+    pc <- .rp_copy(p, file.path(base, paste0("pc", k)))
+    con <- file(file.path(pc, "manifest.json"), "wb")
+    writeLines(sub(line, sprintf("\"folder\": \"%s\"", to), mtext, fixed = TRUE), con, sep = "\n")
+    close(con)
+    out <- file.path(base, paste0("q", k))
+    expect_error(richReport(pc, out), "results/group_1", fixed = TRUE, label = to)
+    expect_false(file.exists(out), label = to)
+  }
 })

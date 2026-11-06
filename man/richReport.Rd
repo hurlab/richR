@@ -170,7 +170,7 @@ rebuilds the themes with \code{richThemes()} at the recorded cutoff,
 re-applies the saved labels and stops naming the first theme table that
 differs from the saved one, and writes the report with the recorded title
 and figure settings. On the same installation every file under
-\code{tables/} and \code{results/} and \code{rerun.R} are byte-identical to
+\code{tables/} and \code{results/} and \code{rerun.R} is byte-identical to
 the original, and \code{report.html} and \code{manifest.json} differ only by
 the generation time. The gene inputs and the universe of the enrichment
 are not stored, so a rerun cannot re-execute it. Edits to

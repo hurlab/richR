@@ -119,7 +119,7 @@
 #' re-applies the saved labels and stops naming the first theme table that
 #' differs from the saved one, and writes the report with the recorded title
 #' and figure settings. On the same installation every file under
-#' \code{tables/} and \code{results/} and \code{rerun.R} are byte-identical to
+#' \code{tables/} and \code{results/} and \code{rerun.R} is byte-identical to
 #' the original, and \code{report.html} and \code{manifest.json} differ only by
 #' the generation time. The gene inputs and the universe of the enrichment
 #' are not stored, so a rerun cannot re-execute it. Edits to
@@ -202,7 +202,7 @@ richReport <- function(x, path, themes = NULL, stats = NULL, sensitivity = NULL,
 .report_format_version <- 1L
 
 ## The entries richReport() writes; the only ones overwrite = TRUE replaces.
-.report_known <- c("report.html", "manifest.json", "rerun.R", "results", "tables")
+.report_known <- c("results", "tables", "report.html", "rerun.R", "manifest.json")
 
 ## Stems of the theme tables, by richThemes element.
 .report_theme_tables <- c(themes = "themes", members = "theme_members",
@@ -285,7 +285,7 @@ richReport <- function(x, path, themes = NULL, stats = NULL, sensitivity = NULL,
   if (identical(rebuilt$themes$theme_id, themes$themes$theme_id)) {
     rebuilt$themes$label <- themes$themes$label
   }
-  for (e in names(.report_theme_tables)) {
+  for (e in c("settings", names(.report_theme_tables))) {
     if (!identical(rebuilt[[e]], themes[[e]])) {
       stop(sprintf(paste("richReport(): `themes` differs from richThemes(x, cutoff = %s)",
                          "in its %s table; only the labels in themes$themes$label may",
@@ -507,7 +507,15 @@ richReport <- function(x, path, themes = NULL, stats = NULL, sensitivity = NULL,
                            "(no manifest.json naming format '%s'); it is left unchanged."),
                      path, .report_format), call. = FALSE)
       }
-      unlink(file.path(path, .report_known), recursive = TRUE)
+      # Keep the identifying manifest until the other entries are removed,
+      # so an interrupted overwrite remains recognizable for a later retry.
+      for (entry in .report_known) {
+        if (file.access(path, 2L) != 0L ||
+            unlink(file.path(path, entry), recursive = TRUE, expand = FALSE) != 0L) {
+          stop(sprintf("richReport(): could not remove the old report entries in '%s'.", path),
+               call. = FALSE)
+        }
+      }
     }
   }
   dir.create(path, recursive = TRUE, showWarnings = FALSE)
@@ -552,7 +560,14 @@ richReport <- function(x, path, themes = NULL, stats = NULL, sensitivity = NULL,
   names(x) <- groups
   for (i in seq_along(groups)) {
     folder <- m$groups[[i]]$folder
-    if (!is.null(folder)) x[[i]] <- readRich(file.path(src, folder))
+    if (!is.null(folder)) {
+      expected <- paste0("results/group_", i)
+      if (!identical(folder, expected)) {
+        stop(sprintf("richReport(): group %d in %s must use folder %s.",
+                     i, where, expected), call. = FALSE)
+      }
+      x[[i]] <- readRich(file.path(src, folder))
+    }
   }
   entries <- m$tables
   names(entries) <- vapply(entries, function(e) as.character(e$table)[1L], character(1))
@@ -639,9 +654,29 @@ richReport <- function(x, path, themes = NULL, stats = NULL, sensitivity = NULL,
       k <<- cond$k
       invokeRestart("muffleMessage")
     })
+  # Each layer gets its own defaults; update_geom_defaults() in the caller
+  # must neither change a saved report nor be changed by drawing one.
+  for (i in seq_along(p$layers)) {
+    geom <- p$layers[[i]]$geom
+    defaults <- if (inherits(geom, "GeomPoint")) {
+      ggplot2::aes(shape = 19, colour = "black", fill = NA, size = 1.5,
+                   alpha = NA, stroke = 0.5)
+    } else if (inherits(geom, "GeomBar")) {
+      ggplot2::aes(colour = NA, fill = "grey35", linewidth = 0.5,
+                   linetype = 1, alpha = NA, width = 0.9)
+    } else NULL
+    if (!is.null(defaults)) {
+      p$layers[[i]]$geom <- ggplot2::ggproto(NULL, geom, default_aes = defaults)
+    }
+  }
   file <- tempfile(fileext = ".png")
   on.exit(unlink(file), add = TRUE)
-  grDevices::png(file, width = 800, height = 600, res = 96)
+  type <- if (isTRUE(unname(capabilities("cairo")))) "cairo" else {
+    if (.Platform$OS.type == "windows") "windows" else {
+      if (isTRUE(unname(capabilities("aqua")))) "quartz" else "Xlib"
+    }
+  }
+  grDevices::png(file, width = 800, height = 600, res = 96, type = type)
   dev <- grDevices::dev.cur()
   tryCatch(print(p), finally = grDevices::dev.off(dev))
   bytes <- readBin(file, "raw", file.info(file)$size)
@@ -877,11 +912,13 @@ richReport <- function(x, path, themes = NULL, stats = NULL, sensitivity = NULL,
   all_ids <- unique(ids[!is.na(ids)])
   cols <- lapply(groups, function(g) {
     if (is.null(x[[g]])) return(rep("failed", length(shown)))
-    at <- match(paste(g, shown, sep = "\001"), paste(grp, ids, sep = "\001"))
+    rows <- which(grp == g)
+    at <- rows[match(shown, ids[rows])]
     state <- bound$state[at]
     with_p <- state %in% c("reported", "tested_not_reported")
     text <- .report_values(state)
-    text[with_p] <- sprintf("%s (%s)", state[with_p], .report_num(bound[[pcol]][at][with_p]))
+    p <- if (pcol %in% names(bound)) bound[[pcol]][at] else rep(NA_real_, length(at))
+    text[with_p] <- sprintf("%s (%s)", state[with_p], .report_num(p[with_p]))
     .report_escape(text)
   })
   c(.report_el("h2", "Comparison", c(id = "comparison")),

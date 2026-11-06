@@ -22,7 +22,8 @@ richGO_internal(
   sep = ",",
   universe = NULL,
   annotation_provenance = NULL,
-  padj.family = c("overlap", "all")
+  padj.family = c("overlap", "all"),
+  universe_policy = c("annotated", "measured")
 )
 }
 \arguments{
@@ -73,6 +74,15 @@ BH over that one term gives 0.01, so a null term is reported every time; BH
 over all 100 gives 1. Use \code{padj.family = "all"} for adjustment over every
 size-eligible term.
 The annotation is narrowed to \code{ontology} before the background is built, so the tested family (and the default background) is ontology-specific.}
+
+\item{universe_policy}{how \code{N} and \code{n} are counted: \code{"annotated"}
+(default) counts only universe genes annotated in the tested annotation (for
+\code{richGO}, the selected ontology); \code{"measured"} also counts the
+tested-but-unannotated genes of an explicit \code{universe}: \code{N} = the
+unique valid universe genes, \code{n} = the unique valid query genes in the
+universe. Term sizes, overlaps and the tested family are the same under both;
+\code{"measured"} requires \code{universe}. Recorded as
+\code{options$universe_policy} in \code{\link{enrichmentInfo}()}.}
 }
 \description{
 GO Enrichment analysis function

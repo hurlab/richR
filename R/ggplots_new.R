@@ -647,9 +647,23 @@ gggenedot_internal <- function(resultFis,
       ggplot2::geom_point(size = 4, alpha = 0.85) +
       ggplot2::scale_color_gradient(low = low, high = high, name = color_label)
   } else {
-    p <- ggplot2::ggplot(melted, ggplot2::aes(x = Gene, y = Term, size = abs_fc, color = fc_value)) +
-      ggplot2::geom_point(alpha = 0.85) +
-      ggplot2::scale_size_continuous(range = c(2, 7), name = "|Fold Change|") +
+    no_fc <- is.na(melted$fc_value)
+    size_range <- c(2, 7)
+    p <- ggplot2::ggplot(melted, ggplot2::aes(x = Gene, y = Term, size = abs_fc, color = fc_value))
+    if (any(no_fc)) {
+      # Member genes without a fold change: drawn, never dropped, in a fixed
+      # grey at the smallest size, and named in the caption (REQ-004).
+      p <- p +
+        ggplot2::geom_point(data = melted[!no_fc, , drop = FALSE], alpha = 0.85) +
+        ggplot2::geom_point(data = melted[no_fc, , drop = FALSE],
+                            ggplot2::aes(x = Gene, y = Term), inherit.aes = FALSE,
+                            colour = "grey55", size = size_range[1], alpha = 0.85) +
+        ggplot2::labs(caption = "Grey (grey55) points: member gene, no fold change supplied")
+    } else {
+      p <- p + ggplot2::geom_point(alpha = 0.85)
+    }
+    p <- p +
+      ggplot2::scale_size_continuous(range = size_range, name = "|Fold Change|") +
       ggplot2::scale_color_gradient2(low = low, mid = mid, high = high, name = "Fold Change")
   }
   p <- p +
@@ -735,8 +749,19 @@ gggeneheat_internal <- function(resultFis,
     melted$fc_value[is.na(melted$present)] <- NA_real_
     melted$label <- ifelse(!is.na(melted$fc_value) & abs(melted$fc_value) > label.cutoff,
                            as.character(melted$Gene), "")
+    # A member gene without a fold change is drawn in grey55, distinct from a
+    # gene not in the term (na.fill), and both are named in the caption (REQ-004).
+    no_fc <- !is.na(melted$present) & is.na(melted$fc_value)
     p <- ggplot2::ggplot(melted, ggplot2::aes(x = Gene, y = Term, fill = fc_value)) +
-      ggplot2::geom_tile(color = border.color, linewidth = 0.5) +
+      ggplot2::geom_tile(color = border.color, linewidth = 0.5)
+    if (any(no_fc)) {
+      p <- p +
+        ggplot2::geom_tile(data = melted[no_fc, , drop = FALSE], fill = "grey55",
+                           color = border.color, linewidth = 0.5) +
+        ggplot2::labs(caption = paste0("grey55: member gene, no fold change supplied; ",
+                                       na.fill, " (na.fill): gene not in the term"))
+    }
+    p <- p +
       ggplot2::geom_text(data = melted[!is.na(melted$label) & melted$label != "", ],
                          ggplot2::aes(label = label), size = 2.5, color = "black") +
       ggplot2::scale_fill_gradient2(low = low, mid = mid, high = high,
@@ -963,8 +988,9 @@ gggenebar_internal <- function(resultFis,
   if (is.null(fc)) {
     melted$fc_value <- 0
   } else {
+    # A member gene for which `fc` holds no value keeps NA: it has no fold
+    # change, and 0 would draw it as a measured "no change" (REQ-004).
     melted$fc_value <- fc[melted$Gene]
-    melted$fc_value[is.na(melted$fc_value)] <- 0
   }
   melted$abs_fc <- abs(melted$fc_value)
   melted

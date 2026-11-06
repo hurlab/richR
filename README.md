@@ -1,7 +1,7 @@
 # richR <img src="man/figures/logo.png" align="right" height="120" />
 
 [![Project Status:](http://www.repostatus.org/badges/latest/active.svg)](http://www.repostatus.org/#active)
-[![](https://img.shields.io/badge/version-0.1.5-green.svg)](https://github.com/hurlab/richR)
+[![](https://img.shields.io/badge/version-0.2.0-green.svg)](https://github.com/hurlab/richR)
 [![R-CMD-check](https://github.com/hurlab/richR/actions/workflows/R-CMD-check.yaml/badge.svg)](https://github.com/hurlab/richR/actions/workflows/R-CMD-check.yaml)
 ![](https://img.shields.io/github/languages/code-size/hurlab/richR)
 [![DOI](https://zenodo.org/badge/243827597.svg)](https://zenodo.org/badge/latestdoi/243827597)
@@ -31,10 +31,12 @@ and you can supply custom gene sets via GMT files or named lists.
 
 ## Installation
 
+richR 0.2.0 requires R 4.6 or later.
+
 ```r
-# Install from GitHub
+# Install the 0.2.0 release from GitHub
 library(devtools)
-install_github("hurlab/richR")
+install_github("hurlab/richR", ref = "v0.2.0")
 ```
 
 Bioconductor annotation packages are needed for building annotations:
@@ -558,6 +560,35 @@ overlapping gene sets are not independent replications, so the number of terms
 in a theme is not a measure of evidence, and evidence genes are not shown to be
 causal drivers. Themes can change when a group is added or removed, because the
 evidence genes pool the supplied groups.
+
+### Study report
+
+`richReport()` writes a folder to share a study: a self-contained
+`report.html`, the saved results, every table behind the report as a TSV, a
+`manifest.json` with checksums, and a `rerun.R` recipe:
+
+```r
+richReport(list(A = res1, B = res2), "study_report",
+           themes = th,                       # optional: richThemes() of the same results
+           sensitivity = g)                   # optional: a richSensitivity() grid
+# later, inside study_report/:  Rscript rerun.R ../study_report_again
+```
+
+The report shows, per group, the analysis record, every reported row (each
+with an anchor), a figure drawn with `pvalue = 1, padj = NULL` so it shows the
+reported rows rather than re-thresholding them, and the mapping audit; then
+the comparison of the groups, the themes and the sensitivity grid. It
+performs no new statistical test: the audit and the grid are shown as
+recorded, and the full tables are in `tables/`.
+
+A term significant in one group and not in another is not evidence of a
+difference between the groups. rerun.R regenerates this report from the saved
+results. It does not re-execute the enrichment: the gene inputs and the
+universe are not stored. A rerun checks the SHA-256 of the files under
+`results/` and `tables/`, plus `rerun.R`, and stops if one was changed; on the
+same installation it reproduces the folder byte for byte apart from the
+generation time. An existing non-empty folder is never overwritten unless
+`overwrite = TRUE` and it holds a report.
 
 ## Function name aliases
 

@@ -223,3 +223,22 @@ test_that("AC-013: the design states what was varied and reproduces the grid", {
   expect_identical(again$states, g$states)
   expect_identical(again$summary, g$summary)
 })
+
+test_that("a grid over an Annot object runs every cell with the requested padj.family", {
+  # Catches: an Annot grid whose cells drop padj.family = "all" (the
+  # enrich(<Annot>) dispatch defect), leaving a design whose arguments ask
+  # for one family and whose criterion and cells used another.
+  f <- fgrid()
+  an <- methods::new("Annot", species = "x", anntype = "custom", keytype = "SYMBOL",
+                     annot = f$an)
+  ga <- richSensitivity(f$q, an, backgrounds = f$bk, padj.family = "all")
+  gd <- richSensitivity(f$q, f$an, backgrounds = f$bk, padj.family = "all")
+  expect_identical(ga$design$arguments$padj.family, "all")
+  expect_identical(ga$design$criterion$padj.family, "all")
+  expect_identical(ga$cells$tested_count, gd$cells$tested_count)
+  for (cell in ga$cells$cell) {
+    expect_identical(testedTerms(ga$results[[cell]])$Padj,
+                     testedTerms(gd$results[[cell]])$Padj, info = cell)
+  }
+  expect_identical(ga$summary, gd$summary)
+})

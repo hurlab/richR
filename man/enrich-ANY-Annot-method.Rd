@@ -7,6 +7,7 @@
 \S4method{enrich}{ANY,Annot}(
   x,
   object,
+  ontology = "",
   pvalue = 0.05,
   padj = 0.05,
   organism = NULL,
@@ -20,8 +21,8 @@
   padj.method = "BH",
   sep = ",",
   universe = NULL,
-  builtin = TRUE,
   padj.family = c("overlap", "all"),
+  builtin = TRUE,
   universe_policy = c("annotated", "measured")
 )
 }
@@ -29,6 +30,8 @@
 \item{x}{vector contains gene names or dataframe with DEGs information}
 
 \item{object}{annotation data}
+
+\item{ontology}{not used: the ontology is read from \code{object}}
 
 \item{pvalue}{cutoff pvalue}
 
@@ -56,8 +59,6 @@
 
 \item{universe}{optional character vector intersected with annotated genes to define the ORA background}
 
-\item{builtin}{use KEGG built-in annotation or not (set FALSE if you want to use newest KEGG data)}
-
 \item{padj.family}{family of terms that \code{padj.method} adjusts over:
 \code{"overlap"} (default) holds the size-eligible terms (see \code{minGSSize})
 that share at least one gene with the query; \code{"all"} holds every
@@ -70,6 +71,8 @@ universe of 100 single-gene terms and one selected gene under the null (with
 BH over that one term gives 0.01, so a null term is reported every time; BH
 over all 100 gives 1. Use \code{padj.family = "all"} for adjustment over every
 size-eligible term.}
+
+\item{builtin}{use KEGG built-in annotation or not (set FALSE if you want to use newest KEGG data)}
 
 \item{universe_policy}{how \code{N} and \code{n} are counted: \code{"annotated"}
 (default) counts only universe genes annotated in the tested annotation (for

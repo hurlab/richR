@@ -124,6 +124,7 @@ setMethod("enrich", signature(object = "data.frame"),definition = function(x,obj
 #' Enrichment analysis function
 #' @param x vector contains gene names or dataframe with DEGs information
 #' @param object annotation data
+#' @param ontology not used: the ontology is read from \code{object}
 #' @param pvalue cutoff pvalue
 #' @param padj cutoff p adjust value
 #' @param organism organism
@@ -166,10 +167,13 @@ setMethod("enrich", signature(object = "data.frame"),definition = function(x,obj
 #'   universe. Term sizes, overlaps and the tested family are the same under both;
 #'   \code{"measured"} requires \code{universe}. Recorded as
 #'   \code{options$universe_policy} in \code{\link{enrichmentInfo}()}.
-setMethod("enrich", signature(object = "Annot"),definition = function(x,object,pvalue=0.05,padj=0.05,organism=NULL,
+## The formals follow the generic's order (method-only arguments last): S4
+## calls this definition positionally in the generic's order, so a formal out
+## of place receives another argument's value.
+setMethod("enrich", signature(object = "Annot"),definition = function(x,object,ontology="",pvalue=0.05,padj=0.05,organism=NULL,
                                                                         keytype="",filename=NULL,minSize=2,maxSize=500,
                                                                       minGSSize = 10, maxGSSize = 500,
-                                                                        keepRich=TRUE,padj.method="BH",sep=",",universe=NULL,builtin=TRUE,padj.family=c("overlap","all"),universe_policy=c("annotated","measured")) {
+                                                                        keepRich=TRUE,padj.method="BH",sep=",",universe=NULL,padj.family=c("overlap","all"),builtin=TRUE,universe_policy=c("annotated","measured")) {
   provenance <- .annotation_provenance(object)
   enrich_internal(x=x,object=object@annot,ontology=object@anntype,pvalue=pvalue,padj=padj,
                     organism=object@species,keytype=object@keytype,minSize=minSize,maxSize=maxSize,minGSSize = minGSSize, maxGSSize = maxGSSize,keepRich=keepRich,

@@ -594,6 +594,15 @@ output is as before. See `?richR_plot_selection`.
   With dplyr 1.2 it failed with "The `add` argument of `group_by()` was
   deprecated in dplyr 1.0.0 and is now defunct"; the methods now pass `.add`
   to dplyr and keep their own `add` argument.
+- `enrich()` on an `Annot` object now honours `padj.family` (new in this
+  release). The `Annot` method's arguments were out of the generic's order,
+  so S4 dispatch passed `padj.family` into the method's `builtin` argument
+  and the adjustment always used the default `"overlap"` family. Only
+  `Annot` calls that passed `padj.family = "all"` change (directly, through
+  `batchEnrich()` or in a `richSensitivity()` grid): their
+  adjusted p-values, tested count and recorded `padj.family` now follow the
+  `"all"` family, as the same call on an annotation data frame already did.
+  `richGO()` and `richKEGG()` on `Annot` objects were not affected.
 
 ### Internal changes
 

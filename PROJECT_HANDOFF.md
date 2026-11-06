@@ -1,3 +1,64 @@
+# PROJECT_HANDOFF.md — richR 0.2.1 release preparation
+
+Updated: 2026-11-06. Artifacts are English; conversation is Korean.
+
+## Current task
+
+The owner authorized a new 0.2.1 release, promotion of the stable branch, and an
+upstream contribution to guokai8/richR. This supersedes the preceding review's
+restriction against release publication; the old 0.2.0 tag and assets remain
+immutable.
+
+- Workspace: `/home/juhur/.moai/worktrees/projects/richR/richr-release-021`.
+- Branch: `WT-release-021`; source base:
+  `fa383355357ee21b21707c1e35abe79520b4b21e`.
+- Release metadata is being prepared for version `0.2.1`. GitHub publication,
+  assets and branch promotion are pending fresh release verification.
+- The repository's existing default branch is `stable`. Keep that designation;
+  advance `stable` and `master` to the validated release commit.
+- Upstream work is separately scoped to avoid duplicating the existing open
+  contributions. No upstream PR publication is claimed by this document.
+- Distribution policy: GitHub now; any future package-repository submission
+  targets Bioconductor. CRAN submission is not a release gate. No Bioconductor
+  submission-readiness assessment is claimed.
+
+## Release scope
+
+The patch packages twelve confirmed fixes across six reviewed areas: literal
+gene separators/detail joins, encoding-equivalent native keys, GSEA identifiers
+and group names, result access/display, plot boundaries/network exports, and
+integer validation during folder import. Package-title and README metadata
+corrections are included. The 0.2.0 significance defaults and engine custom
+background support remain unchanged.
+
+## Verification attribution
+
+The preceding development runtime at
+`7df78b07aabee622625192db4a245734e35f03da` passed 6,369 assertions with zero
+failures/errors; line coverage was 5,561/6,183 = 89.9401585%. Its independent
+review passed all 26 acceptance criteria. The metadata follow-up at
+`30e55792951451ac38bd8c2018b423a4aee0053c` passed standard package check with
+0 ERROR / 0 WARNING / 0 NOTE and 175 scoped fresh-built native/ORA assertions.
+These are **previous development-baseline results**, not fresh 0.2.1 results.
+
+Authoritative previous reports remain in the prior isolated worktree:
+
+- [Final review report](/home/juhur/.moai/worktrees/projects/richR/richr020-review-fix/.moai/reports/review-020/final-report.md)
+- [Prior full runtime QA](/home/juhur/.moai/worktrees/projects/richR/richr020-review-fix/.moai/reports/review-020/qa/final-qa.md)
+- [Prior standard package check](/home/juhur/.moai/worktrees/projects/richR/richr020-review-fix/.moai/reports/review-020/qa/standard-check-30e557929514/standard-check.md)
+
+Fresh 0.2.1 QA, asset hashes, publication receipts, remote branch refs and the
+upstream PR URL will be recorded under `.moai/reports/release-021/` as observed.
+Release-note draft: `.moai/reports/release-021/release-notes.md`.
+
+## Historical review handoff
+
+The snapshot below describes the completed preceding task and its former
+workspace. Relative evidence paths in that snapshot refer to the prior review
+worktree, not this release worktree.
+
+---
+
 # PROJECT_HANDOFF.md — richR
 
 Updated: 2026-11-06. Artifacts are English; conversation is Korean.

@@ -1,3 +1,26 @@
+# Session 2026-11-06 — richR 0.2.1 release preparation
+
+The owner authorized release publication, stable/default-branch reconciliation,
+and an upstream PR. Work is isolated in `richr-release-021` on `WT-release-021`,
+starting from reviewed source `fa383355357ee21b21707c1e35abe79520b4b21e`.
+
+- Prepared DESCRIPTION version 0.2.1, dated patch-release NEWS and README
+  badge/install references. Preserved the entire published 0.2.0 NEWS suffix.
+- README records GitHub distribution and Bioconductor as the only future
+  package-repository target; no CRAN or Bioconductor submission is attempted.
+- Preserved all runtime/native/test/help code. Fresh release QA is pending;
+  prior 6,369 passes and 89.9401585% coverage remain attributed to development
+  runtime 7df78b0. Prior standard check 0E/0W/0N remains attributed to 30e5579.
+- Existing GitHub default branch is stable; branch advancement and release
+  publication await parent verification. Upstream contribution is independently
+  scoped against existing open PRs.
+- Draft release notes and evidence are under `.moai/reports/release-021/`.
+  No commit, push, release publication or branch promotion is claimed here.
+
+## Earlier session history
+
+---
+
 # PROJECT_LOG.md (active) — richR
 Historical session entries are preserved verbatim. Newest first.
 

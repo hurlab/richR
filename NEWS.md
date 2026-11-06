@@ -1,11 +1,10 @@
 # richR Updates
 
-## Development version 0.2.0.9000 (unreleased)
+## Version 0.2.1 (2026-11-06)
 
-This development source follows the published 0.2.0 release. The 0.2.0 tag,
-release notes and release assets remain unchanged. The scoped fixes passed
-integrated QA and independent acceptance review; this development version
-remains unreleased.
+This patch release fixes data integrity, sparse plotting and HTML export.
+Significance-cutoff defaults and custom-background (`universe`) support are
+unchanged from 0.2.0. The published 0.2.0 tag and release assets remain available.
 
 ### Data integrity fixes
 
@@ -35,6 +34,11 @@ remains unreleased.
   preserving each row's statistics and the existing disconnected-term behavior.
 - Interactive network wrappers forward `savehtml` so requested HTML output is
   written for result objects, data frames, GSEA results and multi-result maps.
+
+### Package metadata and documentation
+
+- Package-title capitalization and README status links are corrected. The
+  inactive GitHub Actions status badge is removed.
 
 ## Version 0.2.0 (2026-11-06)
 

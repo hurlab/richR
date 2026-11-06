@@ -1,7 +1,7 @@
 # richR <img src="man/figures/logo.png" align="right" height="120" />
 
 [![Project Status:](https://www.repostatus.org/badges/latest/active.svg)](https://www.repostatus.org/#active)
-[![](https://img.shields.io/badge/version-0.2.0-green.svg)](https://github.com/hurlab/richR)
+[![](https://img.shields.io/badge/version-0.2.1-green.svg)](https://github.com/hurlab/richR)
 ![](https://img.shields.io/github/languages/code-size/hurlab/richR)
 [![DOI](https://zenodo.org/badge/243827597.svg)](https://zenodo.org/badge/latestdoi/243827597)
 
@@ -30,12 +30,15 @@ and you can supply custom gene sets via GMT files or named lists.
 
 ## Installation
 
-richR 0.2.0 requires R 4.6 or later.
+richR 0.2.1 requires R 4.6 or later.
+
+richR is distributed through GitHub and is not intended for CRAN submission.
+Any future package-repository submission will target Bioconductor.
 
 ```r
-# Install the 0.2.0 release from GitHub
+# Install the 0.2.1 release from GitHub
 library(devtools)
-install_github("hurlab/richR", ref = "v0.2.0")
+install_github("hurlab/richR", ref = "v0.2.1")
 ```
 
 Bioconductor annotation packages are needed for building annotations:

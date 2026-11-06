@@ -166,6 +166,27 @@ For ORA (richResult): x = log2(Fold Enrichment), y = -log10(p), color = effect.
 For GSEA (GSEAResult): x = NES, y = -log10(p), color = NES.
 Point size encodes significance; labels auto-adjusted via ggrepel.
 }
+\section{Row selection}{
+
+Draws the first \code{top} rows in input order and applies no significance
+predicate (\code{pvalue} and \code{padj} only place the reference line).
+When this drops rows it signals one \code{\link{richR_plot_selection}}
+message (\code{suppressMessages()} silences it). To draw every row:
+\code{richVolcano(x, top = Inf)}.
+}
+
+\section{Effect column}{
+
+For ORA input the x axis is \code{log2(FoldEnrichment)}, titled
+\code{log2(Fold Enrichment)}. A result without \code{FoldEnrichment} (saved
+before richR 0.1.2) is drawn with \code{log2(Significant/Annotated)}, titled
+\code{log2(Rich Factor = Significant/Annotated)} (colour legend
+\code{log2(Rich Factor)}); without \code{Significant} and \code{Annotated}
+as well, every point is at 0 and the x axis is titled
+\code{No effect column: all points at 0}. Before richR 0.2.0 both cases were
+titled as fold enrichment.
+}
+
 \examples{
 \dontrun{
   resgo <- richGO(gene, godata = hsago, ontology = "BP")

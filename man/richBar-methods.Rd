@@ -86,6 +86,17 @@ ggplot2 object
 \description{
 richBar
 }
+\section{Row selection}{
+
+Draws the rows passing \code{Pvalue <= pvalue} and, unless \code{padj} is
+\code{NULL}, \code{Padj <= padj}, then the first \code{top} of them in
+input order. When this drops rows it signals one
+\code{\link{richR_plot_selection}} message, e.g.
+\code{richBar: drawing 3 of 6 rows (Pvalue <= 0.05 and Padj <= 0.05; first 50 in input order)};
+\code{suppressMessages()} silences it. To draw every row with a p-value:
+\code{richBar(x, pvalue = 1, padj = NULL, top = Inf)}.
+}
+
 \examples{
 \dontrun{
   hsako<-buildAnnot(species="human",keytype="SYMBOL",anntype = "KEGG")

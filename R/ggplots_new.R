@@ -44,7 +44,8 @@ gglollipop_internal <- function(resultFis,
                                 width    = 10,
                                 height   = 8) {
 
-  resultFis <- .filter_and_top(resultFis, top = top, pvalue = pvalue, padj = padj)
+  resultFis <- .filter_and_top(resultFis, top = top, pvalue = pvalue, padj = padj,
+                               fun = "richLollipop")
   if (nrow(resultFis) == 0) { message("No significant terms to plot."); return(invisible(NULL)) }
   resultFis <- .ora_display_terms(resultFis, short = short)
 
@@ -55,14 +56,26 @@ gglollipop_internal <- function(resultFis,
 
   color_label <- if (isTRUE(usePadj)) "-log10(Padj)" else "-log10(Pvalue)"
 
-  p <- ggplot2::ggplot(resultFis, ggplot2::aes(x = stats::reorder(Term, RichFactor), y = RichFactor)) +
-    ggplot2::geom_segment(ggplot2::aes(xend = Term, yend = 0), color = "grey50") +
-    ggplot2::geom_point(ggplot2::aes(color = neg_log_p), size = point.size) +
-    ggplot2::scale_color_gradient(low = low, high = high, name = color_label) +
-    ggplot2::coord_flip() +
-    ggplot2::labs(title = "Lollipop Plot of Enrichment Significance", x = NULL,
-                  y = "RichFactor") +
-    ggplot2::theme_minimal()
+  if ("NES" %in% names(resultFis)) {
+    # GSEA result: draw the NES it carries (no RichFactor exists; REQ-002).
+    p <- ggplot2::ggplot(resultFis, ggplot2::aes(x = stats::reorder(Term, NES), y = NES)) +
+      ggplot2::geom_segment(ggplot2::aes(xend = Term, yend = 0), color = "grey50") +
+      ggplot2::geom_point(ggplot2::aes(color = neg_log_p), size = point.size) +
+      ggplot2::scale_color_gradient(low = low, high = high, name = color_label) +
+      ggplot2::coord_flip() +
+      ggplot2::labs(title = "Lollipop Plot of Enrichment Significance", x = NULL,
+                    y = "NES") +
+      ggplot2::theme_minimal()
+  } else {
+    p <- ggplot2::ggplot(resultFis, ggplot2::aes(x = stats::reorder(Term, RichFactor), y = RichFactor)) +
+      ggplot2::geom_segment(ggplot2::aes(xend = Term, yend = 0), color = "grey50") +
+      ggplot2::geom_point(ggplot2::aes(color = neg_log_p), size = point.size) +
+      ggplot2::scale_color_gradient(low = low, high = high, name = color_label) +
+      ggplot2::coord_flip() +
+      ggplot2::labs(title = "Lollipop Plot of Enrichment Significance", x = NULL,
+                    y = "RichFactor") +
+      ggplot2::theme_minimal()
+  }
 
   if (!is.null(filename)) ggplot2::ggsave(filename, p, width = width, height = height)
   p
@@ -116,7 +129,10 @@ ggvolcano_internal <- function(resultFis,
   .check_cutoff(pvalue, "pvalue")
   .check_cutoff(padj, "padj", allow_null = TRUE)
   resultFis <- .standardise_gsea_cols(resultFis)
+  n <- nrow(resultFis)
   if (nrow(resultFis) > top) resultFis <- resultFis[seq_len(top), ]
+  .plot_selection("richVolcano", nrow(resultFis), n,
+                  rule = .selection_rule(pvalue, padj, top, predicate = FALSE))
   resultFis <- .ora_display_terms(resultFis, short = short)
 
   # x-axis: log2(FoldEnrichment) for ORA, NES for GSEA
@@ -125,15 +141,22 @@ ggvolcano_internal <- function(resultFis,
     resultFis$effect <- resultFis$NES
     x_label <- "Normalized Enrichment Score (NES)"
   } else {
+    # The titles name what is drawn: a result saved before richR 0.1.2 has no
+    # FoldEnrichment, and the rich factor (or nothing) is drawn instead (REQ-003).
+    x_label <- "log2(Fold Enrichment)"
+    colour_label <- "log2(FE)"
     if (!"FoldEnrichment" %in% names(resultFis)) {
       if ("Significant" %in% names(resultFis) && "Annotated" %in% names(resultFis)) {
         resultFis$FoldEnrichment <- resultFis$Significant / resultFis$Annotated
+        x_label <- "log2(Rich Factor = Significant/Annotated)"
+        colour_label <- "log2(Rich Factor)"
       } else {
         resultFis$FoldEnrichment <- 1
+        x_label <- "No effect column: all points at 0"
+        colour_label <- "No effect column"
       }
     }
     resultFis$effect <- log2(pmax(resultFis$FoldEnrichment, 0.001))
-    x_label <- "log2(Fold Enrichment)"
   }
 
   # y / size: -log10(p)
@@ -151,7 +174,7 @@ ggvolcano_internal <- function(resultFis,
                                                 color = effect, size = neg_log_p)) +
     ggplot2::geom_point(alpha = 0.8) +
     ggplot2::scale_color_gradient2(low = low, mid = mid, high = high, midpoint = 0,
-                                   name = if (is_gsea) "NES" else "log2(FE)") +
+                                   name = if (is_gsea) "NES" else colour_label) +
     ggplot2::scale_size_continuous(range = size.range,
                                    name = paste0("-log10(", sig_col, ")")) +
     ggplot2::geom_hline(yintercept = -log10(cutoff), linetype = "dashed", color = "grey50") +
@@ -206,7 +229,8 @@ ggcircbar_internal <- function(resultFis,
                                width  = 10,
                                height = 8) {
 
-  resultFis <- .filter_and_top(resultFis, top = top, pvalue = pvalue, padj = padj)
+  resultFis <- .filter_and_top(resultFis, top = top, pvalue = pvalue, padj = padj,
+                               fun = "richCircle")
   if (nrow(resultFis) == 0) { message("No significant terms to plot."); return(invisible(NULL)) }
   resultFis <- .ora_display_terms(resultFis, short = short)
 
@@ -257,10 +281,13 @@ ggNES_internal <- function(resultFis,
                            height     = 8) {
 
   resultFis <- .standardise_gsea_cols(resultFis)
+  n <- nrow(resultFis)
   resultFis <- .sig_filter(resultFis, pvalue, padj)
 
   resultFis <- resultFis[order(resultFis$NES, decreasing = TRUE), ]
   if (nrow(resultFis) > top) resultFis <- resultFis[seq_len(top), ]
+  .plot_selection("richNES", nrow(resultFis), n,
+                  rule = .selection_rule(pvalue, padj, top, order = "by NES, descending"))
   if (nrow(resultFis) == 0) { message("No significant terms to plot."); return(invisible(NULL)) }
   resultFis <- .ora_display_terms(resultFis, short = short)
 
@@ -320,22 +347,38 @@ ggscatter_internal <- function(resultFis,
                                width      = 10,
                                height     = 8) {
 
-  resultFis <- .filter_and_top(resultFis, top = top, pvalue = pvalue, padj = padj)
+  resultFis <- .filter_and_top(resultFis, top = top, pvalue = pvalue, padj = padj,
+                               fun = "richScatter")
   if (nrow(resultFis) == 0) { message("No significant terms to plot."); return(invisible(NULL)) }
   resultFis <- .ora_display_terms(resultFis, short = short)
 
-  # x-axis: log10(Annotated) — pathway size
-  resultFis$log_annotated <- log10(resultFis$Annotated)
+  is_gsea <- "NES" %in% names(resultFis)
+  if (is_gsea) {
+    # GSEA result: gene-set size against the NES it carries (REQ-002); a GSEA
+    # result has no annotated count and no fold enrichment.
+    resultFis$log_size <- log10(resultFis$Significant)
+    x_label <- "log10(Gene-set size)"
+    y_label <- "NES"
+  } else {
+    # x-axis: log10(Annotated) — pathway size
+    resultFis$log_annotated <- log10(resultFis$Annotated)
 
-  # y-axis: log2(FoldEnrichment) — effect size
-  if (!"FoldEnrichment" %in% names(resultFis)) {
-    if ("Significant" %in% names(resultFis) && "Annotated" %in% names(resultFis)) {
-      resultFis$FoldEnrichment <- resultFis$Significant / resultFis$Annotated
-    } else {
-      resultFis$FoldEnrichment <- 1
+    # y-axis: log2(FoldEnrichment) — effect size; without FoldEnrichment (a
+    # result saved before richR 0.1.2) the rich factor is drawn and titled as
+    # such (REQ-003).
+    y_label <- "log2(Fold Enrichment)"
+    if (!"FoldEnrichment" %in% names(resultFis)) {
+      if ("Significant" %in% names(resultFis) && "Annotated" %in% names(resultFis)) {
+        resultFis$FoldEnrichment <- resultFis$Significant / resultFis$Annotated
+        y_label <- "log2(Rich Factor = Significant/Annotated)"
+      } else {
+        resultFis$FoldEnrichment <- 1
+        y_label <- "No effect column: all points at 0"
+      }
     }
+    resultFis$log2_fe <- log2(pmax(resultFis$FoldEnrichment, 0.001))
+    x_label <- "log10(Pathway Size)"
   }
-  resultFis$log2_fe <- log2(pmax(resultFis$FoldEnrichment, 0.001))
 
   # color: -log10(p)
   sig_col <- if (isTRUE(usePadj) && "Padj" %in% names(resultFis)) "Padj" else "Pvalue"
@@ -348,13 +391,17 @@ ggscatter_internal <- function(resultFis,
   n_label <- min(label.top, nrow(resultFis))
   resultFis$label[seq_len(n_label)] <- resultFis$Term[seq_len(n_label)]
 
-  p <- ggplot2::ggplot(resultFis, ggplot2::aes(x = log_annotated, y = log2_fe,
-                                                color = neg_log_p)) +
+  mapping <- if (is_gsea) {
+    ggplot2::aes(x = log_size, y = NES, color = neg_log_p)
+  } else {
+    ggplot2::aes(x = log_annotated, y = log2_fe, color = neg_log_p)
+  }
+  p <- ggplot2::ggplot(resultFis, mapping) +
     ggplot2::geom_point(size = point.size, alpha = 0.8) +
     ggplot2::scale_color_gradient(low = low, high = high, name = color_label) +
     ggplot2::geom_hline(yintercept = 0, linetype = "dashed", color = "grey60") +
-    ggplot2::labs(x = "log10(Pathway Size)",
-                  y = "log2(Fold Enrichment)") +
+    ggplot2::labs(x = x_label,
+                  y = y_label) +
     ggplot2::theme_minimal(base_size = 12) +
     ggplot2::theme(plot.title = ggplot2::element_text(hjust = 0.5, face = "bold"))
 
@@ -402,9 +449,12 @@ ggecdf_internal <- function(resultFis,
                             height     = 8) {
 
   resultFis <- .standardise_gsea_cols(resultFis)
+  n <- nrow(resultFis)
   resultFis <- .sig_filter(resultFis, pvalue, padj)
   resultFis <- resultFis[order(resultFis$NES), ]
   if (nrow(resultFis) > top) resultFis <- resultFis[seq_len(top), ]
+  .plot_selection("richECDF", nrow(resultFis), n,
+                  rule = .selection_rule(pvalue, padj, top, order = "by NES, ascending"))
   if (nrow(resultFis) == 0) { message("No significant terms to plot."); return(invisible(NULL)) }
   resultFis <- .ora_display_terms(resultFis, short = short)
 
@@ -461,7 +511,8 @@ ggtermsim_internal <- function(resultFis,
                                width      = 10,
                                height     = 8) {
 
-  resultFis <- .filter_and_top(resultFis, top = top, pvalue = pvalue, padj = padj)
+  resultFis <- .filter_and_top(resultFis, top = top, pvalue = pvalue, padj = padj,
+                               fun = "richTermSim")
   if (nrow(resultFis) < 3) { message("Need at least 3 terms for MDS."); return(invisible(NULL)) }
   resultFis <- .ora_display_terms(resultFis, short = short)
 
@@ -578,7 +629,8 @@ gggenedot_internal <- function(resultFis,
                                width      = 12,
                                height     = 8) {
 
-  resultFis <- .filter_and_top(resultFis, top = top, pvalue = pvalue, padj = padj)
+  resultFis <- .filter_and_top(resultFis, top = top, pvalue = pvalue, padj = padj,
+                               fun = "richGeneDot")
   if (nrow(resultFis) == 0) { message("No significant terms to plot."); return(invisible(NULL)) }
   resultFis <- .ora_display_terms(resultFis, short = short)
 
@@ -595,9 +647,23 @@ gggenedot_internal <- function(resultFis,
       ggplot2::geom_point(size = 4, alpha = 0.85) +
       ggplot2::scale_color_gradient(low = low, high = high, name = color_label)
   } else {
-    p <- ggplot2::ggplot(melted, ggplot2::aes(x = Gene, y = Term, size = abs_fc, color = fc_value)) +
-      ggplot2::geom_point(alpha = 0.85) +
-      ggplot2::scale_size_continuous(range = c(2, 7), name = "|Fold Change|") +
+    no_fc <- is.na(melted$fc_value)
+    size_range <- c(2, 7)
+    p <- ggplot2::ggplot(melted, ggplot2::aes(x = Gene, y = Term, size = abs_fc, color = fc_value))
+    if (any(no_fc)) {
+      # Member genes without a fold change: drawn, never dropped, in a fixed
+      # grey at the smallest size, and named in the caption (REQ-004).
+      p <- p +
+        ggplot2::geom_point(data = melted[!no_fc, , drop = FALSE], alpha = 0.85) +
+        ggplot2::geom_point(data = melted[no_fc, , drop = FALSE],
+                            ggplot2::aes(x = Gene, y = Term), inherit.aes = FALSE,
+                            colour = "grey55", size = size_range[1], alpha = 0.85) +
+        ggplot2::labs(caption = "Grey (grey55) points: member gene, no fold change supplied")
+    } else {
+      p <- p + ggplot2::geom_point(alpha = 0.85)
+    }
+    p <- p +
+      ggplot2::scale_size_continuous(range = size_range, name = "|Fold Change|") +
       ggplot2::scale_color_gradient2(low = low, mid = mid, high = high, name = "Fold Change")
   }
   p <- p +
@@ -655,7 +721,8 @@ gggeneheat_internal <- function(resultFis,
                                 width        = 12,
                                 height       = 8) {
 
-  resultFis <- .filter_and_top(resultFis, top = top, pvalue = pvalue, padj = padj)
+  resultFis <- .filter_and_top(resultFis, top = top, pvalue = pvalue, padj = padj,
+                               fun = "richGeneHeat")
   if (nrow(resultFis) == 0) { message("No significant terms to plot."); return(invisible(NULL)) }
   resultFis <- .ora_display_terms(resultFis, short = short)
 
@@ -682,8 +749,19 @@ gggeneheat_internal <- function(resultFis,
     melted$fc_value[is.na(melted$present)] <- NA_real_
     melted$label <- ifelse(!is.na(melted$fc_value) & abs(melted$fc_value) > label.cutoff,
                            as.character(melted$Gene), "")
+    # A member gene without a fold change is drawn in grey55, distinct from a
+    # gene not in the term (na.fill), and both are named in the caption (REQ-004).
+    no_fc <- !is.na(melted$present) & is.na(melted$fc_value)
     p <- ggplot2::ggplot(melted, ggplot2::aes(x = Gene, y = Term, fill = fc_value)) +
-      ggplot2::geom_tile(color = border.color, linewidth = 0.5) +
+      ggplot2::geom_tile(color = border.color, linewidth = 0.5)
+    if (any(no_fc)) {
+      p <- p +
+        ggplot2::geom_tile(data = melted[no_fc, , drop = FALSE], fill = "grey55",
+                           color = border.color, linewidth = 0.5) +
+        ggplot2::labs(caption = paste0("grey55: member gene, no fold change supplied; ",
+                                       na.fill, " (na.fill): gene not in the term"))
+    }
+    p <- p +
       ggplot2::geom_text(data = melted[!is.na(melted$label) & melted$label != "", ],
                          ggplot2::aes(label = label), size = 2.5, color = "black") +
       ggplot2::scale_fill_gradient2(low = low, mid = mid, high = high,
@@ -740,7 +818,8 @@ gggenebar_internal <- function(resultFis,
                                width     = 10,
                                height    = 8) {
 
-  resultFis <- .filter_and_top(resultFis, top = top, pvalue = pvalue, padj = padj)
+  resultFis <- .filter_and_top(resultFis, top = top, pvalue = pvalue, padj = padj,
+                               fun = "richGeneBar")
   if (nrow(resultFis) == 0) { message("No significant terms to plot."); return(invisible(NULL)) }
   resultFis <- .ora_display_terms(resultFis, short = short)
 
@@ -755,6 +834,21 @@ gggenebar_internal <- function(resultFis,
   if (!"RichFactor" %in% names(resultFis) && "Significant" %in% names(resultFis) && "Annotated" %in% names(resultFis))
     resultFis$RichFactor <- resultFis$Significant / resultFis$Annotated
   color_label <- if (isTRUE(usePadj)) "-log10(Padj)" else "-log10(Pvalue)"
+
+  if ("NES" %in% names(resultFis)) {
+    # GSEA result: draw the NES it carries (no RichFactor exists; REQ-002).
+    p <- ggplot2::ggplot(resultFis, ggplot2::aes(x = stats::reorder(Term, NES), y = NES)) +
+      ggplot2::geom_bar(stat = "identity", ggplot2::aes(fill = neg_log_p), alpha = bar.alpha) +
+      ggplot2::scale_fill_gradient(low = low, high = high, name = color_label) +
+      ggplot2::geom_text(ggplot2::aes(label = gene_label, y = 0),
+                         hjust = 0, nudge_y = 0.005, size = text.size, color = "black", fontface = "italic") +
+      ggplot2::coord_flip() +
+      ggplot2::labs(title = "Enriched Terms with Key Genes", x = NULL, y = "NES") +
+      ggplot2::theme_minimal(base_size = 12) +
+      ggplot2::theme(plot.title = ggplot2::element_text(hjust = 0.5, face = "bold"))
+    if (!is.null(filename)) ggplot2::ggsave(filename, p, width = width, height = height)
+    return(p)
+  }
 
   p <- ggplot2::ggplot(resultFis, ggplot2::aes(x = stats::reorder(Term, RichFactor), y = RichFactor)) +
     ggplot2::geom_bar(stat = "identity", ggplot2::aes(fill = neg_log_p), alpha = bar.alpha) +
@@ -776,12 +870,145 @@ gggenebar_internal <- function(resultFis,
 # ============================================================
 
 #' Filter and subset enrichment results
+#'
+#' Keeps the rows passing the significance predicate, then the first `top` in
+#' input order. With `fun` given, signals the plot-selection message of `fun`
+#' when rows were dropped (see \code{.plot_selection}).
 #' @keywords internal
 #' @noRd
-.filter_and_top <- function(df, top, pvalue, padj) {
+.filter_and_top <- function(df, top, pvalue, padj, fun = NULL) {
+  n <- nrow(df)
   df <- .sig_filter(df, pvalue, padj)
   if (nrow(df) > top) df <- df[seq_len(top), , drop = FALSE]
+  if (!is.null(fun)) .plot_selection(fun, nrow(df), n, rule = .selection_rule(pvalue, padj, top))
   df
+}
+
+#' Row selection in richR table plots
+#'
+#' The table plots draw a selection of the rows of an enrichment result. When
+#' that selection drops rows, the call signals one message of class
+#' \code{c("richR_plot_selection", "message", "condition")}, so a plot never
+#' draws fewer terms than the result holds without saying so. The defaults of
+#' \code{pvalue}, \code{padj} and \code{top} are unchanged; only the message is
+#' new in richR 0.2.0.
+#'
+#' The message text reads \code{"<function>: drawing <k> of <n> <unit>
+#' (<rule>)"}, where \code{n} is the input count, \code{k} the drawn count,
+#' \code{unit} is \code{"rows"} (\code{"identifiers"} for
+#' \code{\link{richHeatmap}}) and \code{rule} names the cutoffs and the order
+#' rule applied. The condition also carries the fields \code{fun}, \code{k},
+#' \code{n} and \code{unit}. No message is signalled when \code{k == n}, and a
+#' plot that draws through another plot (\code{\link{richNetmap}}) signals one
+#' message, not two. \code{k} counts selected rows or identifiers, not genes or
+#' network nodes.
+#'
+#' @section Selection per plot:
+#' \describe{
+#'   \item{\code{richBar}, \code{richDot}, \code{richNetplot},
+#'     \code{richNetwork}, \code{richLollipop}, \code{richCircle},
+#'     \code{richScatter}, \code{richTermSim}, \code{richGeneDot},
+#'     \code{richGeneHeat}, \code{richGeneBar}}{rows passing
+#'     \code{Pvalue <= pvalue} and, unless \code{padj} is \code{NULL},
+#'     \code{Padj <= padj}; then the first \code{top} in input order.}
+#'   \item{\code{richNES}, \code{richECDF}}{the same predicate; then the first
+#'     \code{top} by \code{NES}, descending (\code{richNES}) or ascending
+#'     (\code{richECDF}).}
+#'   \item{\code{richVolcano}}{the first \code{top} rows in input order; no
+#'     significance predicate (\code{pvalue} and \code{padj} only place the
+#'     reference line).}
+#'   \item{\code{richHeatmap}}{identifiers: the first \code{top} identifiers of
+#'     each result, united; \code{n} is the number of distinct identifiers over
+#'     all results.}
+#'   \item{\code{richCompareDot}}{rows of the \code{compareResult()} table
+#'     passing the predicate, unless \code{include.all = TRUE}; rows outside
+#'     \code{pathway} when it is given.}
+#'   \item{\code{richNetmap}}{the first \code{top} rows of each result,
+#'     combined and ordered by \code{Pvalue}, then the predicate and \code{top}
+#'     of \code{richNetwork}; \code{n} is the sum of the results' rows.}
+#' }
+#'
+#' @section Drawing every row:
+#' These calls draw every row that has a non-missing p-value and signal no
+#' message:
+#' \describe{
+#'   \item{the predicate plots above, and \code{richNES}, \code{richECDF}}{
+#'     \code{pvalue = 1, padj = NULL, top = Inf}; the \code{data.frame}
+#'     method of \code{richNetwork} also needs \code{gene =}.}
+#'   \item{\code{richVolcano}, \code{richHeatmap}}{\code{top = Inf}.}
+#'   \item{\code{richCompareDot}}{\code{include.all = TRUE}, or
+#'     \code{pvalue = 1, padj = NULL}.}
+#'   \item{\code{richNetmap}}{\code{pvalue = 1, padj = NULL} with a finite
+#'     \code{top} at least the total row count, e.g.
+#'     \code{top = sum(vapply(x, function(r) nrow(r@result), 1L))};
+#'     \code{top = Inf} and \code{top = NULL} are not supported.}
+#' }
+#' Two existing limits apply to \code{GSEAResult} input: a pathway with an
+#' empty leading edge has no genes, so \code{richGeneDot()} and
+#' \code{richGeneHeat()} stop with an error when such a pathway is selected
+#' (subset the result, or keep a cutoff that excludes it), and the network
+#' plots never draw it as a node.
+#'
+#' @examples
+#' \dontrun{
+#'   res <- richKEGG(gene, kodata = hsako)
+#'   p <- richBar(res)                               # may report the selection
+#'   p <- suppressMessages(richBar(res))             # silence it
+#'   p <- richBar(res, pvalue = 1, padj = NULL, top = Inf)  # every row
+#'   withCallingHandlers(richBar(res), richR_plot_selection = function(m) {
+#'     cat(m$k, "of", m$n, m$unit, "\n")
+#'     invokeRestart("muffleMessage")
+#'   })
+#' }
+#' @name richR_plot_selection
+#' @aliases richR_plot_selection
+NULL
+
+# @MX:ANCHOR: [AUTO] the one place a plot reports its row selection (IC-1)
+# @MX:REASON: every table plot of set P and richNetmap route their k-of-n count here; class and text are a public contract (SPEC-RICHR-006 REQ-001)
+#' Report a plot's row selection
+#'
+#' Signals one condition of class
+#' \code{c("richR_plot_selection", "message", "condition")} when a plot draws
+#' fewer rows (or identifiers) than its input holds (\code{k < n}); signals
+#' nothing when \code{k == n}. The text reads
+#' \code{"<fun>: drawing <k> of <n> <unit> (<rule>)"}; the condition also
+#' carries \code{fun}, \code{k}, \code{n} and \code{unit}.
+#' @param fun name of the plot function the user called
+#' @param k number of rows (or identifiers) drawn
+#' @param n number of rows (or identifiers) in the input
+#' @param unit counted unit, \code{"rows"} or \code{"identifiers"}
+#' @param rule the selection applied, cutoffs and order rule
+#' @return \code{TRUE} invisibly when a condition was signalled
+#' @keywords internal
+#' @noRd
+.plot_selection <- function(fun, k, n, unit = "rows", rule) {
+  if (k >= n) return(invisible(FALSE))
+  msg <- sprintf("%s: drawing %s of %s %s (%s)", fun, format(k), format(n), unit, rule)
+  cond <- structure(
+    class = c("richR_plot_selection", "message", "condition"),
+    list(message = paste0(msg, "\n"), call = NULL, fun = fun, k = k, n = n, unit = unit)
+  )
+  message(cond)
+  invisible(TRUE)
+}
+
+#' Text of the significance predicate a plot applied
+#' @keywords internal
+#' @noRd
+.cutoff_rule <- function(pvalue, padj) {
+  rule <- paste("Pvalue <=", format(pvalue))
+  if (!is.null(padj)) rule <- paste(rule, "and Padj <=", format(padj))
+  rule
+}
+
+#' Text of a plot's selection: predicate (unless NULL) then the top rule
+#' @keywords internal
+#' @noRd
+.selection_rule <- function(pvalue, padj, top, order = "in input order",
+                            predicate = TRUE) {
+  paste(c(if (isTRUE(predicate)) .cutoff_rule(pvalue, padj),
+          paste("first", format(top), order)), collapse = "; ")
 }
 
 #' Display labels for a plotted enrichment frame
@@ -841,8 +1068,9 @@ gggenebar_internal <- function(resultFis,
   if (is.null(fc)) {
     melted$fc_value <- 0
   } else {
+    # A member gene for which `fc` holds no value keeps NA: it has no fold
+    # change, and 0 would draw it as a measured "no change" (REQ-004).
     melted$fc_value <- fc[melted$Gene]
-    melted$fc_value[is.na(melted$fc_value)] <- 0
   }
   melted$abs_fc <- abs(melted$fc_value)
   melted

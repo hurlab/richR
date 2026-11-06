@@ -241,6 +241,20 @@ ggplot2 object
 \description{
 richNetwork
 }
+\section{Row selection}{
+
+Selects the rows passing \code{Pvalue <= pvalue} and, unless \code{padj}
+is \code{NULL}, \code{Padj <= padj}, then the first \code{top} of them in
+input order. When this drops rows it signals one
+\code{\link{richR_plot_selection}} message (\code{suppressMessages()}
+silences it); the count is of rows, not nodes. The layout omits a selected
+term that shares no gene with another selected term, and a term with no
+genes (a \code{GSEAResult} pathway with an empty leading edge). To select
+every row with a p-value:
+\code{richNetwork(x, pvalue = 1, padj = NULL, top = Inf)}; the
+\code{data.frame} method also needs \code{gene =}.
+}
+
 \examples{
 \dontrun{
   hsako<-buildAnnot(species="human",keytype="SYMBOL",anntype = "KEGG")

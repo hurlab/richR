@@ -107,6 +107,17 @@ ggplot2 object
 \description{
 Bidirectional NES barplot of GSEA results
 }
+\section{Row selection}{
+
+Keeps the pathways passing \code{Pvalue <= pvalue} and, unless \code{padj}
+is \code{NULL}, \code{Padj <= padj}, then draws the first \code{top} by
+\code{NES}, descending, so a small \code{top} shows only the most positive
+pathways. When this drops rows it signals one
+\code{\link{richR_plot_selection}} message (\code{suppressMessages()}
+silences it). To draw every pathway with a p-value:
+\code{richNES(x, pvalue = 1, padj = NULL, top = Inf)}.
+}
+
 \examples{
 \dontrun{
   res <- richGSEA(genelist, gseadata)

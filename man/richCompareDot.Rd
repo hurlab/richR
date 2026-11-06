@@ -91,6 +91,19 @@ placeholder terms.}
 \description{
 draw dotplot for multiple enrichment results
 }
+\section{Row selection}{
+
+Draws the rows of the \code{compareResult()} table passing
+\code{Pvalue <= pvalue} and, unless \code{padj} is \code{NULL},
+\code{Padj <= padj} (no predicate with \code{include.all = TRUE}), and,
+when \code{pathway} is given, only the rows whose \code{level} is in it.
+When this drops rows it signals one \code{\link{richR_plot_selection}}
+message (\code{suppressMessages()} silences it). A table built with
+explicit cutoffs is otherwise re-filtered by the plot defaults. To draw
+every row: \code{richCompareDot(x, include.all = TRUE)}, or
+\code{richCompareDot(x, pvalue = 1, padj = NULL)}.
+}
+
 \examples{
 \dontrun{
 hsako <- buildAnnot(species="human",keytype="SYMBOL",anntype = "KEGG")

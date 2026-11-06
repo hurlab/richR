@@ -135,7 +135,8 @@ p-value alone, and `pvalue = 1, padj = 1` switches significance filtering
 off. Cutoffs must lie in (0, 1]. Rows removed at analysis time are not kept
 in the result, so a later plot with looser cutoffs cannot bring them back;
 run the analysis with `pvalue = 1, padj = 1` if you want to choose cutoffs
-later.
+later. Their statistics are still recorded in the tested table
+(`testedTerms()`, see "Tested terms, comparing and storing results").
 
 ORA counts each valid query ID once. Adjusted p-values cover the terms whose
 annotated size lies in [`minGSSize`, `maxGSSize`] and that share at least one
@@ -435,6 +436,59 @@ results, combines the rows already returned by each group without applying a
 second cutoff, and returns a `status` data frame with `group`, `status`,
 `n_terms`, and `error` columns. A zero-row enrichment is `empty`; an exception
 is `failed` and retains its error message.
+
+### Tested terms, comparing and storing results
+
+A result records what was tested, not only what was reported. `result(x)`
+holds the reported rows; `testedTerms(x)` holds every tested term (ORA: every
+term of the tested family that overlaps the query; GSEA: every pathway fgsea
+returned), with the same columns and a logical `reported` column:
+
+```r
+tested <- testedTerms(resgo)
+table(tested$reported)
+enrichmentInfo(resgo)$testing$zero_overlap_count  # zero-overlap terms, counted not listed
+```
+
+`zero_overlap_count` is non-zero only with `padj.family = "all"`. dplyr verbs
+change only `result(x)`: the tested table and `enrichmentInfo()` stay those of
+the original analysis. Objects saved by richR before 0.2.0 have no tested
+table; `testedTerms()` returns `NULL` with a warning and nothing is
+reconstructed.
+
+`bindRich()` binds results of one class into one long table, one row per group
+and term, without applying cutoffs or inventing values:
+
+```r
+bound <- bindRich(batch_res$results)   # or bindRich(list(A = res1, B = res2))
+table(bound$group, bound$state)
+```
+
+The columns start with `group`, the identifier (`Annot` or `pathway`),
+`Term`, `state` and `execution`, followed by the groups' result columns.
+`execution` is `success`, `empty` or `failed` (a `NULL` entry). `state` says
+whether the group `reported` the term, tested it without reporting it
+(`tested_not_reported`), did not test it (`not_tested`), could only have tested it with
+zero overlap (`untested_or_zero_overlap`, with `padj.family = "all"`), or
+cannot tell (`unavailable`, for objects without a tested table); it is `NA`
+for a failed group. Statistics come only from the group's own record and are
+`NA` otherwise; a missing value is never written as `0`.
+
+`writeRich()` stores a result as a folder of UTF-8 tab-separated tables
+(`result.tsv`, `tested.tsv`, `detail.tsv` or `input.tsv`) and a
+`manifest.json`; `readRich()` reads it back exactly:
+
+```r
+writeRich(resgo, "resgo_rich")
+resgo2 <- readRich("resgo_rich")
+identical(result(resgo2), result(resgo))   # TRUE
+```
+
+Doubles are written with 17 significant digits, special characters are
+escaped and missing values are written `\N`, so values, identifiers such as
+`"00010"` and the `enrichmentInfo()` record come back unchanged. `readRich()`
+accepts folder format version 1 with metadata `schema_version` 1 or 2 and
+stops with an error, rather than guessing, on anything it cannot read exactly.
 
 ## Function name aliases
 

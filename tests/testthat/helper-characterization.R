@@ -34,7 +34,7 @@
 # Every slot of an S4 result object other than its data.frame slots (those are
 # pinned separately with .char_pin_df()), as a named list.
 .char_slots <- function(x) {
-  nm <- setdiff(methods::slotNames(x), c("result", "detail", "annot"))
+  nm <- setdiff(methods::slotNames(x), c("result", "detail", "annot", "tested"))
   stats::setNames(lapply(nm, function(s) methods::slot(x, s)), nm)
 }
 

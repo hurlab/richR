@@ -564,8 +564,14 @@
   if (!is.null(extra_cols)) {
     resultFis <- cbind(resultFis, extra_cols[resultFis$Annot, , drop = FALSE])
   }
+  # Tested record (REQ-001): every tested term with overlap > 0, captured
+  # before the size, minSize/keepRich and significance filters, with the values
+  # computed above; nothing is recomputed. Ordered and named as @result is.
+  tested <- resultFis[order(resultFis$Pvalue), , drop = FALSE]
+  rownames(tested) <- tested$Annot
   resultFis <- .filter_ora_result(resultFis, pvalue, padj, minSize, maxSize,
                                    minGSSize, maxGSSize, keepRich)
+  tested$reported <- tested$Annot %in% resultFis$Annot
   if (!is.null(filename)) {
     write.table(resultFis, file = paste(filename, ".txt", sep = ""),
                 sep = "\t", quote = FALSE, row.names = FALSE)
@@ -573,6 +579,7 @@
   detail <- .build_detail(resultFis, x, sep)
   result <- .make_richResult(resultFis, detail, pvalue, padj, padj.method,
                              input, organism, ontology, keytype, sep)
+  result@tested <- tested
   input_metadata <- list(
     original_count = as.integer(length(raw_input)),
     valid_count = as.integer(length(valid_input)),
@@ -593,8 +600,11 @@
   } else {
     "size_bounded_positive_overlap"
   }
+  # Tested terms of the family with zero overlap are counted, not listed
+  # (non-zero only for padj.family = "all"): nrow(tested) + this = tested_count.
   testing <- list(family_policy = family_policy,
                   tested_count = as.integer(length(family)),
+                  zero_overlap_count = as.integer(sum(k == 0L)),
                   effective_N = as.integer(N), effective_n = as.integer(n))
   options <- list(pvalue = pvalue, padj = padj, minSize = minSize,
                   maxSize = maxSize, minGSSize = minGSSize,
